@@ -1,0 +1,324 @@
+using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using ImageFetchers;
+using AngleSharp;
+using Models;
+using Data;
+
+public class PetParser
+{
+    // Dependencies and services
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly MongoService _mongoService;
+    private readonly AppDbContext _db;
+    private readonly BreedResolver _breedResolver;
+    private readonly GenderResolver _genderResolver;
+    private readonly ImageFetcher _imageFetcher;
+    private readonly string _linkPath;
+
+    // Constructor injecting required services
+    public PetParser(
+        IHttpClientFactory httpClientFactory,
+        MongoService mongoService,
+        AppDbContext db,
+        BreedResolver breedResolver,
+        GenderResolver genderResolver,
+        ImageFetcher imageFetcher)
+    {
+        _httpClientFactory = httpClientFactory;
+        _mongoService = mongoService;
+        _db = db;
+        _breedResolver = breedResolver;
+        _genderResolver = genderResolver;
+        _imageFetcher = imageFetcher;
+        _linkPath = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "SsLvLinks.json");
+    }
+
+    private static readonly Dictionary<string, int> _categorySpeciesMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["dogs"] = 1,
+        ["cats"] = 2,
+        ["exotic-animals"] = 3,
+        ["rodents/degu"] = 4,
+        ["rodents/domestic-rats"] = 4,
+        ["rodents/rabbits"] = 4,
+        ["rodents/guinea-pigs"] = 4,
+        ["rodents/ferret"] = 4,
+        ["rodents/hamsters"] = 4,
+        ["rodents/chinchillas"] = 4,
+        ["parrots-and-birds/canaries"] = 5,
+        ["parrots-and-birds/parrots"] = 5,
+        ["fish/fish"] = 6,
+        ["agricultural-animals/rams-sheeps"] = 7,
+        ["agricultural-animals/goats"] = 7,
+        ["agricultural-animals/large-horned-livestock"] = 7,
+        ["agricultural-animals/pigs"] = 7,
+        ["agricultural-animals/horses-donkeys-other"] = 7,
+        ["agricultural-animals/rabbits-nutrias"] = 7
+    };
+
+    // Main parsing function
+    public async Task<List<Pet>> ParseFromSsLvAsync(Guid shelterId, int max = 50)
+    {
+        var result = new List<Pet>();
+        var client = _httpClientFactory.CreateClient();
+        var context = BrowsingContext.New(Configuration.Default.WithDefaultLoader()); // Setup AngleSharp browsing context
+
+        var stats = new Dictionary<string, (int added, int skipped)>(); // Track stats per category
+        string logPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Logs", $"parse_{DateTime.Now:yyyyMMdd_HHmmss}.log"));
+        Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+        using var logWriter = new StreamWriter(logPath); // Log writer
+
+        List<string> urls = await LoadUrlsAsync(); // Load category URLs from JSON file
+
+        if (urls.Count == 0)
+            return result; // No URLs = no parsing
+
+        foreach (var baseUrl in urls) // Loop through each category URL
+        {
+            int page = 1;
+            int collected = 0; // Count collected items
+            int added = 0;
+            int skipped = 0;
+
+            // Extract category name from URL path
+            // Load first page for comparison
+            string firstPageUrl = baseUrl + "index.html";
+            var firstPageDoc = await TryLoadPageAsync(client, context, firstPageUrl);
+            string? firstPageHtml = firstPageDoc?.DocumentElement?.OuterHtml;
+
+            while (true) // Loop through paginated pages
+            {
+                string url = baseUrl + (page > 1 ? $"page{page}.html" : "index.html");
+                Console.WriteLine($"🔗 Parsing: {url}");
+                await logWriter.WriteLineAsync($"🔗 Parsing: {url}");
+
+                var document = await TryLoadPageAsync(client, context, url);
+                if (document == null)
+                {
+                    Console.WriteLine("⚠️ Failed to load page — stopping category.");
+                    await logWriter.WriteLineAsync("⚠️ Failed to load page — stopping category.");
+                    break;
+                }
+
+                string? currentPageHtml = document.DocumentElement?.OuterHtml;
+
+                // Stop if duplicate page
+                if (!string.IsNullOrEmpty(firstPageHtml) &&
+                    !string.IsNullOrEmpty(currentPageHtml) &&
+                    page > 1 &&
+                    currentPageHtml == firstPageHtml)
+                {
+                    Console.WriteLine("🔁 Page identical to first — stopping category.");
+                    await logWriter.WriteLineAsync("🔁 Page identical to first — stopping category.");
+                    break;
+                }
+
+                // Select ad blocks
+                var ads = document.QuerySelectorAll(".d1")
+                    .Where(e => e.QuerySelector("a")?.GetAttribute("href")?.Contains("/msg/") == true)
+                    .ToList();
+
+                if (ads.Count == 0)
+                {
+                    Console.WriteLine("🚫 No ads found — stopping this category.");
+                    await logWriter.WriteLineAsync("🚫 No ads found — stopping this category.");
+                    break;
+                }
+
+                // Process each ad
+                foreach (var ad in ads)
+                {
+                    string? fullLink = GetAdLink(ad); // Get full URL to ad
+                    if (string.IsNullOrWhiteSpace(fullLink) ||
+                        await _db.Pets.AnyAsync(p => p.ExternalUrl == fullLink) ||
+                        result.Any(p => p.ExternalUrl == fullLink)) // Skip duplicates
+                    {
+                        skipped++;
+                        continue;
+                    }
+
+                    var pet = await ParseAdAsync(fullLink, context, client, shelterId, baseUrl); // Parse single ad
+                    if (pet != null)
+                    {
+                        result.Add(pet);
+                        collected++;
+                        added++;
+                        Console.WriteLine($"✅ Added: {pet.Name}");
+                        await logWriter.WriteLineAsync($"✅ Added: {pet.Name}");
+                    }
+                    else
+                    {
+                        skipped++;
+                    }
+
+                    if (collected >= max) // Stop if reached limit
+                    {
+                        Console.WriteLine("📦 Reached max — moving to next category.");
+                        await logWriter.WriteLineAsync("📦 Reached max — moving to next category.");
+                        break;
+                    }
+                }
+
+                if (collected >= max)
+                    break;
+
+                if (page >= 1000)
+                    break;
+
+                page++;
+            }
+
+            stats[ExtractCategoryPath(baseUrl)] = (added, skipped); // Save stats for category
+            await logWriter.WriteLineAsync($"📁 {ExtractCategoryPath(baseUrl)}: ✅ {added}, ❌ {skipped}");
+        }
+
+        // Log summary
+        await logWriter.WriteLineAsync("\n📊 Summary:");
+        foreach (var kvp in stats)
+            await logWriter.WriteLineAsync($"📁 {kvp.Key}: ✅ {kvp.Value.added} / ❌ {kvp.Value.skipped}");
+
+        await logWriter.FlushAsync();
+        Console.WriteLine($"📂 Log saved: {logPath}");
+
+        return result; // Return parsed pets
+    }
+
+    // Loads URLs from SsLvLinks.json file
+    private async Task<List<string>> LoadUrlsAsync()
+    {
+        try
+        {
+            var json = await File.ReadAllTextAsync(_linkPath);
+            return JsonSerializer.Deserialize<List<string>>(json) ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Failed to read SsLvLinks.json: {ex.Message}");
+            return new();
+        }
+    }
+
+    // Loads and parses a page given a URL
+    private async Task<AngleSharp.Dom.IDocument?> TryLoadPageAsync(HttpClient client, IBrowsingContext context, string url)
+    {
+        try
+        {
+            var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode) return null;
+            var html = await response.Content.ReadAsStringAsync();
+            return await context.OpenAsync(req => req.Content(html));
+        }
+        catch
+        {
+            Console.WriteLine($"⚠️ Failed to fetch: {url}");
+            return null;
+        }
+    }
+
+    // Extracts ad link from ad block
+    private string? GetAdLink(AngleSharp.Dom.IElement ad)
+    {
+        var link = ad.QuerySelector("a")?.GetAttribute("href");
+        return string.IsNullOrWhiteSpace(link) ? null : "https://www.ss.lv" + link;
+    }
+
+    public static string? CleanText(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return null;
+
+        input = Regex.Replace(input, @"[\t\r\n]+", "\n");     // tabs → newline
+        input = Regex.Replace(input, @"\n{2,}", "\n");        // many \n → one
+        input = Regex.Replace(input, @" {2,}", " ");          // many spaces → one
+        return input.Trim();
+    }
+
+    // Parses single ad page into a Pet object
+    private async Task<Pet?> ParseAdAsync(string fullLink, IBrowsingContext context, HttpClient client, Guid shelterId, string baseUrl)
+    {
+        try
+        {
+            var petHtml = await client.GetStringAsync(fullLink);
+            var petDoc = await context.OpenAsync(req => req.Content(petHtml));
+
+            var title = CleanText(petDoc.QuerySelector("title")?.TextContent?.Trim());
+            var cleanTitle = Regex.Replace(title?.Split("€. ").LastOrDefault() ?? title ?? "Unnamed", "-+\\s*Sludinājumi\\s*$", "", RegexOptions.IgnoreCase).Trim();
+
+            var breedText = GetFieldValue(petDoc, "Šķirne:") ?? GetFieldValue(petDoc, "Порода:");
+            var ageText = GetFieldValue(petDoc, "Vecums:") ?? GetFieldValue(petDoc, "Возраст:");
+            var colorText = GetFieldValue(petDoc, "Krāsa:") ?? GetFieldValue(petDoc, "Окрас:");
+            var description = CleanText(petDoc.QuerySelector("div[id^='msg_div_msg']")?.TextContent?.Trim());
+            var priceText = PriceResolver.ExtractPrice(description);
+            var photoId = await _imageFetcher.FetchImageIdFromPage(petDoc);
+
+
+            string categoryPath = ExtractCategoryPath(baseUrl);
+            int speciesId = _categorySpeciesMap.TryGetValue(categoryPath, out var id) ? id : 9;
+
+            int breedId = await _breedResolver.ResolveBreedIdAsync(breedText, speciesId);
+            int? genderId = await _genderResolver.ResolveGenderAsync(description, title);
+
+            return new Pet
+            {
+                Id = Guid.NewGuid(),
+                Name = cleanTitle,
+                Description = description,
+                Age = AgeResolver.ParseAge(ageText),
+                BreedId = breedId,
+                SpeciesId = speciesId,
+                Color = colorText,
+                GenderId = genderId,
+                MongoImageId = photoId?.ToString(),
+                ShelterId = shelterId,
+                CreatedAt = DateTime.UtcNow,
+                ExternalUrl = fullLink,
+                Price = priceText,
+                Category = categoryPath
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("❌ Error parsing ad: " + ex.Message);
+            return null;
+        }
+    }
+
+    // Extracts text content for a label in a table row
+    private string? GetFieldValue(AngleSharp.Dom.IDocument doc, string fieldName)
+    {
+        return doc.QuerySelectorAll("tr")
+            .FirstOrDefault(tr =>
+                tr.Children.Length == 2 &&
+                tr.Children[0].TextContent.Trim().StartsWith(fieldName, StringComparison.OrdinalIgnoreCase))
+            ?.Children[1]?.TextContent?.Trim();
+    }
+
+    private static string ExtractCategoryPath(string url)
+    {
+        Uri uri = new Uri(url);
+        string path = uri.AbsolutePath.ToLowerInvariant();
+
+        // All keys in Dictionary are lowercase, so we can use ToLowerInvariant() for comparison
+        var knownPaths = _categorySpeciesMap.Keys
+            .OrderByDescending(k => k.Length);
+
+        foreach (var key in knownPaths)
+        {
+            if (path.Contains(key.ToLower()))
+            {
+                return key.ToLower();
+            }
+        }
+
+        // fallback — last two segments of the path
+        var segments = uri.Segments
+            .Select(s => s.Trim('/'))
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .ToList();
+
+        return string.Join('/', segments.Skip(Math.Max(0, segments.Count - 2))).ToLower();
+    }
+
+}

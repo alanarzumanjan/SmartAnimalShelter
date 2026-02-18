@@ -1,0 +1,53 @@
+using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
+using Models;
+using Data;
+
+public class GenderResolver
+{
+    private readonly AppDbContext _db;
+
+    public GenderResolver(AppDbContext db)
+    {
+        _db = db;
+    }
+
+    public async Task<int?> ResolveGenderAsync(string? description, string? title = null)
+    {
+        string combined = ((description ?? "") + " " + (title ?? "")).ToLower();
+
+        if (string.IsNullOrWhiteSpace(combined))
+            return null;
+
+        if (Regex.IsMatch(combined, @"\b(девочка|meitene|female|сука|girl|женский|she)\b"))
+            return await EnsureGenderExistsAsync("female");
+
+        if (Regex.IsMatch(combined, @"\b(мальчик|puika|male|кобель|boy|мужской|he)\b"))
+            return await EnsureGenderExistsAsync("male");
+
+        return null;
+    }
+
+    private async Task<int> EnsureGenderExistsAsync(string name)
+    {
+        var existing = await _db.Genders.FirstOrDefaultAsync(g => g.Name == name);
+        if (existing != null)
+            return existing.Id;
+
+        try
+        {
+            var gender = new Gender { Name = name };
+            _db.Genders.Add(gender);
+            await _db.SaveChangesAsync();
+            return gender.Id;
+        }
+        catch (DbUpdateException)
+        {
+            var existingRetry = await _db.Genders.FirstOrDefaultAsync(g => g.Name == name);
+            if (existingRetry != null)
+                return existingRetry.Id;
+
+            throw;
+        }
+    }
+}

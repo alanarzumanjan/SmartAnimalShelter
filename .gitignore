@@ -1,0 +1,18 @@
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+*.dll
+*.log
+
+# Frontend
+frontend/**/node_modules/
+frontend/**/dist/
+frontend/**/build/
+frontend/**/.npm
+package-lock.json
+
+# Secrets & Local Configs
+.env
+backend/.env
+appsettings.Development.json
+appsettings.*.local.json

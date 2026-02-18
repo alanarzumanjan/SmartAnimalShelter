@@ -1,0 +1,6 @@
+@SmartShelter.API_HostAddress = http://localhost:5056
+
+GET {{SmartShelter.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
