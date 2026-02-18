@@ -1,0 +1,83 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: co2_postgres
+    environment:
+      POSTGRES_DB: ${DATABASE}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${DATABASE}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - co2_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      network: host
+    container_name: co2_backend
+    env_file:
+      - ./backend/.env
+    environment:
+      ASPNETCORE_URLS: http://+:5000
+      ASPNETCORE_ENVIRONMENT: Development
+      POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=${DATABASE};Username=${POSTGRES_USER};Password=${PASSWORD};Include Error Detail=true;"
+      ALLOWED_FRONTEND_PORT: ${ALLOWED_FRONTEND_PORT}
+      EMAIL_ADDRESS: ${EMAIL_ADDRESS}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_NAME: ${EMAIL_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${PORT:-5000}:5000"
+    restart: unless-stopped
+    networks:
+      - co2_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      network: host
+    container_name: co2_frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    networks:
+      - co2_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 10s
+      retries: 3
+
+  cloudflared:
+    build:
+      context: .
+      dockerfile: cloudflared.Dockerfile
+      network: host
+    container_name: co2_cloudflared
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  pgdata:
+
+networks:
+  co2_network:
+    driver: bridge
