@@ -32,7 +32,7 @@ public class PetParser
         _breedResolver = breedResolver;
         _genderResolver = genderResolver;
         _imageFetcher = imageFetcher;
-        _linkPath = Path.Combine(AppContext.BaseDirectory, "Data", "Seed", "SsLvLinks.json");
+        _linkPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "Seed", "SsLvLinks.json");
     }
 
     private static readonly Dictionary<string, int> _categorySpeciesMap = new(StringComparer.OrdinalIgnoreCase)
@@ -66,7 +66,7 @@ public class PetParser
         var context = BrowsingContext.New(Configuration.Default.WithDefaultLoader()); // Setup AngleSharp browsing context
 
         var stats = new Dictionary<string, (int added, int skipped)>(); // Track stats per category
-        string logPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "Logs", $"parse_{DateTime.Now:yyyyMMdd_HHmmss}.log"));
+        string logPath = Path.Combine(Directory.GetCurrentDirectory(), "Logs", $"parse_{DateTime.Now:yyyyMMdd_HHmmss}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
         using var logWriter = new StreamWriter(logPath); // Log writer
 
@@ -252,6 +252,7 @@ public class PetParser
             var description = CleanText(petDoc.QuerySelector("div[id^='msg_div_msg']")?.TextContent?.Trim());
             var priceText = PriceResolver.ExtractPrice(description);
             var photoId = await _imageFetcher.FetchImageIdFromPage(petDoc);
+            // string? photoId = null; 
 
 
             string categoryPath = ExtractCategoryPath(baseUrl);
