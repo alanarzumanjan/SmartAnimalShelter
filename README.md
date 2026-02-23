@@ -57,7 +57,7 @@ flowchart TD
         API --> Chat[Chat Service]
     end
     
-    subgraph Data["Data Layer (Polyglot Persistence)"]
+    subgraph Data["Data Layer"]
         Auth --> Redis[(Redis)]
         Chat --> Redis
         IoT_Core --> Redis
@@ -65,11 +65,9 @@ flowchart TD
         Shelter --> PG[(PostgreSQL)]
     end
     
-    style Redis fill:#f96,stroke:#333,stroke-width:2px,color:#000
-    style Mongo fill:#4db33d,stroke:#333,stroke-width:2px,color:#fff
-    style PG fill:#336791,stroke:#333,stroke-width:2px,color:#fff
-    style Backend fill:#f0f0f0,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
-    style Data fill:#f0f0f0,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    style Redis fill:#f96,stroke:#333,stroke-width:2px
+    style Mongo fill:#4db33d,stroke:#333,stroke-width:2px
+    style PG fill:#336791,stroke:#333,stroke-width:2px
 
 ### 🗄 Data Strategy
 
