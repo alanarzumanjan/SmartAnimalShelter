@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using Validation;
 using Services;
 using Config;
@@ -15,11 +17,16 @@ public class AuthController : ControllerBase
 {
     private readonly AppDbContext db;
     private readonly JwtService _jwtService;
+    private readonly PasswordHashingService _passwordHashingService;
 
-    public AuthController(AppDbContext db, JwtService jwtService)
+    public AuthController(
+        AppDbContext db, 
+        JwtService jwtService, 
+        PasswordHashingService passwordHashingService)
     {
         this.db = db;
         _jwtService = jwtService;
+        _passwordHashingService = passwordHashingService;
     }
 
     [HttpPost("register")]
@@ -37,10 +44,12 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(user.name))
             return BadRequest("Username is required.");
 
+        if (string.IsNullOrWhiteSpace(user.password))
+            return BadRequest("Password is required.");
+
         try
-        { 
+        {
             string? encryptedEmail = EncryptionService.Encrypt(user.email);
-            var emailHash = EncryptionService.Hash(user.email);
 
             if (await db.Users.AnyAsync(u => u.Username == user.name))
                 return BadRequest("Username already exists.");
@@ -48,16 +57,17 @@ public class AuthController : ControllerBase
             if (await db.Users.AnyAsync(u => u.Email == encryptedEmail))
                 return BadRequest("Email already exists.");
 
+            string role = user.role ?? "user";
+
             var newUser = new User
             {
                 Id = Guid.NewGuid(),
                 Username = user.name,
                 Email = encryptedEmail,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.password),
-                Role = user.role
+                PasswordHash = _passwordHashingService.HashPassword(user.password),
+                Role = role
             };
 
-            // Transaction
             using var transaction = await db.Database.BeginTransactionAsync();
             await db.Users.AddAsync(newUser);
             await db.SaveChangesAsync();
@@ -83,12 +93,13 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(loginRequest.email))
             return BadRequest("Email is required.");
 
+        if (string.IsNullOrWhiteSpace(loginRequest.password))
+            return BadRequest("Password is required.");
+
         try
         {
-            var emailHash = EncryptionService.Hash(loginRequest.email);
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == EncryptionService.Encrypt(loginRequest.email));
-
-            Console.WriteLine($"🔐 Email hash: {emailHash}");
+            var encryptedEmail = EncryptionService.Encrypt(loginRequest.email);
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == encryptedEmail);
 
             if (user == null)
             {
@@ -96,7 +107,7 @@ public class AuthController : ControllerBase
                 return Unauthorized("Incorrect email or password.");
             }
 
-            bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(loginRequest.password, user.PasswordHash);
+            bool isPasswordCorrect = _passwordHashingService.VerifyPassword(loginRequest.password, user.PasswordHash);
 
             if (!isPasswordCorrect)
             {
@@ -109,13 +120,29 @@ public class AuthController : ControllerBase
 
             Console.WriteLine($"✅ Login success: {user.Username}, Role: {role}");
 
+            string? decryptedEmail = null;
+            string? decryptedPhone = null;
+
+            try 
+            { 
+                decryptedEmail = EncryptionService.Decrypt(user.Email); 
+            } 
+            catch { }
+
+            try 
+            { 
+                if (!string.IsNullOrWhiteSpace(user.Phone))
+                    decryptedPhone = EncryptionService.Decrypt(user.Phone); 
+            } 
+            catch { }
+
             return Ok(new
             {
                 token,
                 id = user.Id,
                 name = user.Username,
-                email = EncryptionService.Decrypt(user.Email),
-                phone = user.Phone != null ? EncryptionService.Decrypt(user.Phone) : null,
+                email = decryptedEmail,
+                phone = decryptedPhone,
                 role = user.Role
             });
         }
@@ -125,5 +152,4 @@ public class AuthController : ControllerBase
             return Problem("Error: " + ex.Message);
         }
     }
-
 }
