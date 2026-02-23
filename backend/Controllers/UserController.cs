@@ -13,14 +13,20 @@ namespace Controllers;
 public class UsersController : ControllerBase
 {
     private readonly AppDbContext db;
+    private readonly PasswordHashingService _passwordHashingService;
 
-    public UsersController(AppDbContext context)
+    public UsersController(AppDbContext context, PasswordHashingService passwordHashingService)
     {
         db = context;
+        _passwordHashingService = passwordHashingService;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? role, [FromQuery] string? name, [FromQuery] string? email, [FromQuery] string? sort = "name")
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? role, 
+        [FromQuery] string? name, 
+        [FromQuery] string? email, 
+        [FromQuery] string? sort = "name")
     {
         var query = db.Users.AsQueryable();
 
@@ -49,10 +55,16 @@ public class UsersController : ControllerBase
         foreach (var user in users)
         {
             if (!string.IsNullOrWhiteSpace(user.Email))
-                user.Email = EncryptionService.Decrypt(user.Email);
+            {
+                try { user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email; }
+                catch { }
+            }
 
             if (!string.IsNullOrWhiteSpace(user.Phone))
-                user.Phone = EncryptionService.Decrypt(user.Phone);
+            {
+                try { user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone; }
+                catch { }
+            }
         }
 
         return Ok(users);
@@ -72,19 +84,21 @@ public class UsersController : ControllerBase
             if (emailExists)
                 return BadRequest("Email is already taken.");
 
-            user.Email = encryptedEmail;
+            user.Email = encryptedEmail ?? user.Email;
         }
 
         if (!string.IsNullOrWhiteSpace(dto.name))
             user.Username = dto.name;
 
         if (!string.IsNullOrWhiteSpace(dto.phone))
-            user.Phone = EncryptionService.Encrypt(dto.phone);
+        {
+            string? encryptedPhone = EncryptionService.Encrypt(dto.phone);
+            user.Phone = encryptedPhone ?? user.Phone;
+        }
 
         if (!string.IsNullOrWhiteSpace(dto.role))
             user.Role = dto.role;
 
-        // Transaction
         using var transaction = await db.Database.BeginTransactionAsync();
         await db.SaveChangesAsync();
         await transaction.CommitAsync();
@@ -99,21 +113,19 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound("User not found.");
 
-        string decryptedEmail;
-        try
-        {
-            decryptedEmail = EncryptionService.Decrypt(user.Email);
-        }
-        catch (FormatException)
-        {
-            decryptedEmail = user.Email;
-        }
+        try 
+        { 
+            if (!string.IsNullOrWhiteSpace(user.Email))
+                user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email;
+        } 
+        catch { }
 
-        if (!string.IsNullOrWhiteSpace(user.Email))
-            user.Email = EncryptionService.Decrypt(user.Email);
-
-        if (!string.IsNullOrWhiteSpace(user.Phone))
-            user.Phone = EncryptionService.Decrypt(user.Phone);
+        try 
+        { 
+            if (!string.IsNullOrWhiteSpace(user.Phone))
+                user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone;
+        } 
+        catch { }
 
         return Ok(user);
     }
@@ -125,7 +137,6 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound("User not found.");
 
-        // Transaction
         using var transaction = await db.Database.BeginTransactionAsync();
         db.Users.Remove(user);
         await db.SaveChangesAsync();
@@ -138,18 +149,18 @@ public class UsersController : ControllerBase
     [Authorize]
     public async Task<IActionResult> GetCurrentUser()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null) return Unauthorized();
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userIdValue) || !Guid.TryParse(userIdValue, out var userId))
+            return Unauthorized();
 
-        var user = await db.Users.FindAsync(Guid.Parse(userId));
+        var user = await db.Users.FindAsync(userId);
         if (user == null) return NotFound();
 
-        try { user.Email = EncryptionService.Decrypt(user.Email); } catch { }
-        try { user.Phone = EncryptionService.Decrypt(user.Phone); } catch { }
+        try { if (!string.IsNullOrWhiteSpace(user.Email)) user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email; } catch { }
+        try { if (!string.IsNullOrWhiteSpace(user.Phone)) user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone; } catch { }
 
         return Ok(user);
     }
-
 
     [HttpPatch("{id}/password")]
     [Authorize]
@@ -158,20 +169,19 @@ public class UsersController : ControllerBase
         var user = await db.Users.FindAsync(id);
         if (user == null) return NotFound();
 
-        var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (currentUserId != user.Id.ToString() && !User.IsInRole("admin"))
+        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
+            return Unauthorized();
+
+        if (currentUserId != user.Id && !User.IsInRole("admin"))
             return Forbid();
 
-        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+        if (string.IsNullOrWhiteSpace(dto.NewPassword))
+            return BadRequest("Password is required.");
+
+        user.PasswordHash = _passwordHashingService.HashPassword(dto.NewPassword);
         await db.SaveChangesAsync();
-
-        if (!string.IsNullOrWhiteSpace(user.Email))
-            user.Email = EncryptionService.Decrypt(user.Email);
-
-        if (!string.IsNullOrWhiteSpace(user.Phone))
-            user.Phone = EncryptionService.Decrypt(user.Phone);
 
         return Ok(new { message = "Password updated" });
     }
-
 }
