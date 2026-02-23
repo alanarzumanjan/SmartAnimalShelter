@@ -9,7 +9,7 @@
 Traditional animal shelters often struggle with fragmented data and lack of control over environmental conditions in enclosures, which can lead to health issues among animals. **Smart Shelter IoT** solves this by integrating:
 
 1.  **Shelter Management:** Centralized database for animals, staff, and adoption requests.
-2.  **IoT Safety Net:** Real-time monitoring of **CO₂, Temperature, and Humidity** using industrial-grade sensors.
+2.  **IoT Safety Net:** Real-time monitoring of **CO₂, Temperature, and Humidity** using sensors.
 3.  **Communication:** Built-in real-time chat for adopters and shelter managers.
 4.  **Commerce:** A store to purchase IoT stations, supporting shelter funding.
 
@@ -41,23 +41,23 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 
 ---
 
-## 🏗 System Architecture
+### 🏗 System Architecture
 
 The project follows a **Modular Monolith** architecture with **Polyglot Persistence** to optimize data storage and retrieval performance.
 
 ```mermaid
-graph TD
+flowchart TD
     Client[Web Client / React] -->|HTTPS| LB[Nginx Load Balancer]
     IoT[ESP32 + SCD41] -->|HTTP/MQTT| API[API Backend Cluster]
     
-    subgraph "Backend Cluster (ASP.NET Core)"
+    subgraph Backend["Backend Cluster (ASP.NET Core)"]
         API --> Auth[Auth & Rate Limit]
         API --> Shelter[Shelter Logic]
         API --> IoT_Core[IoT Processor]
         API --> Chat[Chat Service]
     end
     
-    subgraph "Data Layer (Polyglot Persistence)"
+    subgraph Data["Data Layer (Polyglot Persistence)"]
         Auth --> Redis[(Redis)]
         Chat --> Redis
         IoT_Core --> Redis
@@ -65,10 +65,11 @@ graph TD
         Shelter --> PG[(PostgreSQL)]
     end
     
-    style Redis fill:#f96,stroke:#333,stroke-width:2px
-    style Mongo fill:#4db33d,stroke:#333,stroke-width:2px
-    style PG fill:#336791,stroke:#333,stroke-width:2px
-```
+    style Redis fill:#f96,stroke:#333,stroke-width:2px,color:#000
+    style Mongo fill:#4db33d,stroke:#333,stroke-width:2px,color:#fff
+    style PG fill:#336791,stroke:#333,stroke-width:2px,color:#fff
+    style Backend fill:#f0f0f0,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
+    style Data fill:#f0f0f0,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
 
 ### 🗄 Data Strategy
 
