@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json; 
 using Models;
 using Data;
 
@@ -27,11 +28,80 @@ public static class DbInitializer
             if (!exists)
             {
                 db.Species.Add(species);
+                await db.SaveChangesAsync();
                 Console.WriteLine($"➕ Added missing species: {species.Name} (Id={species.Id})");
             }
         }
 
-        await db.SaveChangesAsync();
         Console.WriteLine("✅ Species check complete.");
+        await SeedBreedsAsync(db);
     }
+
+    private static async Task SeedBreedsAsync(AppDbContext db)
+    {
+    var breedsPath = Path.Combine(Directory.GetCurrentDirectory(), "Data", "Seed", "species_breeds.json");
+    
+    if (!File.Exists(breedsPath))
+    {
+        Console.WriteLine("⚠️ species_breeds.json not found. Skipping breeds seed.");
+        return;
+    }
+
+    try
+    {
+        var json = await File.ReadAllTextAsync(breedsPath);
+        
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        Console.WriteLine("🔍 Checking breeds...");
+
+        foreach (var speciesProp in root.EnumerateObject())
+        {
+            var speciesData = speciesProp.Value;
+            int speciesId = speciesData.GetProperty("species_id").GetInt32();
+            
+            var speciesExists = await db.Species.AnyAsync(s => s.Id == speciesId);
+            if (!speciesExists)
+            {
+                Console.WriteLine($"⚠️ Skipping {speciesProp.Name}: SpeciesId {speciesId} not found");
+                continue;
+            }
+
+            var breedsArray = speciesData.GetProperty("breeds");
+            
+            foreach (var breedName in breedsArray.EnumerateArray())
+            {
+                var name = breedName.GetString();
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                var exists = await db.Breeds.AnyAsync(b => 
+                    b.Name.ToLower() == name.ToLower() && 
+                    b.SpeciesId == speciesId);
+                
+                if (!exists)
+                {
+                    db.Breeds.Add(new Breed
+                    {
+                        Name = name,
+                        SpeciesId = speciesId
+                    });
+                }
+            }
+        }
+
+        await db.SaveChangesAsync();
+        Console.WriteLine("✅ Breeds check complete.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error seeding breeds: {ex.Message}");
+    }
+}
+}
+
+public class BreedSeedDto
+{
+    public string Name { get; set; } = string.Empty;
+    public int SpeciesId { get; set; }
 }
