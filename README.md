@@ -99,7 +99,7 @@ Each monitoring station is built using reliable, low-cost components suitable fo
 The project follows a **Modular Monolith** architecture with **Polyglot Persistence** and **Defense-in-Depth** security strategy.
 
 <p align="center">
-  <img src="docs/system_architecture_pink.svg" alt="Smart Shelter IoT System Architecture Diagram" width="800" />
+  <img src="docs/system_architecture_pink.svg" alt="Smart Shelter IoT System Architecture Diagram" width="700" />
   <br/>
   <em> Complete system architecture showing data flow, security zones, and CI/CD pipeline</em>
 </p>
