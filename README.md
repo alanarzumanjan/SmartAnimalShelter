@@ -41,34 +41,6 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 
 ---
 
-### 🏗 System Architecture
-
-The project follows a **Modular Monolith** architecture with **Polyglot Persistence** to optimize data storage and retrieval performance.
-
-```mermaid
-flowchart TD
-    Client[Web Client / React] -->|HTTPS| LB[Nginx Load Balancer]
-    IoT[ESP32 + SCD41] -->|HTTP/MQTT| API[API Backend Cluster]
-    
-    subgraph Backend["Backend Cluster (ASP.NET Core)"]
-        API --> Auth[Auth & Rate Limit]
-        API --> Shelter[Shelter Logic]
-        API --> IoT_Core[IoT Processor]
-        API --> Chat[Chat Service]
-    end
-    
-    subgraph Data["Data Layer"]
-        Auth --> Redis[(Redis)]
-        Chat --> Redis
-        IoT_Core --> Redis
-        IoT_Core --> Mongo[(MongoDB)]
-        Shelter --> PG[(PostgreSQL)]
-    end
-    
-    style Redis fill:#f96,stroke:#333,stroke-width:2px
-    style Mongo fill:#4db33d,stroke:#333,stroke-width:2px
-    style PG fill:#336791,stroke:#333,stroke-width:2px
-
 ### 🗄 Data Strategy
 
 | Database | Technology | Purpose |
@@ -76,13 +48,6 @@ flowchart TD
 | **PostgreSQL** | Relational DB | Users, Animals, Orders, Chat Messages (ACID compliance). |
 | **MongoDB** | Document DB | IoT Telemetry Logs (Time-series data, high write volume). |
 | **Redis** | In-Memory DB | **Caching**, **Real-time Device State**, **SignalR Backplane**, **Rate Limiting**. |
-
-### 🔴 Why Redis?
-We utilize Redis to ensure high performance and scalability:
-1.  **IoT Last Known State:** Instead of querying MongoDB for the current temperature, we store the latest value in Redis (`device:{id}:latest`). This makes dashboard loading instantaneous.
-2.  **SignalR Backplane:** Enables seamless real-time chat even when multiple backend instances are running.
-3.  **API Rate Limiting:** Protects authentication and chat endpoints from abuse using sliding window algorithms.
-4.  **Distributed Caching:** Caches frequently accessed data (e.g., breed lists, product catalogs) to reduce PostgreSQL load.
 
 ### 🗄 Entity Relationship Diagram (ERD)
 The database schema is designed to link environmental data with animal welfare records.
@@ -123,67 +88,56 @@ Each monitoring station is built using reliable, low-cost components suitable fo
 - **Secure Transmission:** Data sent via HTTPS/MQTT with API Key authentication.
 
 ---
-
-## 🚀 Getting Started
-
 ### Prerequisites
 - **Docker & Docker Compose**
-- **.NET 8 SDK** (for local backend development)
+- **.NET 8 SDK** (for local development)
 - **Node.js 18+** (for frontend)
 - **Arduino IDE** (for firmware)
 
----
 ### 🏗 System Architecture
 
-The project follows a **Modular Monolith** architecture with **Polyglot Persistence**.
+The project follows a **Modular Monolith** architecture with **Polyglot Persistence** and **Defense-in-Depth** security strategy.
 
-```mermaid
-flowchart TD
-    Client[Web Client / React] -->|HTTPS| LB[Nginx Load Balancer]
-    IoT[ESP32 + SCD41] -->|HTTP/MQTT| API[API Backend Cluster]
-    
-    subgraph Backend["Backend Cluster (ASP.NET Core)"]
-        API --> Auth[Auth & Rate Limit]
-        API --> Shelter[Shelter Logic]
-        API --> IoT_Core[IoT Processor]
-        API --> Chat[Chat Service]
-    end
-    
-    subgraph Data["Data Layer"]
-        Auth --> Redis[(Redis)]
-        Chat --> Redis
-        IoT_Core --> Redis
-        IoT_Core --> Mongo[(MongoDB)]
-        Shelter --> PG[(PostgreSQL)]
-    end
-    
-    style Redis fill:#f96,stroke:#333,stroke-width:2px,color:#000
-    style Mongo fill:#4db33d,stroke:#333,stroke-width:2px,color:#fff
-    style PG fill:#336791,stroke:#333,stroke-width:2px,color:#fff
-    style Backend fill:#f9f9f9,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
-    style Data fill:#f9f9f9,stroke:#333,stroke-width:1px,stroke-dasharray: 5 5
----
+<p align="center">
+  <img src="docs/system_architecture_pink.svg" alt="Smart Shelter IoT System Architecture Diagram" width="500" />
+  <br/>
+  <em> Complete system architecture showing data flow, security zones, and CI/CD pipeline</em>
+</p>
 
-## 📈 Roadmap
+#### 📋 Architecture Components Breakdown
 
-- [ ] **Mobile Application:** Flutter app for volunteers on the go.
-- [ ] **AI Analytics:** Predictive modeling for disease outbreaks based on climate data.
-- [ ] **Home Assistant Integration:** Allow users to sync shelter data with their smart home.
-- [ ] **Payment Gateway:** Integrate Stripe/PayPal for donations and shop purchases.
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| **Users** | Web Browser | End users (adopters, shelter staff, volunteers) |
+| **Cloudflare** | CDN / WAF | DDoS protection, SSL termination, content caching |
+| **Nginx** | Reverse Proxy | Serves React static files, proxies API requests to Backend |
+| **Backend .NET** | ASP.NET Core 8 | Main application logic, REST API, business rules |
+| **MQTT Broker** | EMQX / Mosquitto | Async message broker for IoT device communication |
+| **Device IoT** | ESP32 + SCD41 | Environmental sensors (CO₂, Temperature, Humidity) |
+| **Redis** | In-Memory DB | Caching, session storage, rate limiting, real-time state |
+| **MongoDB** | Document DB | IoT telemetry logs (time-series data) |
+| **PostgreSQL** | Relational DB | Users, animals, orders, adoption requests (ACID compliance) |
+| **Prometheus** | Monitoring | Collects metrics from all services |
+| **Grafana** | Visualization | Dashboards and alerts for system health |
+| **GitHub** | Version Control | Source code repository |
+| **CI/CD Pipeline** | GitHub Actions | Automated build, test, and deployment |
+| **Docker** | Containerization | Package and deploy all services |
+
+#### 🔐 Security Zones
+
+| Zone | Components | Access |
+|------|------------|--------|
+| **Public Zone** | Users, Cloudflare, Device IoT | Open internet access |
+| **Protected Zone** | Backend, All Databases, Prometheus, Grafana  | Internal network only, accessed via Nginx |
 
 ---
 
 ## 👥 Authors
 
-- **Developer:** [Your Name] — Fullstack Developer & IoT Engineer
-- **Scientific Supervisor:** [Supervisor Name] — [Title]
-- **University:** [University Name]
+- **Developer:** Alan Arzumanjan
+- **Scientific Supervisor:** Vladislav Medvedev
+- **School:** Professional High School "Victoria"
 
 ## 📄 License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
----
-
-### 📝 Note for Deployment
-> For production deployment, ensure you change default passwords in `docker-compose.yml`, enable SSL via Nginx, and configure Redis persistence appropriately.
