@@ -148,6 +148,8 @@ Security is implemented using a **Defense-in-Depth** strategy:
     - **Rate Limiting:** Redis-based throttling to prevent brute-force attacks.
     - **CORS Policies:** Restricting access to trusted domains only.
 
+---
+
 ### API Documentation
 
 <p align="center">
@@ -157,6 +159,7 @@ Security is implemented using a **Defense-in-Depth** strategy:
 </p>
 
 ---
+
 ## Authors
 
 - **Developer:** Alan Arzumanjan
