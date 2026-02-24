@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16
-    container_name: co2_postgres
+    container_name: shelter_postgres
     environment:
       POSTGRES_DB: ${DATABASE}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -16,46 +16,81 @@ services:
       timeout: 3s
       retries: 10
     networks:
-      - co2_network
+      - shelter_network
+
+  mongodb:
+    image: mongo:6.0
+    container_name: shelter_mongodb
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodata:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - shelter_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: shelter_redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redisdata:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - shelter_network
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      network: host
-    container_name: co2_backend
+    container_name: shelter_backend
     env_file:
       - ./backend/.env
     environment:
       ASPNETCORE_URLS: http://+:5000
       ASPNETCORE_ENVIRONMENT: Development
       POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=${DATABASE};Username=${POSTGRES_USER};Password=${PASSWORD};Include Error Detail=true;"
-      ALLOWED_FRONTEND_PORT: ${ALLOWED_FRONTEND_PORT}
+      MONGODB_CONNECTION_STRING: "mongodb://mongodb:27017"
+      REDIS_CONNECTION_STRING: "redis:6379"
+      ALLOWED_FRONTEND_URL: ${ALLOWED_FRONTEND_PORT}
       EMAIL_ADDRESS: ${EMAIL_ADDRESS}
       EMAIL_PASSWORD: ${EMAIL_PASSWORD}
       EMAIL_NAME: ${EMAIL_NAME}
     depends_on:
       postgres:
         condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "${PORT:-5000}:5000"
     restart: unless-stopped
     networks:
-      - co2_network
+      - shelter_network
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      network: host
-    container_name: co2_frontend
+    container_name: shelter_frontend
     depends_on:
       - backend
     ports:
       - "8080:80"
     restart: unless-stopped
     networks:
-      - co2_network
+      - shelter_network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
@@ -67,17 +102,23 @@ services:
     build:
       context: .
       dockerfile: cloudflared.Dockerfile
-      network: host
-    container_name: co2_cloudflared
+    container_name: shelter_cloudflared
     restart: unless-stopped
-    network_mode: host
     depends_on:
       - frontend
       - backend
+    network_mode: host
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    cap_add:
+      - NET_ADMIN
 
 volumes:
   pgdata:
+  mongodata:
+  redisdata:
 
 networks:
-  co2_network:
+  shelter_network:
     driver: bridge
