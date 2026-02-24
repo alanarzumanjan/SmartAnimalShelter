@@ -57,6 +57,7 @@ The database schema is designed to link environmental data with animal welfare r
   <br/>
   <em> Entity Relationship Diagram</em>
 </p>
+
 ---
 
 ## Technology Stack
@@ -101,7 +102,7 @@ Each monitoring station is built using reliable, low-cost components suitable fo
 The project follows a **Modular Monolith** architecture with **Polyglot Persistence** and **Defense-in-Depth** security strategy.
 
 <p align="center">
-  <img src="docs/system_architecture_pink.svg" alt="Smart Shelter IoT System Architecture Diagram" width="700" />
+  <img src="docs/system_architecture.svg" alt="Smart Shelter IoT System Architecture Diagram" width="700" />
   <br/>
   <em> System architecture showing data flow, security zones, and CI/CD pipeline</em>
 </p>
