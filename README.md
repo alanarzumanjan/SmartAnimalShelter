@@ -52,9 +52,11 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 ### Entity Relationship Diagram (ERD)
 The database schema is designed to link environmental data with animal welfare records.
 
-![ER Diagram](docs/erd.png)
-*> Click to enlarge. Full schema available in `/docs/erd.sql`.*
-
+<p align="center">
+  <img src="docs/erd.png" alt="Entity Relationship Diagram" width="700" />
+  <br/>
+  <em> Entity Relationship Diagram</em>
+</p>
 ---
 
 ## Technology Stack
