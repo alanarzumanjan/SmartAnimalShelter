@@ -151,7 +151,7 @@ Security is implemented using a **Defense-in-Depth** strategy:
 ### API Documentation
 
 <p align="center">
-  <img src="docs/api_documentation.png" alt="Api Documentation" width="400" />
+  <img src="docs/api_documentation.png" alt="Api Documentation" heigh="1000" />
   <br/>
   <em> System API documentation with Swagger implementation</em>
 </p>
