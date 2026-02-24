@@ -65,7 +65,7 @@ The database schema is designed to link environmental data with animal welfare r
 | **Frontend** | React Vite, TypeScript, TailwindCSS |
 | **Real-Time** | SignalR, WebSockets |
 | **Hardware** | ESP32-WROOM, Sensirion SCD41 (I2C) |
-| **Databases** | PostgreSQL 15, MongoDB 6.0, Redis 7 |
+| **Databases** | PostgreSQL, MongoDB, Redis |
 | **DevOps** | Docker, Docker Compose, Nginx |
 | **Documentation** | Swagger UI, OpenAPI |
 
@@ -77,10 +77,10 @@ Each monitoring station is built using reliable, low-cost components suitable fo
 
 | Component | Model | Interface |
 |-----------|-------|-----------|
-| **Microcontroller** | ESP32-WROOM-32 | Wi-Fi |
+| **Microcontroller** | ESP32-WROOM-32D | Wi-Fi |
 | **Sensor** | Sensirion SCD41 | I2C (SDA) |
 | **Power** | 5V USB / Li-Ion 18650 | VIN / GND |
-| **Indicator** | WS2812B 8 LED Ring | GPIO |
+| **Indicator** | 8 LED Ring, 1 Wifi LED| GPIO |
 
 **Firmware Features:**
 - **Deep Sleep Mode:** Extends battery life for wireless setups.
@@ -101,7 +101,7 @@ The project follows a **Modular Monolith** architecture with **Polyglot Persiste
 <p align="center">
   <img src="docs/system_architecture_pink.svg" alt="Smart Shelter IoT System Architecture Diagram" width="700" />
   <br/>
-  <em> Complete system architecture showing data flow, security zones, and CI/CD pipeline</em>
+  <em> System architecture showing data flow, security zones, and CI/CD pipeline</em>
 </p>
 
 #### 📋 Architecture Components Breakdown
@@ -115,7 +115,7 @@ The project follows a **Modular Monolith** architecture with **Polyglot Persiste
 | **MQTT Broker** | EMQX / Mosquitto | Async message broker for IoT device communication |
 | **Device IoT** | ESP32 + SCD41 | Environmental sensors (CO₂, Temperature, Humidity) |
 | **Redis** | In-Memory DB | Caching, session storage, rate limiting, real-time state |
-| **MongoDB** | Document DB | IoT telemetry logs (time-series data) |
+| **MongoDB** | Document DB | IoT telemetry logs (time-series data), Images |
 | **PostgreSQL** | Relational DB | Users, animals, orders, adoption requests (ACID compliance) |
 | **Prometheus** | Monitoring | Collects metrics from all services |
 | **Grafana** | Visualization | Dashboards and alerts for system health |
@@ -132,6 +132,15 @@ The project follows a **Modular Monolith** architecture with **Polyglot Persiste
 
 ---
 
+### API Documentation
+
+<p align="center">
+  <img src="docs/api_documentation.png" alt="Api Documentation" width="400" />
+  <br/>
+  <em> System API documentation with Swagger implementation</em>
+</p>
+
+---
 ## 👥 Authors
 
 - **Developer:** Alan Arzumanjan
