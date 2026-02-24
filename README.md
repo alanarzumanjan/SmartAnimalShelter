@@ -162,8 +162,8 @@ Security is implemented using a **Defense-in-Depth** strategy:
 
 ## Authors
 
-- **Developer:** Alan Arzumanjan
-- **Scientific Supervisor:** Vladislav Medvedev
+- **Developer:** Alans Arzumanjans
+- **Scientific Supervisor:** Vladislavs Medvedevs
 - **School:** Professional High School "Victoria"
 
 ## License
