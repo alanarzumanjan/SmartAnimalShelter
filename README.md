@@ -46,7 +46,7 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 | Database | Technology | Purpose |
 |----------|------------|---------|
 | **PostgreSQL** | Relational DB | Users, Animals, Orders, Chat Messages (ACID compliance). |
-| **MongoDB** | Document DB | IoT Telemetry Logs (Time-series data, high write volume). |
+| **MongoDB** | Document DB | IoT Telemetry Logs (Time-series data, high write volume, images). |
 | **Redis** | In-Memory DB | **Caching**, **Real-time Device State**, **SignalR Backplane**, **Rate Limiting**. |
 
 ### Entity Relationship Diagram (ERD)
