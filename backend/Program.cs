@@ -36,7 +36,7 @@ var mongoDb = mongoClient.GetDatabase("PetShelterMedia");
 builder.Services.AddSingleton<IMongoClient>(mongoClient);
 builder.Services.AddSingleton(mongoDb);
 
-// ✅ Swagger
+// Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Smart Animal Shelter API", Version = "v1" });
@@ -100,6 +100,8 @@ builder.Logging.ClearProviders();
 
 var app = builder.Build();
 
+app.UseCors("FrontendOnly");
+
 // Auto migrate and seed species
 using (var scope = app.Services.CreateScope())
 {
@@ -142,7 +144,7 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Smart Animal Shelter API v1");
 });
 
-app.UseCors("FrontendOnly");
+
 
 app.UseStaticFiles();
 app.UseAuthentication();
