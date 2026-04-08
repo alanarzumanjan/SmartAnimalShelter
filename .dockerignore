@@ -1,0 +1,12 @@
+**/bin
+**/obj
+**/.vs
+**/.idea
+**/.vscode
+**/node_modules
+.git
+.gitignore
+*.user
+*.suo
+*.swp
+*.DS_Store
