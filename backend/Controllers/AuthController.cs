@@ -73,7 +73,21 @@ public class AuthController : ControllerBase
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return Ok("User registered successfully.");
+            string token = _jwtService.GenerateToken(newUser.Id, role);
+            string? decryptedEmail = EncryptionService.Decrypt(newUser.Email);
+
+            return Ok(new
+            {
+                token,
+                user = new
+                {
+                    id = newUser.Id,
+                    name = newUser.Username,
+                    email = decryptedEmail,
+                    role = newUser.Role
+                },
+                message = "User registered successfully"
+            });
         }
         catch (Exception ex)
         {
