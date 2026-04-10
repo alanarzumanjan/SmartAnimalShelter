@@ -7,11 +7,11 @@ namespace Config;
 
 public class JwtService
 {
-    private readonly IConfiguration _config;
+    private readonly JwtSettings _settings;
 
-    public JwtService(IConfiguration config)
+    public JwtService(JwtSettings settings)
     {
-        _config = config;
+        _settings = settings;
     }
 
     // Token generation
@@ -26,14 +26,14 @@ public class JwtService
         };
 
         // Get the key and issuer from environment variables
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: Environment.GetEnvironmentVariable("JWT_ISSUER"),
-            audience: Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+            issuer: _settings.Issuer,
+            audience: _settings.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(int.Parse(Environment.GetEnvironmentVariable("JWT_EXPIRE_MINUTES")!)),
+            expires: DateTime.UtcNow.AddMinutes(_settings.ExpireMinutes),
             signingCredentials: creds
         );
 
