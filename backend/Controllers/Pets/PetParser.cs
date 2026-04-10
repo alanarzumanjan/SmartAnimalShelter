@@ -145,7 +145,8 @@ public class PetParser
                         result.Add(pet);
                         collected++;
                         added++;
-                        Console.WriteLine($"✅ Added: {pet.Name}");
+                        var logMessage = $"> ✅ Added: {pet.Name}";
+                        Console.WriteLine(logMessage);
                         await logWriter.WriteLineAsync($"✅ Added: {pet.Name}");
                     }
                     else
@@ -156,6 +157,8 @@ public class PetParser
                     if (collected >= max) // Stop if reached limit
                     {
                         Console.WriteLine("📦 Reached max — moving to next category.");
+                                            var message = "> 📦 Reached max — moving to next category.";
+                                            Console.WriteLine(message);
                         await logWriter.WriteLineAsync("📦 Reached max — moving to next category.");
                         break;
                     }
