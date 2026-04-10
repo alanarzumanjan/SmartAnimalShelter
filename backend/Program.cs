@@ -21,6 +21,7 @@ Env.Load(Path.Combine(solutionRoot, ".env"));
 Console.WriteLine("✅ .env loaded from: " + Path.Combine(solutionRoot, ".env"));
 
 var builder = WebApplication.CreateBuilder(args);
+var jwtSettings = JwtSettings.FromConfiguration(builder.Configuration);
 
 // Get connection string
 var connectionString = DbConnectionService.TestDatabaseConnection();
@@ -43,6 +44,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // JWT Authentication
+builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddSingleton<JwtService>();
 builder.Services.AddAuthentication(options =>
 {
@@ -54,14 +56,14 @@ builder.Services.AddAuthentication(options =>
     options.RequireHttpsMetadata = false;
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = true,
-        ValidateAudience = true,
+        ValidateIssuer = !string.IsNullOrWhiteSpace(jwtSettings.Issuer),
+        ValidateAudience = !string.IsNullOrWhiteSpace(jwtSettings.Audience),
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
-        ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("JWT_KEY")!)),
+            Encoding.UTF8.GetBytes(jwtSettings.Key)),
         RoleClaimType = ClaimTypes.Role,
         NameClaimType = ClaimTypes.NameIdentifier
     };
@@ -69,6 +71,7 @@ builder.Services.AddAuthentication(options =>
 
 // Password Hasing
 builder.Services.AddSingleton<PasswordHashingService>();
+builder.Services.AddScoped<UserEmailService>();
 
 // Controllers
 builder.Services.AddControllers();
