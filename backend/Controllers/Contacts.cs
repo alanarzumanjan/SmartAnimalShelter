@@ -15,7 +15,8 @@ public class ContactsController : ControllerBase
             var emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
             if (!string.IsNullOrEmpty(form.Email) && !Regex.IsMatch(form.Email, emailPattern))
             {
-                Console.WriteLine($"Contacts email send: Invalid email format {form.Email}");
+                var logMessage = $"> Contacts email send: Invalid email format {form.Email}";
+                Console.WriteLine(logMessage);
                 return BadRequest("Invalid email format.");
             }
 
@@ -23,12 +24,14 @@ public class ContactsController : ControllerBase
             var passwordEnv = Environment.GetEnvironmentVariable("EMAIL_PASSWORD");
             var nameEnv = Environment.GetEnvironmentVariable("EMAIL_NAME") ?? "Iot meter Support Team";
 
-            Console.WriteLine($"📧 Contact form received from {form.Email}: {form.Message}");
+                var logMessage1 = $"> 📧 Contact form received from {form.Email}: {form.Message}";
+                Console.WriteLine(logMessage1);
 
             // Check if email is configured
             if (string.IsNullOrEmpty(emailEnv) || string.IsNullOrEmpty(passwordEnv))
             {
-                Console.WriteLine($"⚠️  Email not configured. Message saved to logs.");
+                var logMessage2 = "> ⚠️  Email not configured. Message saved to logs.";
+                Console.WriteLine(logMessage2);
                 return Ok(new { message = "Message received successfully!" });
             }
 
@@ -51,18 +54,21 @@ public class ContactsController : ControllerBase
                 await client.SendAsync(emailMessage);
                 await client.DisconnectAsync(true);
 
-                Console.WriteLine($"✅ Email notification sent to {emailEnv}");
+                var logMessage3 = $"> ✅ Email notification sent to {emailEnv}";
+                Console.WriteLine(logMessage3);
                 return Ok(new { message = "Message received and email sent!" });
             }
             catch (Exception smtpEx)
             {
-                Console.WriteLine($"⚠️  Email send failed: {smtpEx.Message}. Message logged.");
+                var logMessage4 = $"> ⚠️  Email send failed: {smtpEx.Message}. Message logged.";
+                Console.WriteLine(logMessage4);
                 return Ok(new { message = "Message received successfully!" });
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Contact form error: {ex.Message}");
+            var logMessage5 = $"> ❌ Contact form error: {ex.Message}";
+            Console.WriteLine(logMessage5);
             return StatusCode(500, "Failed to process contact form.");
         }
     }
