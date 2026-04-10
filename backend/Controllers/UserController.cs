@@ -14,11 +14,16 @@ public class UsersController : ControllerBase
 {
     private readonly AppDbContext db;
     private readonly PasswordHashingService _passwordHashingService;
+    private readonly UserEmailService _userEmailService;
 
-    public UsersController(AppDbContext context, PasswordHashingService passwordHashingService)
+    public UsersController(
+        AppDbContext context,
+        PasswordHashingService passwordHashingService,
+        UserEmailService userEmailService)
     {
         db = context;
         _passwordHashingService = passwordHashingService;
+        _userEmailService = userEmailService;
     }
 
     [HttpGet]
@@ -28,7 +33,7 @@ public class UsersController : ControllerBase
         [FromQuery] string? email, 
         [FromQuery] string? sort = "name")
     {
-        var query = db.Users.AsQueryable();
+        var query = db.Users.AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(role))
             query = query.Where(u => u.Role == role);
@@ -36,21 +41,12 @@ public class UsersController : ControllerBase
         if (!string.IsNullOrWhiteSpace(name))
             query = query.Where(u => u.Username != null && u.Username.ToLower().Contains(name.ToLower()));
 
-        if (!string.IsNullOrWhiteSpace(email))
-        {
-            string? encryptedEmail = EncryptionService.Encrypt(email);
-            query = query.Where(u => u.Email == encryptedEmail);
-        }
-
-        // Sort
-        query = sort switch
-        {
-            "created" => query.OrderByDescending(u => u.Id),
-            "email" => query.OrderBy(u => u.Email),
-            _ => query.OrderBy(u => u.Username)
-        };
-
         var users = await query.ToListAsync();
+
+        if (!string.IsNullOrWhiteSpace(email))
+            users = users
+                .Where(u => EncryptionService.EmailMatchesEncryptedValue(u.Email, email))
+                .ToList();
 
         foreach (var user in users)
         {
@@ -67,6 +63,13 @@ public class UsersController : ControllerBase
             }
         }
 
+        users = sort switch
+        {
+            "created" => users.OrderByDescending(u => u.CreatedAt).ToList(),
+            "email" => users.OrderBy(u => u.Email ?? string.Empty).ToList(),
+            _ => users.OrderBy(u => u.Username).ToList()
+        };
+
         return Ok(users);
     }
 
@@ -79,8 +82,9 @@ public class UsersController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(dto.email))
         {
-            string? encryptedEmail = EncryptionService.Encrypt(dto.email);
-            bool emailExists = await db.Users.AnyAsync(u => u.Email == encryptedEmail && u.Id != id);
+            var trimmedEmail = dto.email.Trim();
+            string? encryptedEmail = EncryptionService.Encrypt(trimmedEmail);
+            bool emailExists = await _userEmailService.EmailExistsAsync(trimmedEmail, id);
             if (emailExists)
                 return BadRequest("Email is already taken.");
 
@@ -143,6 +147,22 @@ public class UsersController : ControllerBase
         await transaction.CommitAsync();
 
         return Ok(new { message = "User deleted." });
+    }
+
+    [HttpDelete("all")]
+    public async Task<IActionResult> DeleteAll()
+    {
+        using var transaction = await db.Database.BeginTransactionAsync();
+
+        var users = await db.Users.ToListAsync();
+        if (users.Count == 0)
+            return Ok(new { message = "No users to delete.", deletedCount = 0 });
+
+        db.Users.RemoveRange(users);
+        await db.SaveChangesAsync();
+        await transaction.CommitAsync();
+
+        return Ok(new { message = "All users deleted.", deletedCount = users.Count });
     }
 
     [HttpGet("me")]
