@@ -51,6 +51,31 @@ public static class EncryptionService
         return sr.ReadToEnd(); // Return plain text
     }
 
+    public static string? NormalizeEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return null;
+
+        return email.Trim().ToLowerInvariant();
+    }
+
+    public static bool EmailMatchesEncryptedValue(string? encryptedEmail, string? plainTextEmail)
+    {
+        var normalizedPlainTextEmail = NormalizeEmail(plainTextEmail);
+        if (normalizedPlainTextEmail == null)
+            return false;
+
+        try
+        {
+            var decryptedEmail = NormalizeEmail(Decrypt(encryptedEmail));
+            return decryptedEmail == normalizedPlainTextEmail;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     // Returns a SHA256 hash of the input string (used for lookup without revealing original)
     public static string Hash(string input)
     {
