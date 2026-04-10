@@ -1,150 +1,143 @@
 import React, { useMemo, useState } from 'react';
-import { ShoppingBag, PackageCheck, Cpu, ShieldCheck } from 'lucide-react';
+import { Cpu, Minus, Plus, ShieldCheck, Thermometer, Wifi } from 'lucide-react';
 
-type Category = 'All' | 'Sensors' | 'Stations' | 'Accessories';
+const unitPrice = 249;
 
-interface StoreItem {
-  id: string;
-  name: string;
-  category: Exclude<Category, 'All'>;
-  price: string;
-  availability: string;
-  description: string;
-  features: string[];
-}
-
-const categoryOptions: Category[] = ['All', 'Sensors', 'Stations', 'Accessories'];
-
-const previewProducts: StoreItem[] = [
-  {
-    id: 'station-home',
-    name: 'Shelter Home Station',
-    category: 'Stations',
-    price: '€249',
-    availability: 'Preview stock',
-    description: 'A compact base station designed for home adopters who want to track comfort metrics after adoption.',
-    features: ['Temperature + humidity', 'Wi-Fi sync', 'Future mobile alerts'],
-  },
-  {
-    id: 'station-pro',
-    name: 'Shelter Pro Hub',
-    category: 'Stations',
-    price: '€499',
-    availability: 'Ready for catalog',
-    description: 'A multi-room monitoring hub for shelters with space for enclosure mapping, alerts, and future order workflows.',
-    features: ['CO2 monitoring', 'Multi-zone support', 'Dashboard integration'],
-  },
-  {
-    id: 'sensor-air',
-    name: 'Air Quality Sensor',
-    category: 'Sensors',
-    price: '€89',
-    availability: 'Preview stock',
-    description: 'A standalone sensor card example showing how individual devices can be listed alongside the main kits.',
-    features: ['CO2 readings', 'Compact housing', 'Calibration ready'],
-  },
-  {
-    id: 'mount-kit',
-    name: 'Enclosure Mount Kit',
-    category: 'Accessories',
-    price: '€29',
-    availability: 'Concept preview',
-    description: 'Accessory listing for brackets, cable routing, and shelter-safe mounting hardware.',
-    features: ['Wall mount', 'Cable clips', 'Fast install'],
-  },
+const installationTips = [
+  'Install the device 1.5 to 2 meters above the floor for more stable environmental readings.',
+  'Avoid placing the unit directly near heaters, windows, or strong drafts.',
+  'Use one device per room or enclosure zone where you want independent temperature and air-quality tracking.',
+  'Connect it to steady Wi-Fi and place it where staff can easily access the status light and mounting bracket.',
 ];
 
 const StorePage: React.FC = () => {
-  const [category, setCategory] = useState<Category>('All');
+  const [quantity, setQuantity] = useState(1);
 
-  const filteredProducts = useMemo(
-    () => (category === 'All' ? previewProducts : previewProducts.filter((item) => item.category === category)),
-    [category]
-  );
+  const totalPrice = useMemo(() => unitPrice * quantity, [quantity]);
 
   return (
     <div className="py-8 space-y-8">
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-10">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-4">
-              <ShoppingBag className="w-4 h-4" />
-              Public storefront preview
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Store</h1>
-            <p className="text-gray-600 text-lg leading-7">
-              A product showcase for future shelter hardware sales. The layout is ready for real inventory, checkout, stock states, and richer product data later.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-sm text-gray-500">Products</div>
-              <div className="text-2xl font-bold text-gray-900">{previewProducts.length}</div>
-            </div>
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-sm text-gray-500">Catalog mode</div>
-              <div className="text-sm font-semibold text-gray-900">Preview</div>
-            </div>
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-sm text-gray-500">Checkout</div>
-              <div className="text-sm font-semibold text-gray-900">Coming later</div>
-            </div>
-          </div>
+      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-10 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-4">
+          <Cpu className="w-4 h-4" />
+          Single product storefront
         </div>
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Store</h1>
+        <p className="max-w-3xl mx-auto text-gray-600 text-lg leading-7">
+          A focused product page for one core shelter device. The layout is ready for a future checkout flow, order history, shipping details, and live inventory.
+        </p>
       </section>
 
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-        <div className="flex flex-wrap gap-3">
-          {categoryOptions.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={`px-4 py-2 rounded-full border text-sm transition-colors ${
-                category === option
-                  ? 'bg-primary-600 text-white border-primary-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-              }`}
-              onClick={() => setCategory(option)}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
-          <article key={product.id} className="bg-white rounded-3xl border border-gray-100 shadow-sm p-5 flex flex-col">
-            <div className="w-12 h-12 rounded-2xl bg-primary-50 text-primary-700 flex items-center justify-center mb-4">
-              {product.category === 'Stations' ? <Cpu className="w-6 h-6" /> : product.category === 'Sensors' ? <PackageCheck className="w-6 h-6" /> : <ShieldCheck className="w-6 h-6" />}
-            </div>
-            <div className="flex items-start justify-between gap-3 mb-3">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">{product.name}</h2>
-                <p className="text-sm text-gray-500">{product.category}</p>
+      <section className="max-w-5xl mx-auto bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+        <div className="grid lg:grid-cols-[1fr_0.95fr]">
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 text-white p-10 flex flex-col justify-between min-h-[520px]">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm font-medium mb-6">
+                IoT Device
               </div>
-              <span className="text-sm font-semibold text-primary-700">{product.price}</span>
+              <h2 className="text-4xl font-bold mb-4">Smart Shelter IoT Device</h2>
+              <p className="text-slate-200 text-lg leading-8 max-w-xl">
+                A compact environmental monitoring unit built for shelters and adopters who want reliable room-level visibility into comfort and air quality.
+              </p>
             </div>
-            <p className="text-sm text-gray-600 leading-6 mb-4">{product.description}</p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {product.features.map((feature) => (
-                <span key={feature} className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs">
-                  {feature}
-                </span>
-              ))}
+
+            <div className="grid sm:grid-cols-3 gap-4 mt-10">
+              <div className="rounded-2xl bg-white/10 p-4">
+                <Thermometer className="w-5 h-5 mb-3" />
+                <div className="font-semibold">Climate tracking</div>
+                <div className="text-sm text-slate-300">Temperature and humidity monitoring</div>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-4">
+                <Wifi className="w-5 h-5 mb-3" />
+                <div className="font-semibold">Wi-Fi connected</div>
+                <div className="text-sm text-slate-300">Ready for dashboard sync and alerts</div>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-4">
+                <ShieldCheck className="w-5 h-5 mb-3" />
+                <div className="font-semibold">Shelter-ready</div>
+                <div className="text-sm text-slate-300">Designed for daily operational use</div>
+              </div>
             </div>
-            <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
-              <span className="text-sm text-gray-500">{product.availability}</span>
-              <button
-                type="button"
-                className="px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors"
-              >
-                Preview item
-              </button>
+          </div>
+
+          <div className="p-8 md:p-10 flex flex-col">
+            <div className="mb-6">
+              <div className="text-sm text-gray-500 mb-2">Unit price</div>
+              <div className="text-4xl font-bold text-gray-900">€{unitPrice}</div>
             </div>
-          </article>
-        ))}
+
+            <div className="rounded-3xl bg-gray-50 p-5 mb-6">
+              <div className="text-sm text-gray-500 mb-3">Quantity</div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="inline-flex items-center gap-3">
+                  <button
+                    type="button"
+                    className="w-11 h-11 rounded-full border border-gray-300 flex items-center justify-center hover:bg-white transition-colors"
+                    onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                  >
+                    <Minus className="w-4 h-4" />
+                  </button>
+                  <span className="text-2xl font-bold text-gray-900 min-w-10 text-center">{quantity}</span>
+                  <button
+                    type="button"
+                    className="w-11 h-11 rounded-full border border-gray-300 flex items-center justify-center hover:bg-white transition-colors"
+                    onClick={() => setQuantity((current) => current + 1)}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm text-gray-500">Total price</div>
+                  <div className="text-2xl font-bold text-gray-900">€{totalPrice}</div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="w-full px-6 py-4 rounded-2xl bg-primary-600 text-white text-base font-semibold hover:bg-primary-700 transition-colors mb-8"
+            >
+              Buy
+            </button>
+
+            <div className="space-y-6 text-gray-600 leading-7">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Why this device matters</h3>
+                <p>
+                  The device helps shelters maintain safer conditions by making environmental changes visible sooner. It supports daily operations, pet comfort, and future alerting workflows.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Recommended use</h3>
+                <p>
+                  Use it in adoption rooms, cat zones, dog rooms, medical spaces, or home environments where air quality and temperature consistency matter.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">Installation recommendations</h3>
+          <ul className="space-y-3">
+            {installationTips.map((tip) => (
+              <li key={tip} className="flex items-start gap-3 text-gray-600">
+                <ShieldCheck className="w-5 h-5 text-primary-600 mt-1" />
+                <span>{tip}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">What is included</h3>
+          <div className="space-y-4 text-gray-600 leading-7">
+            <p>The box includes the IoT device, wall-mount accessories, power adapter, and quick-start setup guide.</p>
+            <p>The page is intentionally structured so stock availability, checkout, shipping status, and installation services can be added later without redesigning the store.</p>
+          </div>
+        </div>
       </section>
     </div>
   );
