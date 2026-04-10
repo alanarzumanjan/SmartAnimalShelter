@@ -29,11 +29,14 @@ public static class DbInitializer
             {
                 db.Species.Add(species);
                 await db.SaveChangesAsync();
-                Console.WriteLine($"➕ Added missing species: {species.Name} (Id={species.Id})");
+                var logMessage = $"> ➕ Added missing species: {species.Name} (Id={species.Id})";
+                Console.WriteLine(logMessage);
             }
         }
 
         Console.WriteLine("✅ Species check complete.");
+            var logMessage2 = "> ✅ Species check complete.";
+            Console.WriteLine(logMessage2);
         await SeedBreedsAsync(db);
     }
 
@@ -43,7 +46,8 @@ public static class DbInitializer
     
     if (!File.Exists(breedsPath))
     {
-        Console.WriteLine("⚠️ species_breeds.json not found. Skipping breeds seed.");
+        var logMessage3 = "> ⚠️ species_breeds.json not found. Skipping breeds seed.";
+        Console.WriteLine(logMessage3);
         return;
     }
 
