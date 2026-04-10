@@ -11,6 +11,7 @@ import HomePage from '@/pages/home/HomePage';
 import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
+import DeviceDetailPage from '@/pages/dashboard/DeviceDetailPage';
 import AdminPage from '@/pages/admin/AdminPage';
 import AnimalsPage from '@/pages/animals/AnimalsPage';
 import AdoptionFormPage from '@/pages/animals/AdoptionFormPage';
@@ -59,6 +60,14 @@ const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/devices/:deviceId"
+            element={
+              <ProtectedRoute>
+                <DeviceDetailPage />
               </ProtectedRoute>
             }
           />
