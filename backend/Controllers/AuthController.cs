@@ -1,7 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using Validation;
 using Services;
 using Config;
@@ -18,15 +16,18 @@ public class AuthController : ControllerBase
     private readonly AppDbContext db;
     private readonly JwtService _jwtService;
     private readonly PasswordHashingService _passwordHashingService;
+    private readonly UserEmailService _userEmailService;
 
     public AuthController(
         AppDbContext db, 
         JwtService jwtService, 
-        PasswordHashingService passwordHashingService)
+        PasswordHashingService passwordHashingService,
+        UserEmailService userEmailService)
     {
         this.db = db;
         _jwtService = jwtService;
         _passwordHashingService = passwordHashingService;
+        _userEmailService = userEmailService;
     }
 
     [HttpPost("register")]
@@ -49,12 +50,15 @@ public class AuthController : ControllerBase
 
         try
         {
-            string? encryptedEmail = EncryptionService.Encrypt(user.email);
+            var trimmedEmail = user.email.Trim();
+            string? encryptedEmail = EncryptionService.Encrypt(trimmedEmail);
+            if (encryptedEmail == null)
+                return BadRequest("Email encryption failed. Email is empty or invalid.");
 
             if (await db.Users.AnyAsync(u => u.Username == user.name))
                 return BadRequest("Username already exists.");
 
-            if (await db.Users.AnyAsync(u => u.Email == encryptedEmail))
+            if (await _userEmailService.EmailExistsAsync(trimmedEmail))
                 return BadRequest("Email already exists.");
 
             string role = user.role ?? "user";
@@ -68,13 +72,12 @@ public class AuthController : ControllerBase
                 Role = role
             };
 
+            string token = _jwtService.GenerateToken(newUser.Id, role);
+
             using var transaction = await db.Database.BeginTransactionAsync();
             await db.Users.AddAsync(newUser);
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
-
-            string token = _jwtService.GenerateToken(newUser.Id, role);
-            string? decryptedEmail = EncryptionService.Decrypt(newUser.Email);
 
             return Ok(new
             {
@@ -83,7 +86,7 @@ public class AuthController : ControllerBase
                 {
                     id = newUser.Id,
                     name = newUser.Username,
-                    email = decryptedEmail,
+                    email = trimmedEmail,
                     role = newUser.Role
                 },
                 message = "User registered successfully"
@@ -91,6 +94,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"> [Register] Exception: {ex}");
             return Problem("Error: " + ex.Message);
         }
     }
@@ -112,12 +116,12 @@ public class AuthController : ControllerBase
 
         try
         {
-            var encryptedEmail = EncryptionService.Encrypt(loginRequest.email);
-            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == encryptedEmail);
+            var user = await _userEmailService.FindByEmailAsync(loginRequest.email);
 
             if (user == null)
             {
-                Console.WriteLine("❌ User not found.");
+                var logMessage = "> ❌ User not found";
+                Console.WriteLine(logMessage);
                 return Unauthorized("Incorrect email or password.");
             }
 
@@ -125,14 +129,16 @@ public class AuthController : ControllerBase
 
             if (!isPasswordCorrect)
             {
-                Console.WriteLine("❌ Incorrect password.");
+                var logMessage = "> ❌ Incorrect password";
+                Console.WriteLine(logMessage);
                 return Unauthorized("Incorrect email or password.");
             }
 
             string role = user.Role ?? "user"; 
             string token = _jwtService.GenerateToken(user.Id, role);
 
-            Console.WriteLine($"✅ Login success: {user.Username}, Role: {role}");
+            var logMessage2 = $"> ✅ Login success: {user.Username}, Role: {role}";
+            Console.WriteLine(logMessage2);
 
             string? decryptedEmail = null;
             string? decryptedPhone = null;
@@ -162,7 +168,8 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
-            Console.WriteLine("❌ Login error: " + ex);
+            var logMessage3 = $"> ❌ Login error: {ex}";
+            Console.WriteLine(logMessage3);
             return Problem("Error: " + ex.Message);
         }
     }
