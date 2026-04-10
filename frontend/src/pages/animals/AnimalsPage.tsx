@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { HeartHandshake, SlidersHorizontal } from 'lucide-react';
 import AnimalCard from './AnimalCard';
 import api from '@/services/api';
@@ -117,12 +116,6 @@ const AnimalsPage: React.FC = () => {
               </button>
             ))}
           </div>
-          <Link
-            to="/adoption"
-            className="md:ml-auto inline-flex items-center justify-center px-6 py-3 rounded-full bg-primary-600 text-white hover:bg-primary-700 transition-colors text-sm font-medium"
-          >
-            Submit adoption request
-          </Link>
         </div>
 
         {usingPreviewData && (
