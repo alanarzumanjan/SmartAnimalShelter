@@ -111,12 +111,14 @@ public class MeasurementsController : ControllerBase
         }
         catch (DbUpdateException dbex)
         {
-            Console.WriteLine($"❌ DB error on ingest: {dbex.Message}");
+            var logMessage = $"> ❌ DB error on ingest: {dbex.Message}";
+            Console.WriteLine(logMessage);
             return StatusCode(500, new { error = "Database error while saving measurement." });
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ Failed to ingest measurement: {ex.Message}");
+            var logMessage2 = $"> ❌ Failed to ingest measurement: {ex.Message}";
+            Console.WriteLine(logMessage2);
             return StatusCode(500, new { error = "Failed to ingest measurement." });
         }
     }
