@@ -3,13 +3,10 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Data;
 using Services;
 using ImageFetchers;
 using Config;
-using Models;
 using MongoDB.Driver;
 using DotNetEnv;
 
@@ -85,6 +82,7 @@ builder.Services.AddScoped<GenderResolver>();
 builder.Services.AddSingleton<MongoService>();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<ImageFetcher>();
+builder.Services.AddScoped<UserEmailService>();
 
 // CORS
 var frontendOrigin = Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_PORT") ?? "http://localhost:5173";
