@@ -57,6 +57,7 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      TZ: Europe/Riga
       ASPNETCORE_URLS: http://+:5000
       ASPNETCORE_ENVIRONMENT: Development
       POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=${DATABASE};Username=${POSTGRES_USER};Password=${PASSWORD};Include Error Detail=true;"
