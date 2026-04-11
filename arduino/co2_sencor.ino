@@ -19,7 +19,7 @@ IPAddress apGW(192, 168, 4, 1);
 IPAddress apSN(255, 255, 255, 0);
 
 // !!! your backend URL
-const char* API_URL = "https://oxide-level.id.lv";
+const char* API_URL = "https://api.alantech.id.lv";
 
 // send interval
 const unsigned long SEND_INTERVAL = 60000; // 60s
@@ -44,12 +44,12 @@ const unsigned long wifiTimeoutMs = 30000;
 
 // ================== DEVICE AUTH STATE ==================
 String deviceMAC = "";
-String savedUsername = "";     // save username, NOT password
-String deviceKey = "";         // X-Api-Key
+String savedEmail = "";
+String deviceKey = "";      // X-Api-Key
 bool enrolled = false;
 
 // pending (from UI)
-String pendingUsername = "";
+String pendingEmail = "";
 String pendingPassword = "";
 
 // ================== TIMERS ==================
@@ -181,26 +181,26 @@ void handleWifiClear() {
 
 // POST /auth  (username+password)
 void handleAuthPost() {
-  if (!server.hasArg("username") || !server.hasArg("password")) {
-    server.send(400, "application/json", "{\"ok\":false,\"error\":\"missing username/password\"}");
+  if (!server.hasArg("email") || !server.hasArg("password")) {
+    server.send(400, "application/json", "{\"ok\":false,\"error\":\"missing email/password\"}");
     return;
   }
 
-  String u = server.arg("username");
-  String p = server.arg("password");
-  u.trim();
+  String email = server.arg("email");
+  String pass = server.arg("password");
+  email.trim();
 
-  if (u.length() < 1 || p.length() < 1) {
-    server.send(400, "application/json", "{\"ok\":false,\"error\":\"empty username/password\"}");
+  if (email.length() < 1 || pass.length() < 1) {
+    server.send(400, "application/json", "{\"ok\":false,\"error\":\"empty email/password\"}");
     return;
   }
 
-  pendingUsername = u;
-  pendingPassword = p;
+  pendingEmail = email;
+  pendingPassword = pass;
 
   bool ok = false;
   if (WiFi.status() == WL_CONNECTED) {
-    ok = apiLogin(pendingUsername, pendingPassword);
+    ok = apiLogin(pendingEmail, pendingPassword);
     pendingPassword = "";
   }
 
@@ -308,15 +308,15 @@ void loop() {
   }
 
   if (!enrolled && WiFi.status() == WL_CONNECTED &&
-      pendingUsername.length() > 0 && pendingPassword.length() > 0) {
+      pendingEmail.length() > 0 && pendingPassword.length() > 0) {
     if (millis() - lastLoginAttempt >= LOGIN_RETRY_MS) {
       lastLoginAttempt = millis();
       Serial.println("[AUTH] Pending login attempt...");
-      bool ok = apiLogin(pendingUsername, pendingPassword);
+      bool ok = apiLogin(pendingEmail, pendingPassword);
       pendingPassword = "";
       if (!ok) {
         Serial.println("[AUTH] Login failed. Re-enter credentials in web UI.");
-        pendingUsername = "";
+        pendingEmail = "";
       }
     }
   }
@@ -408,7 +408,7 @@ void updateWifiLed() {
 // ================== AUTH STATE (prefs) ==================
 void loadAuthState() {
   prefs.begin("co2", true);
-  savedUsername = prefs.getString("username", "");
+  savedEmail = prefs.getString("email", "");
   deviceKey = prefs.getString("deviceKey", "");
   enrolled = prefs.getBool("enrolled", false);
   prefs.end();
@@ -416,14 +416,14 @@ void loadAuthState() {
   if (deviceKey.length() > 0) enrolled = true;
 
   Serial.println("Auth state:");
-  Serial.print("  username: "); Serial.println(savedUsername);
+  Serial.print("  email:    "); Serial.println(savedEmail);
   Serial.print("  enrolled: "); Serial.println(enrolled ? "true" : "false");
   Serial.print("  hasKey:   "); Serial.println(deviceKey.length() > 0 ? "YES" : "NO");
 }
 
 void saveAuthState() {
   prefs.begin("co2", false);
-  prefs.putString("username", savedUsername);
+  prefs.putString("email", savedEmail);
   prefs.putString("deviceKey", deviceKey);
   prefs.putBool("enrolled", enrolled);
   prefs.end();
@@ -432,20 +432,20 @@ void saveAuthState() {
 
 void clearAuthState() {
   prefs.begin("co2", false);
-  prefs.remove("username");
+  prefs.remove("email");
   prefs.remove("deviceKey");
   prefs.remove("enrolled");
   prefs.end();
 
-  savedUsername = "";
+  savedEmail = "";
   deviceKey = "";
   enrolled = false;
-  pendingUsername = "";
+  pendingEmail = "";
   pendingPassword = "";
 }
 
 // ================== API: LOGIN ==================
-bool apiLogin(const String& username, const String& password) {
+bool apiLogin(const String& email, const String& password) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
   HTTPClient http;
@@ -454,7 +454,7 @@ bool apiLogin(const String& username, const String& password) {
 
   StaticJsonDocument<256> doc;
   doc["mac"] = deviceMAC;
-  doc["username"] = username;
+  doc["email"] = email;
   doc["password"] = password;
 
   String payload;
@@ -482,7 +482,7 @@ bool apiLogin(const String& username, const String& password) {
   bool keyIssued = out["keyIssued"] | out["KeyIssued"] | false;
   const char* key = out["deviceKey"] | out["DeviceKey"] | (const char*)nullptr;
 
-  savedUsername = username;
+  savedEmail = email;
 
   if (keyIssued && key && String(key).length() > 0) {
     deviceKey = String(key);
@@ -499,7 +499,6 @@ bool apiLogin(const String& username, const String& password) {
       Serial.println("[AUTH] ✅ Already enrolled (key exists locally).");
       return true;
     }
-
     Serial.println("[AUTH] ⚠️ Server says already enrolled, but deviceKey is missing locally.");
     enrolled = false;
     saveAuthState();
@@ -574,7 +573,7 @@ String jsonStatus() {
   json += "\"mac\":\"" + deviceMAC + "\",";
   json += "\"enrolled\":" + String(enrolled ? "true" : "false") + ",";
   json += "\"hasKey\":" + String(deviceKey.length() > 0 ? "true" : "false") + ",";
-  json += "\"username\":\"" + escapeHtml(savedUsername) + "\"";
+  json += "\"email\":\"" + escapeHtml(savedEmail) + "\"";
   json += "}";
   return json;
 }
@@ -608,7 +607,7 @@ String jsonScan() {
 // ================== UI: HTML ==================
 String htmlIndex() {
   String presetSsid = escapeHtml(savedSsid);
-  String presetUser = escapeHtml(savedUsername);
+  String presetEmail = escapeHtml(savedEmail);
 
   String html = R"HTML(
 <!doctype html>
@@ -683,8 +682,8 @@ String htmlIndex() {
         <h1>2) Device login</h1>
         <p class="small">Enter your site credentials. Device will request <b>deviceKey</b> and then start sending measurements.</p>
 
-        <label>Username</label>
-        <input id="username" placeholder="e.g. danila" value="__USER__" />
+        <label>Email</label>
+        <input id="username" placeholder="e.g. user@example.com" value="__USER__" />
 
         <label>Password</label>
         <input id="password" placeholder="password" type="password" />
@@ -709,7 +708,7 @@ String htmlIndex() {
         <p class="small"><b>MAC:</b> <span id="mac">-</span></p>
         <p class="small"><b>Enrolled:</b> <span id="enrolled">-</span></p>
         <p class="small"><b>Has key:</b> <span id="hasKey">-</span></p>
-        <p class="small"><b>User:</b> <span id="userOut">-</span></p>
+        <p class="small"><b>Email:</b> <span id="userOut">-</span></p>
 
         <p class="small" style="margin-top:12px">WiFi LED (pin 15) is ON only when state=connected.</p>
       </div>
@@ -729,7 +728,7 @@ async function refresh(){
     document.getElementById('curIp').textContent = j.ip || '-';
     document.getElementById('apIp').textContent = j.ap_ip || '-';
     document.getElementById('mac').textContent = j.mac || '-';
-    document.getElementById('userOut').textContent = j.username || '-';
+    document.getElementById('userOut').textContent = j.email || '-';
 
     const dot = document.getElementById('dot');
     if (j.state === 'connected') dot.style.background = '#22c55e';
@@ -819,14 +818,14 @@ async function clearWifi(){
 }
 
 async function loginDevice(){
-  const u = document.getElementById('username').value.trim();
-  const p = document.getElementById('password').value;
+  const email = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value;
   const msg = document.getElementById('authMsg');
   msg.textContent = 'Logging in...';
 
   const body = new URLSearchParams();
-  body.append('username', u);
-  body.append('password', p);
+  body.append('email', email);
+  body.append('password', pass);
 
   const r = await fetch('/auth', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
   const j = await r.json().catch(()=>({ok:false}));
@@ -837,7 +836,7 @@ async function loginDevice(){
     else msg.textContent = '✅ Done.';
     document.getElementById('password').value = '';
   } else {
-    msg.textContent = '❌ Login failed. Check username/password.';
+    msg.textContent = '❌ Login failed. Check email/password.';
   }
 }
 
@@ -854,7 +853,7 @@ async function clearAuth(){
 )HTML";
 
   html.replace("__SSID__", presetSsid);
-  html.replace("__USER__", presetUser);
+  html.replace("__USER__", presetEmail);
   return html;
 }
 
