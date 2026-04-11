@@ -100,3 +100,29 @@ export async function getDeviceMeasurements(deviceId: string, limit = 50): Promi
   const items = unwrapData<any[]>(response.data);
   return Array.isArray(items) ? items.map(normalizeMeasurement) : [];
 }
+
+export async function updateDevice(deviceId: string, updates: { name?: string; location?: string }): Promise<DeviceRecord> {
+  const response = await api.put(`/devices/${encodeURIComponent(deviceId)}`, updates);
+  return normalizeDevice(unwrapData<any>(response.data));
+}
+
+export async function getUserMeasurements(
+  userId: string,
+  options?: { from?: string; to?: string; limit?: number; offset?: number }
+): Promise<{ data: MeasurementRecord[]; total: number; limit: number; offset: number }> {
+  const params = new URLSearchParams();
+  if (options?.from) params.set('from', options.from);
+  if (options?.to) params.set('to', options.to);
+  if (options?.limit) params.set('limit', String(options.limit));
+  if (options?.offset) params.set('offset', String(options.offset));
+
+  const response = await api.get(`/measurements/user/${userId}?${params.toString()}`);
+  const payload = response.data;
+  const items = payload?.data ?? payload;
+  return {
+    data: Array.isArray(items) ? items.map(normalizeMeasurement) : [],
+    total: payload?.total ?? 0,
+    limit: payload?.limit ?? 0,
+    offset: payload?.offset ?? 0,
+  };
+}
