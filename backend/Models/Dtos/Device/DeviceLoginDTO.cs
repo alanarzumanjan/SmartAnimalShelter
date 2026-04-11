@@ -1,9 +1,12 @@
+using System.ComponentModel.DataAnnotations;
 namespace Dtos;
 
 public sealed class DeviceLoginRequest
 {
     public string Mac { get; set; } = default!;
-    public string Username { get; set; } = default!;
+    
+    [Required, EmailAddress]
+    public string Email { get; set; } = null!;
     public string Password { get; set; } = default!;
 }
 
