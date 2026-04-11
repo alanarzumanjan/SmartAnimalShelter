@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using Models;
 using Data;
 using Dtos;
+using Services;
 
 namespace Controllers;
 
@@ -14,7 +15,13 @@ namespace Controllers;
 public class DeviceUsersController : ControllerBase
 {
     private readonly AppDbContext _db;
-    public DeviceUsersController(AppDbContext db) => _db = db;
+    private readonly UserEmailService _userEmailService;
+
+    public DeviceUsersController(AppDbContext db, UserEmailService userEmailService) 
+    {
+        _db = db;
+        _userEmailService = userEmailService;
+    }
 
     private static string NormalizeMac(string mac)
     {
@@ -25,6 +32,9 @@ public class DeviceUsersController : ControllerBase
 
     private static bool IsValidMac(string mac) =>
         Regex.IsMatch(mac, "^[0-9A-F]{2}(:[0-9A-F]{2}){5}$");
+
+    private static DateTime UtcNow() => DateTime.UtcNow;
+
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] DeviceLoginRequest req)
     {
@@ -33,18 +43,17 @@ public class DeviceUsersController : ControllerBase
         var mac = NormalizeMac(req.Mac);
         if (!IsValidMac(mac)) return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
 
-        var username = (req.Username ?? "").Trim();
+        var email = (req.Email ?? "").Trim().ToLower();
         var password = req.Password ?? "";
 
-        if (username.Length == 0 || password.Length == 0)
-            return BadRequest(new { error = "Username/password are required." });
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+            return BadRequest(new { error = "Email and password are required." });
 
-        // 1) Validate user credentials
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
+        var user = await _userEmailService.FindByEmailAsync(email);
+        
         if (user?.PasswordHash == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             return Unauthorized(new { error = "Invalid credentials." });
 
-        // 2) Ensure device exists and is linked to this user
         var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac);
         if (device == null)
         {
@@ -52,9 +61,9 @@ public class DeviceUsersController : ControllerBase
             {
                 Id = Guid.NewGuid(),
                 DeviceId = mac,
-                Name = "ESP32",
+                Name = "IoT Device",
                 Location = "Unknown",
-                RegisteredAt = DateTime.UtcNow,
+                RegisteredAt = UtcNow(),
                 UserId = user.Id
             };
             _db.Devices.Add(device);
@@ -65,12 +74,11 @@ public class DeviceUsersController : ControllerBase
             if (device.UserId != user.Id)
                 return Forbid("Device is owned by another user.");
 
-            device.LastSeenAt = DateTime.UtcNow;
+            device.LastSeenAt = UtcNow();
             await _db.SaveChangesAsync();
         }
 
-        // 3) Ensure DeviceUser link exists
-        var link = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac && x.UserId == user.Id); 
+        var link = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac && x.UserId == user.Id);
 
         if (link == null || string.IsNullOrWhiteSpace(link.ApiKeyHash))
         {
@@ -85,7 +93,7 @@ public class DeviceUsersController : ControllerBase
                     DeviceId = mac,
                     UserId = user.Id,
                     ApiKeyHash = hash,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = UtcNow()
                 };
                 _db.DeviceUsers.Add(link);
             }
@@ -106,7 +114,15 @@ public class DeviceUsersController : ControllerBase
             });
         }
 
-        return Ok(new DeviceLoginResponse { DeviceUsersId = link.Id, DeviceId = device.Id, Mac = mac, DeviceKey = null, KeyIssued = false });
+        // ✅ Уже есть ключ — не выдаём новый
+        return Ok(new DeviceLoginResponse 
+        { 
+            DeviceUsersId = link.Id, 
+            DeviceId = device.Id, 
+            Mac = mac, 
+            DeviceKey = null, 
+            KeyIssued = false 
+        });
     }
 
     [HttpPost("enroll")]
@@ -128,7 +144,7 @@ public class DeviceUsersController : ControllerBase
                 DeviceId = mac,
                 Name = "Auto-registered device",
                 Location = "Unknown",
-                RegisteredAt = DateTime.UtcNow,
+                RegisteredAt = UtcNow(),
                 UserId = req.UserId
             };
             _db.Devices.Add(device);
@@ -147,7 +163,7 @@ public class DeviceUsersController : ControllerBase
             DeviceId = mac,
             UserId = req.UserId,
             ApiKeyHash = hash,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = UtcNow()
         };
 
         _db.DeviceUsers.Add(du);
