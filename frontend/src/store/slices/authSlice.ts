@@ -7,6 +7,15 @@ interface User {
   role: string;
 }
 
+interface LoginResponse {
+  token: string;
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  role: string;
+}
+
 interface AuthState {
   user: User | null;
   token: string | null;
@@ -41,13 +50,16 @@ export const authSlice = createSlice({
     loginStart: (state) => {
       state.isLoading = true;
     },
-    loginSuccess: (state, action: PayloadAction<{ user: User; token: string }>) => {
-      state.user = action.payload.user;
-      state.token = action.payload.token;
+    loginSuccess: (state, action: PayloadAction<LoginResponse>) => {
+      const { token, id, name, email, role } = action.payload;
+      const user: User = { id, name, email, role };
+
+      state.user = user;
+      state.token = token;
       state.isAuthenticated = true;
       state.isLoading = false;
-      localStorage.setItem('token', action.payload.token);
-      localStorage.setItem('user', JSON.stringify(action.payload.user));
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
     },
     loginFailure: (state) => {
       state.isLoading = false;
