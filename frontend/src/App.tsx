@@ -4,6 +4,7 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from '@/store/store';
 import type { RootState } from '@/store/store';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from '@/components/layout/ThemeContext';
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -12,6 +13,7 @@ import LoginPage from '@/pages/auth/LoginPage';
 import RegisterPage from '@/pages/auth/RegisterPage';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import DeviceDetailPage from '@/pages/dashboard/DeviceDetailPage';
+import HistoryPage from '@/pages/dashboard/HistoryPage';
 import AdminPage from '@/pages/admin/AdminPage';
 import AnimalsPage from '@/pages/animals/AnimalsPage';
 import AdoptionFormPage from '@/pages/animals/AdoptionFormPage';
@@ -72,6 +74,14 @@ const AppRoutes: React.FC = () => {
             }
           />
           <Route
+            path="/dashboard/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard/chats"
             element={
               <ProtectedRoute>
@@ -101,9 +111,11 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </ThemeProvider>
     </Provider>
   );
 };
