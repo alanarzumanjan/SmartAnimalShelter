@@ -27,6 +27,14 @@ public class MeasurementsController : ControllerBase
     private static bool IsValidMac(string mac) =>
         Regex.IsMatch(mac, "^[0-9A-F]{2}(:[0-9A-F]{2}){5}$");
 
+    private static DateTime NormalizeToUtc(DateTime dateTime) =>
+        dateTime.Kind switch
+        {
+            DateTimeKind.Utc => dateTime,
+            DateTimeKind.Local => dateTime.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
+        };
+
     [HttpPost("measurements")]
     public async Task<IActionResult> Ingest([FromBody] MeasurementInDTO request)
     {
@@ -87,7 +95,7 @@ public class MeasurementsController : ControllerBase
             }
 
             // 3) Save measurement
-            var ts = (request.Timestamp ?? DateTime.UtcNow).ToUniversalTime();
+            var ts = NormalizeToUtc(request.Timestamp ?? DateTime.UtcNow);
 
             var entity = new Measurement
             {
@@ -267,6 +275,59 @@ public async Task<IActionResult> GetByDevice(
         {
             Console.WriteLine($"❌ Failed to get latest measurement: {ex.Message}");
             return StatusCode(500, new { error = "Failed to get latest measurement." });
+        }
+    }
+
+    [HttpGet("measurements/user/{userId:guid}")]
+    public async Task<IActionResult> GetByUser(
+        Guid userId,
+        [FromQuery] DateTime? from = null,
+        [FromQuery] DateTime? to = null,
+        [FromQuery] int limit = 0,
+        [FromQuery] int offset = 0)
+    {
+        try
+        {
+            offset = Math.Max(0, offset);
+            const int HARD_CAP = 1000000;
+            if (limit <= 0) limit = HARD_CAP;
+            limit = Math.Clamp(limit, 1, HARD_CAP);
+
+            var query = _db.Measurements
+                .AsNoTracking()
+                .Where(m => m.UserId == userId);
+
+            if (from.HasValue)
+            {
+                var f = DateTime.SpecifyKind(from.Value, DateTimeKind.Utc);
+                query = query.Where(m => m.Timestamp >= f);
+            }
+
+            if (to.HasValue)
+            {
+                var t = DateTime.SpecifyKind(to.Value, DateTimeKind.Utc);
+                query = query.Where(m => m.Timestamp <= t);
+            }
+
+            query = query.OrderByDescending(m => m.Timestamp);
+
+            var total = await query.CountAsync();
+            var items = await query.Skip(offset).Take(limit).ToListAsync();
+
+            return Ok(new
+            {
+                total,
+                limit,
+                offset,
+                from,
+                to,
+                data = items.Select(MeasurementOutDTO.FromEntity)
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Failed to fetch user measurements: {ex.Message}");
+            return StatusCode(500, new { error = "Failed to fetch measurements." });
         }
     }
 }
