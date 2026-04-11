@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/store/store';
 import { logout } from '@/store/slices/authSlice';
+import { ThemeToggle } from './ThemeToggle';
 import { LogOut, User, Home, MessageSquare, PawPrint, ShoppingBag } from 'lucide-react';
 
 const Header: React.FC = () => {
@@ -16,99 +17,124 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-slate-800 dark:bg-slate-950/95 dark:supports-[backdrop-filter]:bg-slate-950/80">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <span className="text-2xl">🐾</span>
-            <span className="font-bold text-xl text-gray-900">Smart Shelter</span>
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
+              <span className="text-white text-lg">🐾</span>
+            </div>
+            <span className="text-lg font-semibold text-slate-900 dark:text-white">
+              Smart Shelter
+            </span>
           </Link>
 
           {/* Navigation */}
-          <nav className="flex items-center gap-6">
+          <nav className="hidden md:flex items-center space-x-6">
             <Link
               to="/"
-              className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors"
             >
-              <Home className="w-5 h-5" />
-              <span className="hidden sm:inline">Home</span>
+              <Home className="w-4 h-4 inline mr-1" />
+              Home
             </Link>
 
-            {/* Store always visible */}
             <Link
               to="/animals"
-              className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors"
             >
-              <PawPrint className="w-5 h-5" />
-              <span className="hidden sm:inline">Animals</span>
+              <PawPrint className="w-4 h-4 inline mr-1" />
+              Animals
             </Link>
 
             <Link
               to="/store"
-              className="text-gray-600 hover:text-primary-600 transition-colors flex items-center gap-1"
+              className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors"
             >
-              <ShoppingBag className="w-5 h-5" />
-              <span className="hidden sm:inline">Store</span>
+              <ShoppingBag className="w-4 h-4 inline mr-1" />
+              Store
             </Link>
 
-            {isAuthenticated ? (
+            {isAuthenticated && (
               <>
                 <Link
                   to="/dashboard"
-                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
+                  className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors"
                 >
-                  <User className="w-5 h-5" />
-                  <span className="hidden sm:inline">Dashboard</span>
+                  Dashboard
                 </Link>
 
                 <Link
                   to="/dashboard/chats"
-                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-1"
+                  className="text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors"
                 >
-                  <MessageSquare className="w-5 h-5" />
-                  <span className="hidden sm:inline">Chats</span>
+                  <MessageSquare className="w-4 h-4 inline mr-1" />
+                  Chats
                 </Link>
 
                 {user?.role === 'Admin' && (
                   <Link
                     to="/admin"
-                    className="text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 font-medium"
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors"
                   >
-                    <User className="w-5 h-5" />
-                    <span className="hidden sm:inline">Admin</span>
+                    Admin
                   </Link>
                 )}
-
-                <button
-                  onClick={handleLogout}
-                  className="text-gray-600 hover:text-red-600 transition-colors"
-                  title="Logout"
-                >
-                  <LogOut className="w-5 h-5" />
-                </button>
-
-                <span className="text-sm text-gray-500 hidden md:inline">
-                  {user?.name}
-                </span>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/register"
-                  className="btn-primary px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-                >
-                  Sign Up
-                </Link>
               </>
             )}
           </nav>
+
+          {/* Right side: Theme + Auth buttons */}
+          <div className="flex items-center space-x-4">
+            <ThemeToggle />
+
+            <div className="flex items-center space-x-3">
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    to="/dashboard"
+                    className="hidden sm:block rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <User className="w-4 h-4 inline mr-1" />
+                    {user?.name}
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4 inline" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="hidden sm:block rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-2 text-sm font-medium text-white hover:from-indigo-500 hover:to-purple-500 transition-all shadow-lg shadow-indigo-500/50"
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Mobile menu button */}
+          <button
+            type="button"
+            className="md:hidden rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
+            aria-label="Toggle menu"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>
