@@ -20,7 +20,7 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 ### Shelter Management
 - **Animal Profiles:** Detailed records including medical history, photos, and status (Available, Adopted, Quarantine).
 - **Auto-Parsing:** Integration with external platforms (e.g., ss.lv) to import lost/found pet data.
-- **Role-Based Access Control (RBAC):** Admin, Veterinarian, Volunteer, Customer.
+- **Role-Based Access Control (RBAC):** Admin, Veterinarian, Shelter, Customer.
 - **Adoption Workflow:** Application tracking and approval system.
 
 ### IoT Environmental Monitoring (SCD41)
