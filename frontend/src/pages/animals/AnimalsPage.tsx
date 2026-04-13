@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { HeartHandshake, SlidersHorizontal } from 'lucide-react';
+import { HeartHandshake, SlidersHorizontal, Plus } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import AnimalCard from './AnimalCard';
 import api from '@/services/api';
 import { type AnimalItem, type AnimalStatus, mapAnimal, previewAnimals } from './animalCatalog';
+import { Button } from '@/components/ui/Button';
+import type { RootState } from '@/store/store';
 
 const statusOptions: Array<{ value: '' | AnimalStatus; label: string }> = [
   { value: '', label: 'All' },
@@ -12,10 +16,14 @@ const statusOptions: Array<{ value: '' | AnimalStatus; label: string }> = [
 ];
 
 const AnimalsPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [status, setStatus] = useState<'' | AnimalStatus>('');
   const [animals, setAnimals] = useState<AnimalItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [usingPreviewData, setUsingPreviewData] = useState(false);
+
+  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter');
 
   useEffect(() => {
     let isMounted = true;
@@ -81,14 +89,22 @@ const AnimalsPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 min-w-[220px]">
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-sm text-gray-500">Visible cards</div>
-              <div className="text-2xl font-bold text-gray-900">{filteredAnimals.length}</div>
-            </div>
-            <div className="rounded-2xl bg-gray-50 p-4">
-              <div className="text-sm text-gray-500">Data mode</div>
-              <div className="text-sm font-semibold text-gray-900">{usingPreviewData ? 'Preview demo' : 'Live API'}</div>
+          <div className="flex flex-col items-end gap-3">
+            {isAuthorized && (
+              <Button onClick={() => navigate('/animals/create')}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Animal Profile
+              </Button>
+            )}
+            <div className="grid grid-cols-2 gap-3 min-w-[220px]">
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <div className="text-sm text-gray-500">Visible cards</div>
+                <div className="text-2xl font-bold text-gray-900">{filteredAnimals.length}</div>
+              </div>
+              <div className="rounded-2xl bg-gray-50 p-4">
+                <div className="text-sm text-gray-500">Data mode</div>
+                <div className="text-sm font-semibold text-gray-900">{usingPreviewData ? 'Preview demo' : 'Live API'}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -146,6 +162,7 @@ const AnimalsPage: React.FC = () => {
               location={animal.location}
               description={animal.description}
               tags={animal.tags}
+              shelterId={animal.shelterId}
             />
           ))}
         </section>
