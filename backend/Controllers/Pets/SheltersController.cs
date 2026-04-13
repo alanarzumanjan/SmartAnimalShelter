@@ -103,7 +103,7 @@ public class SheltersController : ControllerBase
         return Ok(shelter);
     }
 
-    [Authorize(Roles = "shelter_owner")]
+    [Authorize(Roles = "veterinarian,shelter")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] ShelterCreateDto dto)
     {
@@ -145,7 +145,7 @@ public class SheltersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "shelter_owner")]
+    [Authorize(Roles = "veterinarian,shelter")]
     [HttpPatch("{id}")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] ShelterUpdateDto dto)
     {
@@ -189,7 +189,7 @@ public class SheltersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "shelter_owner")]
+    [Authorize(Roles = "veterinarian,shelter")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
