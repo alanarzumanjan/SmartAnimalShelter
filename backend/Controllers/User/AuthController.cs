@@ -61,7 +61,14 @@ public class AuthController : ControllerBase
             if (await _userEmailService.EmailExistsAsync(trimmedEmail))
                 return BadRequest("Email already exists.");
 
-            string role = user.role ?? "user";
+            // Validate and default role
+            var allowedRoles = new[] { "user", "veterinarian", "shelter" };
+            string role = "user"; // default
+            if (!string.IsNullOrWhiteSpace(user.role))
+            {
+                var requestedRole = user.role.ToLowerInvariant();
+                role = allowedRoles.Contains(requestedRole) ? requestedRole : "user";
+            }
 
             var newUser = new User
             {
@@ -77,6 +84,25 @@ public class AuthController : ControllerBase
             using var transaction = await db.Database.BeginTransactionAsync();
             await db.Users.AddAsync(newUser);
             await db.SaveChangesAsync();
+
+            // Auto-create a Shelter for shelter and veterinarian role users
+            if (role == "shelter" || role == "veterinarian")
+            {
+                var defaultShelter = new Shelter
+                {
+                    Id = Guid.NewGuid(),
+                    Name = role == "shelter" ? $"{newUser.Username}'s Shelter" : $"{newUser.Username}'s Vet Clinic",
+                    Address = "Address to be updated",
+                    Phone = null,
+                    Email = encryptedEmail,
+                    Description = null,
+                    OwnerId = newUser.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await db.Shelters.AddAsync(defaultShelter);
+                await db.SaveChangesAsync();
+            }
+
             await transaction.CommitAsync();
 
             return Ok(new
