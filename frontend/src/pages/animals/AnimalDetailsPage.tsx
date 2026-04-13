@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { MessageSquare, MapPin, PawPrint, ShieldCheck } from 'lucide-react';
+import { MessageSquare, MapPin, PawPrint, ShieldCheck, Pencil, Trash2 } from 'lucide-react';
 import type { RootState } from '@/store/store';
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { getPreviewAnimalById, mapAnimal, type AnimalItem } from './animalCatalog';
+import toast from 'react-hot-toast';
 
 const AnimalDetailsPage: React.FC = () => {
   const { animalId } = useParams<{ animalId: string }>();
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const [animal, setAnimal] = useState<AnimalItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isOwned, setIsOwned] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -34,6 +37,20 @@ const AnimalDetailsPage: React.FC = () => {
         const response = await api.get(`/pets/${animalId}`);
         if (isMounted) {
           setAnimal(mapAnimal(response.data));
+          const shelterId = response.data.shelter?.id;
+          // Check ownership for edit/delete
+          if (isAuthenticated && user && (user.role === 'veterinarian' || user.role === 'shelter')) {
+            if (user.role === 'veterinarian') {
+              setIsOwned(true);
+            } else if (shelterId) {
+              try {
+                const res = await api.get(`/shelters/${shelterId}`);
+                setIsOwned(res.data.ownerId === user.id);
+              } catch {
+                setIsOwned(false);
+              }
+            }
+          }
         }
       } catch {
         if (isMounted) {
@@ -51,7 +68,20 @@ const AnimalDetailsPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [animalId]);
+  }, [animalId, isAuthenticated, user]);
+
+  const handleDelete = async () => {
+    if (!animalId || !window.confirm(`Delete ${animal?.name}'s profile? This cannot be undone.`)) return;
+    try {
+      await api.delete(`/pets/${animalId}`);
+      toast.success(`${animal?.name}'s profile deleted`);
+      navigate('/animals');
+    } catch {
+      toast.error('Failed to delete');
+    }
+  };
+
+  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter') && isOwned;
 
   if (isLoading) {
     return <div className="py-16 text-center text-gray-400">Loading pet profile...</div>;
@@ -73,6 +103,20 @@ const AnimalDetailsPage: React.FC = () => {
 
   return (
     <div className="py-8 space-y-8">
+      {/* Admin action buttons */}
+      {isAuthorized && (
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={() => navigate(`/animals/${animalId}/edit`)}>
+            <Pencil className="w-4 h-4 mr-2" />
+            Edit Profile
+          </Button>
+          <Button variant="destructive" onClick={handleDelete}>
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete Profile
+          </Button>
+        </div>
+      )}
+
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
           <div className="bg-gray-100 min-h-[360px] flex items-center justify-center">
