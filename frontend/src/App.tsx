@@ -16,8 +16,10 @@ import DeviceDetailPage from '@/pages/dashboard/DeviceDetailPage';
 import HistoryPage from '@/pages/dashboard/HistoryPage';
 import AdminPage from '@/pages/admin/AdminPage';
 import AnimalsPage from '@/pages/animals/AnimalsPage';
-import AdoptionFormPage from '@/pages/animals/AdoptionFormPage';
 import AnimalDetailsPage from '@/pages/animals/AnimalDetailsPage';
+import CreateAnimalPage from '@/pages/animals/CreateAnimalPage';
+import EditAnimalPage from '@/pages/animals/EditAnimalPage';
+import AdoptionFormPage from '@/pages/animals/AdoptionFormPage';
 import ChatPage from '@/pages/chat/ChatPage';
 import StorePage from '@/pages/store/StorePage';
 
@@ -54,6 +56,22 @@ const AppRoutes: React.FC = () => {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/animals" element={<AnimalsPage />} />
           <Route path="/animals/:animalId" element={<AnimalDetailsPage />} />
+          <Route
+            path="/animals/create"
+            element={
+              <ProtectedRoute>
+                <CreateAnimalPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/animals/:animalId/edit"
+            element={
+              <ProtectedRoute>
+                <EditAnimalPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/adoption" element={<AdoptionFormPage />} />
           <Route path="/store" element={<StorePage />} />
 
