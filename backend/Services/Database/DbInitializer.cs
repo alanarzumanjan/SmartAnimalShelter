@@ -18,6 +18,19 @@ public static class DbInitializer
         new Species { Id = 9, Name = "Unknown" }
     };
 
+    private static readonly List<AdoptionStatus> RequiredStatuses = new()
+    {
+        new AdoptionStatus { Id = 1, Name = "Available" },
+        new AdoptionStatus { Id = 2, Name = "Adopted" },
+        new AdoptionStatus { Id = 3, Name = "Pending" }
+    };
+
+    private static readonly List<Gender> RequiredGenders = new()
+    {
+        new Gender { Id = 1, Name = "Male" },
+        new Gender { Id = 2, Name = "Female" }
+    };
+
     public static async Task EnsureDbIsInitializedAsync(AppDbContext db)
     {
         Console.WriteLine("🔍 Checking species...");
@@ -34,9 +47,31 @@ public static class DbInitializer
             }
         }
 
-        Console.WriteLine("✅ Species check complete.");
-            var logMessage2 = "> ✅ Species check complete.";
-            Console.WriteLine(logMessage2);
+        Console.WriteLine("🔍 Checking adoption statuses...");
+        foreach (var status in RequiredStatuses)
+        {
+            var exists = await db.AdoptionStatuses.AnyAsync(s => s.Id == status.Id);
+            if (!exists)
+            {
+                db.AdoptionStatuses.Add(status);
+                await db.SaveChangesAsync();
+                Console.WriteLine($"> ➕ Added missing status: {status.Name} (Id={status.Id})");
+            }
+        }
+
+        Console.WriteLine("🔍 Checking genders...");
+        foreach (var gender in RequiredGenders)
+        {
+            var exists = await db.Genders.AnyAsync(g => g.Id == gender.Id);
+            if (!exists)
+            {
+                db.Genders.Add(gender);
+                await db.SaveChangesAsync();
+                Console.WriteLine($"> ➕ Added missing gender: {gender.Name} (Id={gender.Id})");
+            }
+        }
+
+        Console.WriteLine("✅ Seed data check complete.");
         await SeedBreedsAsync(db);
     }
 
