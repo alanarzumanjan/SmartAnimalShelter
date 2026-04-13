@@ -479,3 +479,59 @@ public class DeviceUser
     [ForeignKey(nameof(UserId))]
     public User User { get; set; } = null!;
 }
+
+[Index(nameof(StripeSessionId), IsUnique = true)]
+[Index(nameof(UserId))]
+[Index(nameof(Status))]
+public class Order
+{
+    [Key]
+    public Guid Id { get; init; } = Guid.NewGuid();
+
+    [Required]
+    public Guid UserId { get; set; }
+
+    [Required, MaxLength(255)]
+    public string StripeSessionId { get; set; } = null!;
+
+    [MaxLength(255)]
+    public string? StripePaymentIntentId { get; set; }
+
+    [Required]
+    public string ProductType { get; set; } = "device";
+
+    [Required]
+    public string ProductName { get; set; } = null!;
+
+    public int Quantity { get; set; } = 1;
+
+    [Required, MaxLength(10)]
+    public string Currency { get; set; } = "EUR";
+
+    public long AmountTotal { get; set; }
+
+    [Required, MaxLength(50)]
+    public string Status { get; set; } = "pending"; // pending | paid | failed | refunded
+
+    [MaxLength(500)]
+    public string? CustomerEmail { get; set; }
+
+    [MaxLength(500)]
+    public string? CustomerName { get; set; }
+
+    [MaxLength(500)]
+    public string? ShippingAddress { get; set; }
+
+    [MaxLength(500)]
+    public string? CustomerPhone { get; set; }
+
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+
+    public DateTime? PaidAt { get; set; }
+
+    public DateTime? UpdatedAt { get; set; }
+
+    // Navigation properties
+    [ForeignKey(nameof(UserId))]
+    public User User { get; set; } = null!;
+}

@@ -1,7 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { Cpu, Minus, Plus, ShieldCheck, Thermometer, Wifi } from 'lucide-react';
-
-const unitPrice = 249;
+import React, { useEffect, useMemo, useState } from 'react';
+import { Cpu, LoaderCircle, Minus, Plus, ShieldCheck, Thermometer, Wifi } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
+import {
+  createCheckoutSession,
+  getCheckoutSessionStatus,
+  getStoreProduct,
+  type CheckoutSessionStatus,
+  type StoreProduct,
+} from '@/services/store.service';
 
 const installationTips = [
   'Install the device 1.5 to 2 meters above the floor for more stable environmental readings.',
@@ -10,21 +17,195 @@ const installationTips = [
   'Connect it to steady Wi-Fi and place it where staff can easily access the status light and mounting bracket.',
 ];
 
+const formatCurrency = (amountInMinorUnits: number, currency: string) =>
+  new Intl.NumberFormat('en-IE', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+    maximumFractionDigits: 2,
+  }).format(amountInMinorUnits / 100);
+
+const getStoredBuyer = (): { id?: string; name?: string; email?: string } | null => {
+  const raw = localStorage.getItem('user');
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(raw) as { id?: string; name?: string; email?: string };
+  } catch {
+    return null;
+  }
+};
+
 const StorePage: React.FC = () => {
   const [quantity, setQuantity] = useState(1);
+  const [product, setProduct] = useState<StoreProduct | null>(null);
+  const [isLoadingProduct, setIsLoadingProduct] = useState(true);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [checkoutStatus, setCheckoutStatus] = useState<CheckoutSessionStatus | null>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
 
-  const totalPrice = useMemo(() => unitPrice * quantity, [quantity]);
+  const checkoutState = searchParams.get('checkout');
+  const checkoutSessionId = searchParams.get('session_id');
+  const unitAmount = product?.unitAmount ?? 24900;
+  const currency = product?.currency ?? 'eur';
+
+  const totalPrice = useMemo(() => unitAmount * quantity, [unitAmount, quantity]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadProduct = async () => {
+      try {
+        const nextProduct = await getStoreProduct();
+        if (isMounted) {
+          setProduct(nextProduct);
+        }
+      } catch (error: any) {
+        if (isMounted) {
+          toast.error(error?.response?.data?.error || 'Failed to load store product');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingProduct(false);
+        }
+      }
+    };
+
+    loadProduct();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (checkoutState !== 'success' || !checkoutSessionId) {
+      setCheckoutStatus(null);
+      setStatusError(null);
+      setIsLoadingStatus(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const loadCheckoutStatus = async () => {
+      setIsLoadingStatus(true);
+      setStatusError(null);
+
+      try {
+        const status = await getCheckoutSessionStatus(checkoutSessionId);
+        if (isMounted) {
+          setCheckoutStatus(status);
+        }
+      } catch (error: any) {
+        if (isMounted) {
+          setStatusError(error?.response?.data?.error || 'Failed to verify the payment status.');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingStatus(false);
+        }
+      }
+    };
+
+    loadCheckoutStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [checkoutSessionId, checkoutState]);
+
+  const handleBuy = async () => {
+    if (!product?.stripeEnabled) {
+      toast.error('Stripe checkout is not configured yet.');
+      return;
+    }
+
+    setIsCreatingCheckout(true);
+
+    try {
+      const buyer = getStoredBuyer();
+      const session = await createCheckoutSession({
+        quantity,
+        customerEmail: buyer?.email,
+        customerName: buyer?.name,
+        userId: buyer?.id,
+      });
+
+      window.location.assign(session.url);
+    } catch (error: any) {
+      toast.error(error?.response?.data?.error || 'Unable to start Stripe checkout');
+      setIsCreatingCheckout(false);
+    }
+  };
 
   return (
     <div className="py-8 space-y-8">
+      {(checkoutState === 'cancelled' || checkoutStatus || isLoadingStatus || statusError) && (
+        <section
+          className={[
+            'max-w-5xl mx-auto rounded-3xl border px-6 py-5 shadow-sm',
+            checkoutStatus?.isPaid
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+              : checkoutState === 'cancelled'
+                ? 'border-amber-200 bg-amber-50 text-amber-900'
+                : statusError
+                  ? 'border-rose-200 bg-rose-50 text-rose-900'
+                  : 'border-sky-200 bg-sky-50 text-sky-900',
+          ].join(' ')}
+        >
+          {isLoadingStatus ? (
+            <div className="flex items-center gap-3 text-sm font-medium">
+              <LoaderCircle className="h-5 w-5 animate-spin" />
+              Checking Stripe payment status...
+            </div>
+          ) : checkoutStatus?.isPaid ? (
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold">Payment received</h2>
+              <p className="text-sm leading-6">
+                Stripe marked this checkout as paid. Reference <span className="font-semibold">{checkoutStatus.id}</span>{' '}
+                for {formatCurrency(checkoutStatus.amountTotal, checkoutStatus.currency)}.
+              </p>
+              {checkoutStatus.customerEmail && (
+                <p className="text-sm leading-6">Receipt email: {checkoutStatus.customerEmail}</p>
+              )}
+            </div>
+          ) : checkoutState === 'cancelled' ? (
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold">Checkout was cancelled</h2>
+              <p className="text-sm leading-6">
+                No payment was completed. You can adjust the quantity and try again when you are ready.
+              </p>
+            </div>
+          ) : statusError ? (
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold">We could not verify this checkout yet</h2>
+              <p className="text-sm leading-6">{statusError}</p>
+            </div>
+          ) : checkoutStatus ? (
+            <div className="space-y-2">
+              <h2 className="text-xl font-bold">Checkout created, payment still pending</h2>
+              <p className="text-sm leading-6">
+                Stripe returned this session, but it is not marked as paid yet. Current payment status: {checkoutStatus.paymentStatus ?? 'unknown'}.
+              </p>
+            </div>
+          ) : null}
+        </section>
+      )}
+
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-10 text-center">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-4">
           <Cpu className="w-4 h-4" />
-          Single product storefront
+          Stripe checkout enabled storefront
         </div>
         <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Store</h1>
         <p className="max-w-3xl mx-auto text-gray-600 text-lg leading-7">
-          A focused product page for one core shelter device. The layout is ready for a future checkout flow, order history, shipping details, and live inventory.
+          A focused product page for one core shelter device. The page now starts a real Stripe Checkout flow and returns here with the verified payment status.
         </p>
       </section>
 
@@ -35,9 +216,10 @@ const StorePage: React.FC = () => {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-sm font-medium mb-6">
                 IoT Device
               </div>
-              <h2 className="text-4xl font-bold mb-4">Smart Shelter IoT Device</h2>
+              <h2 className="text-4xl font-bold mb-4">{product?.name ?? 'Smart Shelter IoT Device'}</h2>
               <p className="text-slate-200 text-lg leading-8 max-w-xl">
-                A compact environmental monitoring unit built for shelters and adopters who want reliable room-level visibility into comfort and air quality.
+                {product?.description ??
+                  'A compact environmental monitoring unit built for shelters and adopters who want reliable room-level visibility into comfort and air quality.'}
               </p>
             </div>
 
@@ -63,7 +245,9 @@ const StorePage: React.FC = () => {
           <div className="p-8 md:p-10 flex flex-col">
             <div className="mb-6">
               <div className="text-sm text-gray-500 mb-2">Unit price</div>
-              <div className="text-4xl font-bold text-gray-900">€{unitPrice}</div>
+              <div className="text-4xl font-bold text-gray-900">
+                {isLoadingProduct ? 'Loading...' : formatCurrency(unitAmount, currency)}
+              </div>
             </div>
 
             <div className="rounded-3xl bg-gray-50 p-5 mb-6">
@@ -88,17 +272,24 @@ const StorePage: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-sm text-gray-500">Total price</div>
-                  <div className="text-2xl font-bold text-gray-900">€{totalPrice}</div>
+                  <div className="text-2xl font-bold text-gray-900">{formatCurrency(totalPrice, currency)}</div>
                 </div>
               </div>
             </div>
 
             <button
               type="button"
-              className="w-full px-6 py-4 rounded-2xl bg-primary-600 text-white text-base font-semibold hover:bg-primary-700 transition-colors mb-8"
+              className="w-full px-6 py-4 rounded-2xl bg-primary-600 text-white text-base font-semibold hover:bg-primary-700 transition-colors mb-3 disabled:cursor-not-allowed disabled:bg-primary-400"
+              disabled={isCreatingCheckout || isLoadingProduct || !product?.stripeEnabled}
+              onClick={handleBuy}
             >
-              Buy
+              {isCreatingCheckout ? 'Redirecting to Stripe...' : 'Buy with Stripe'}
             </button>
+            <p className="mb-8 text-sm text-gray-500 leading-6">
+              {product?.stripeEnabled
+                ? 'Checkout opens on Stripe-hosted pages so card details never touch this frontend or backend.'
+                : 'Stripe is not configured yet. Add the Stripe secret key on the backend to enable purchases.'}
+            </p>
 
             <div className="space-y-6 text-gray-600 leading-7">
               <div>
@@ -135,7 +326,7 @@ const StorePage: React.FC = () => {
           <h3 className="text-2xl font-bold text-gray-900 mb-4">What is included</h3>
           <div className="space-y-4 text-gray-600 leading-7">
             <p>The box includes the IoT device, wall-mount accessories, power adapter, and quick-start setup guide.</p>
-            <p>The page is intentionally structured so stock availability, checkout, shipping status, and installation services can be added later without redesigning the store.</p>
+            <p>The page is intentionally structured so stock availability, webhook-based fulfillment, shipping status, and installation services can be added later without redesigning the store.</p>
           </div>
         </div>
       </section>

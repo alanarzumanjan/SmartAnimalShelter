@@ -16,6 +16,7 @@ package-lock.json
 backend/.env
 appsettings.Development.json
 appsettings.*.local.json
+docs/STRIPE_SETUP.md
 
 # Cloudflared
 .cloudflared/*.json

@@ -9,6 +9,7 @@ using ImageFetchers;
 using Config;
 using MongoDB.Driver;
 using DotNetEnv;
+using Services.Payments;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -43,6 +44,9 @@ builder.Services.AddSwaggerGen(c =>
 // JWT Authentication
 builder.Services.AddSingleton(jwtSettings);
 builder.Services.AddSingleton<JwtService>();
+builder.Services.AddSingleton(StripeCheckoutOptions.FromConfiguration(builder.Configuration));
+builder.Services.AddSingleton<StripeCheckoutService>();
+builder.Services.AddScoped<OrderService>();
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -144,8 +148,6 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Smart Animal Shelter API v1");
 });
-
-
 
 app.UseStaticFiles();
 app.UseAuthentication();

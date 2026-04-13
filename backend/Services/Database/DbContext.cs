@@ -29,6 +29,9 @@ public class AppDbContext : DbContext
     public DbSet<Measurement> Measurements => Set<Measurement>();
     public DbSet<DeviceUser> DeviceUsers => Set<DeviceUser>();
 
+    // Orders & Payments
+    public DbSet<Order> Orders => Set<Order>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -91,5 +94,11 @@ public class AppDbContext : DbContext
             .WithMany(d => d.DeviceUsers)
             .HasForeignKey(du => du.DeviceId)
             .HasPrincipalKey(d => d.DeviceId);
+
+        modelBuilder.Entity<Order>()
+            .HasOne(o => o.User)
+            .WithMany()
+            .HasForeignKey(o => o.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
