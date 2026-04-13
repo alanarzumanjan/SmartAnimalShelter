@@ -22,7 +22,7 @@ public class User
     public string PasswordHash { get; set; } = null!;
 
     [MaxLength(50)]
-    public string Role { get; set; } = "user"; // admin | shelter_owner | user
+    public string Role { get; set; } = "user"; // admin | veterinarian | shelter | user
 
     [Phone, MaxLength(50)]
     public string? Phone { get; set; }
@@ -190,8 +190,7 @@ public class Pet
     [Required]
     public int SpeciesId { get; set; }
 
-    [Required]
-    public int BreedId { get; set; }
+    public int? BreedId { get; set; }
 
     public int? GenderId { get; set; }
 
@@ -230,21 +229,27 @@ public class Pet
 
     // Navigation properties
     [ForeignKey(nameof(SpeciesId))]
-    public Species Species { get; set; } = null!;
+    [JsonIgnore]
+    public Species? Species { get; set; }
 
     [ForeignKey(nameof(BreedId))]
-    public Breed Breed { get; set; } = null!;
+    [JsonIgnore]
+    public Breed? Breed { get; set; }
 
     [ForeignKey(nameof(GenderId))]
+    [JsonIgnore]
     public Gender? Gender { get; set; }
 
     [ForeignKey(nameof(StatusId))]
-    public AdoptionStatus Status { get; set; } = null!;
+    [JsonIgnore]
+    public AdoptionStatus? Status { get; set; }
 
     [ForeignKey(nameof(ShelterId))]
-    public Shelter Shelter { get; set; } = null!;
+    [JsonIgnore]
+    public Shelter? Shelter { get; set; }
 
     [ForeignKey(nameof(EnclosureId))]
+    [JsonIgnore]
     public Enclosure? Enclosure { get; set; }
 
     [JsonIgnore]
