@@ -3,7 +3,7 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline' | 'destructive';
   isLoading?: boolean;
   fullWidth?: boolean;
 }
@@ -18,11 +18,13 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles = 'px-4 py-2 rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2';
-  
+
   const variantStyles = {
     primary: 'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800',
     secondary: 'bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400',
     danger: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
+    outline: 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 active:bg-gray-100',
+    destructive: 'bg-red-600 text-white hover:bg-red-700 active:bg-red-800',
   };
 
   return (
