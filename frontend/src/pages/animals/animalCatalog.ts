@@ -13,6 +13,7 @@ export interface AnimalItem {
   tags?: string[];
   shelterName?: string;
   contactName?: string;
+  shelterId?: string;
   story?: string;
   personality?: string[];
   careHighlights?: string[];
@@ -107,17 +108,31 @@ export const normalizeStatus = (value: unknown): AnimalStatus => {
   return 'Available';
 };
 
-export const mapAnimal = (animal: any, index = 0): AnimalItem => ({
+export const mapAnimal = (animal: any, index = 0): AnimalItem => {
+  // Format age: show months if < 1 year
+  let ageDisplay: string | undefined = undefined;
+  if (animal.age !== null && animal.age !== undefined) {
+    const ageNum = parseFloat(animal.age);
+    if (ageNum < 1) {
+      const months = Math.round(ageNum * 12);
+      ageDisplay = months <= 1 ? '1 month' : `${months} months`;
+    } else {
+      ageDisplay = ageNum === 1 ? '1 year' : `${ageNum} years`;
+    }
+  }
+
+  return {
   id: animal.id ?? `animal-${index}`,
   name: animal.name ?? 'Unnamed pet',
   species: animal.species?.name ?? animal.species ?? 'Pet',
   breed: animal.breed?.name ?? animal.breed ?? undefined,
-  age: animal.age ? `${animal.age} years` : undefined,
+  age: ageDisplay,
   status: normalizeStatus(animal.status?.name ?? animal.status),
   imageUrl: animal.imageUrl ?? undefined,
   location: animal.shelter?.name ?? 'Shelter network',
   shelterName: animal.shelter?.name ?? 'Shelter network',
   contactName: 'Shelter team',
+  shelterId: animal.shelter?.id ?? undefined,
   description: animal.description ?? 'Profile details will appear here once backend content is connected.',
   story: animal.description ?? 'This profile is ready for a fuller story once rescue intake notes and adoption context are connected.',
   personality: [
@@ -137,7 +152,8 @@ export const mapAnimal = (animal: any, index = 0): AnimalItem => ({
     animal.category,
     animal.price ? `Fee: ${animal.price}` : undefined,
   ].filter(Boolean),
-});
+  };
+};
 
 export const getPreviewAnimalById = (animalId: string) =>
   previewAnimals.find((animal) => animal.id === animalId);
