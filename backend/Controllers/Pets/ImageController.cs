@@ -2,59 +2,69 @@ using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver.GridFS;
 using MongoDB.Driver;
 using MongoDB.Bson;
+using Microsoft.EntityFrameworkCore;
+using Data;
+using Models;
 
 namespace Controllers
 {
     [ApiController]
-    [Route("image")]
-
+    [Route("pets")]
     public class ImageController : ControllerBase
     {
         private readonly GridFSBucket _bucket;
+        private readonly AppDbContext _db;
 
-        public ImageController(IMongoDatabase mongoDatabase)
+        public ImageController(IMongoDatabase mongoDatabase, AppDbContext db)
         {
             _bucket = new GridFSBucket(mongoDatabase);
+            _db = db;
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetImageById(string id)
+        [HttpPost("{id}/image")]
+        [RequestSizeLimit(50_000_000)] // 50MB
+        [RequestFormLimits(MultipartBodyLengthLimit = 50_000_000)]
+        public async Task<IActionResult> UploadImage(Guid id, IFormFile file)
         {
-            ObjectId objectId;
+            if (file == null || file.Length == 0)
+                return BadRequest("No file uploaded.");
 
-            if (!ObjectId.TryParse(id, out objectId))
+            // Find pet
+            var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == id);
+            if (pet == null)
+                return NotFound("Pet not found.");
+
+            // Upload to GridFS
+            using var stream = file.OpenReadStream();
+            var options = new GridFSUploadOptions
             {
-                if (Guid.TryParse(id, out Guid guid))
-                {
-                    try
-                    {
-                        var bytes = guid.ToByteArray();
-                        objectId = new ObjectId(bytes[..12]);
-                    }
-                    catch
-                    {
-                        return BadRequest("❌ Failed to convert Guid to ObjectId.");
-                    }
-                }
-                else
-                {
-                    return BadRequest("❌ Invalid image ID format.");
-                }
-            }
+                Metadata = new BsonDocument { { "contentType", file.ContentType }, { "petId", id.ToString() } }
+            };
+            var fileId = await _bucket.UploadFromStreamAsync(Guid.NewGuid().ToString(), stream, options);
+
+            // Update pet's image reference
+            pet.MongoImageId = fileId.ToString();
+            await _db.SaveChangesAsync();
+
+            return Ok(new { mongoImageId = fileId.ToString(), message = "Image uploaded" });
+        }
+
+        [HttpGet("{id}/image")]
+        public async Task<IActionResult> GetPetImage(Guid id)
+        {
+            var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == id);
+            if (pet == null || string.IsNullOrWhiteSpace(pet.MongoImageId))
+                return NotFound("Image not found.");
 
             try
             {
+                var objectId = ObjectId.Parse(pet.MongoImageId);
                 var stream = await _bucket.OpenDownloadStreamAsync(objectId);
-                return File(stream, "image/jpeg");
+                return File(stream, stream.FileInfo.Metadata?["contentType"]?.AsString ?? "image/jpeg");
             }
-            catch (GridFSFileNotFoundException)
+            catch
             {
-                return NotFound("❌ Image not found.");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("❌ Error while fetching image: " + ex.Message);
-                return StatusCode(500, "❌ Internal server error.");
+                return NotFound("Image not found.");
             }
         }
     }
