@@ -3,8 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Mail, Lock, User, UserPlus } from 'lucide-react';
+import { Mail, Lock, User, UserPlus, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+type UserRole = 'user' | 'veterinarian' | 'shelter';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +16,7 @@ const RegisterPage: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    role: 'user' as UserRole,
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
@@ -44,6 +47,7 @@ const RegisterPage: React.FC = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
+        role: formData.role,
       });
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -122,6 +126,23 @@ const RegisterPage: React.FC = () => {
             onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, confirmPassword: e.target.value })}
             error={errors.confirmPassword}
           />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
+            <div className="relative">
+              <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <select
+                value={formData.role}
+                onChange={(e: ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white text-gray-900 appearance-none cursor-pointer"
+              >
+                <option value="user">🐾 User - Browse and adopt pets</option>
+                <option value="veterinarian">🩺 Veterinarian - Manage animal health records</option>
+                <option value="shelter">🏠 Shelter - Manage shelter and publish animal profiles</option>
+              </select>
+            </div>
+            {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
+          </div>
 
           <Button type="submit" fullWidth isLoading={isLoading}>
             <UserPlus className="w-5 h-5" />
