@@ -141,14 +141,14 @@ const CreateAnimalPage: React.FC = () => {
     }
   };
 
-  const isAuthorized = user?.role === 'veterinarian' || user?.role === 'shelter';
+  const isAuthorized = user?.role === 'veterinarian' || user?.role === 'shelter' || user?.role === 'user';
 
   if (!isAuthorized) {
     return (
       <div className="py-8 text-center">
         <PawPrint className="w-16 h-16 mx-auto text-gray-300 mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-        <p className="text-gray-600">Only veterinarians and shelter managers can create animal profiles.</p>
+        <p className="text-gray-600">Only authenticated users can create animal profiles.</p>
         <Button onClick={() => navigate(-1)} className="mt-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Go Back
