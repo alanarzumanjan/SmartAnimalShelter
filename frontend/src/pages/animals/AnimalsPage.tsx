@@ -19,6 +19,7 @@ const AnimalsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [status, setStatus] = useState<'' | AnimalStatus>('');
+  const [species, setSpecies] = useState<string>('');
   const [animals, setAnimals] = useState<AnimalItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [usingPreviewData, setUsingPreviewData] = useState(false);
@@ -69,10 +70,18 @@ const AnimalsPage: React.FC = () => {
     };
   }, []);
 
-  const filteredAnimals = useMemo(
-    () => (status ? animals.filter((animal) => animal.status === status) : animals),
-    [animals, status]
-  );
+  const speciesOptions = useMemo(() => {
+    const unique = Array.from(new Set(animals.map((a) => a.species).filter(Boolean)));
+    return unique.sort();
+  }, [animals]);
+
+  const filteredAnimals = useMemo(() => {
+    return animals.filter((a) => {
+      if (status && a.status !== status) return false;
+      if (species && a.species !== species) return false;
+      return true;
+    });
+  }, [animals, status, species]);
 
   return (
     <div className="py-8 space-y-8">
@@ -111,27 +120,65 @@ const AnimalsPage: React.FC = () => {
       </section>
 
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="flex items-center gap-2 text-gray-500 text-sm">
-            <SlidersHorizontal className="w-4 h-4" />
-            Status filter
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex items-center gap-2 text-gray-500 text-sm shrink-0">
+              <SlidersHorizontal className="w-4 h-4" />
+              Status
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {statusOptions.map((option) => (
+                <button
+                  key={option.value || 'all'}
+                  type="button"
+                  className={`px-4 py-2 rounded-full border text-sm transition-colors ${
+                    status === option.value
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setStatus(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-3">
-            {statusOptions.map((option) => (
-              <button
-                key={option.value || 'all'}
-                type="button"
-                className={`px-4 py-2 rounded-full border text-sm transition-colors ${
-                  status === option.value
-                    ? 'bg-primary-600 text-white border-primary-600'
-                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                }`}
-                onClick={() => setStatus(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+
+          {speciesOptions.length > 0 && (
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="flex items-center gap-2 text-gray-500 text-sm shrink-0">
+                <SlidersHorizontal className="w-4 h-4" />
+                Species
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className={`px-4 py-2 rounded-full border text-sm transition-colors ${
+                    species === ''
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                  }`}
+                  onClick={() => setSpecies('')}
+                >
+                  All
+                </button>
+                {speciesOptions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={`px-4 py-2 rounded-full border text-sm transition-colors ${
+                      species === s
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                    onClick={() => setSpecies(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {usingPreviewData && (
