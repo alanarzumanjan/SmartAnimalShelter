@@ -14,6 +14,7 @@ export interface AnimalItem {
   shelterName?: string;
   contactName?: string;
   shelterId?: string;
+  shelterOwnerId?: string;
   story?: string;
   personality?: string[];
   careHighlights?: string[];
@@ -140,7 +141,8 @@ export const mapAnimal = (animal: any, index = 0): AnimalItem => {
   location: animal.shelter?.name ?? 'Shelter network',
   shelterName: animal.shelter?.name ?? 'Shelter network',
   contactName: 'Shelter team',
-  shelterId: animal.shelter?.id ?? undefined,
+  shelterId: animal.shelter?.id ?? animal.shelter?.Id ?? undefined,
+  shelterOwnerId: animal.shelter?.ownerId ?? animal.shelter?.OwnerId ?? undefined,
   description: animal.description ?? 'Profile details will appear here once backend content is connected.',
   story: animal.description ?? 'This profile is ready for a fuller story once rescue intake notes and adoption context are connected.',
   personality: [
