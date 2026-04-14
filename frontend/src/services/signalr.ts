@@ -11,6 +11,7 @@ export const getSignalRConnection = (): signalR.HubConnection => {
   connection = new signalR.HubConnectionBuilder()
     .withUrl(`${config.api.baseUrl}/chatHub`, {
       accessTokenFactory: () => token || '',
+      withCredentials: false,
     })
     .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
     .build();
