@@ -53,7 +53,32 @@ public class PetsController : ControllerBase
             .Take(pageSize)
             .ToListAsync();
 
-        return Ok(new { currentPage = page, pageSize, totalCount, totalPages, pets });
+        var result = pets.Select(p => new
+        {
+            p.Id,
+            p.Name,
+            p.Age,
+            p.Color,
+            p.Description,
+            p.ImageUrl,
+            p.Category,
+            p.Price,
+            p.StatusId,
+            p.ShelterId,
+            p.CreatedAt,
+            species = p.Species,
+            breed = p.Breed,
+            gender = p.Gender,
+            status = p.Status,
+            shelter = p.Shelter == null ? null : new
+            {
+                p.Shelter.Id,
+                p.Shelter.Name,
+                p.Shelter.OwnerId
+            }
+        });
+
+        return Ok(new { currentPage = page, pageSize, totalCount, totalPages, pets = result });
     }
 
     [HttpGet("{id}")]
@@ -69,10 +94,36 @@ public class PetsController : ControllerBase
         if (pet == null)
             return NotFound("Pet not found");
 
-        return Ok(pet);
+        return Ok(new
+        {
+            pet.Id,
+            pet.Name,
+            pet.Age,
+            pet.Color,
+            pet.Description,
+            pet.ImageUrl,
+            pet.MongoImageId,
+            pet.Category,
+            pet.Price,
+            pet.ExternalUrl,
+            pet.ShelterId,
+            pet.EnclosureId,
+            pet.CreatedAt,
+            species = pet.Species,
+            breed = pet.Breed,
+            gender = pet.Gender,
+            status = pet.Status,
+            shelter = pet.Shelter == null ? null : new
+            {
+                pet.Shelter.Id,
+                pet.Shelter.Name,
+                pet.Shelter.Address,
+                pet.Shelter.OwnerId
+            }
+        });
     }
 
-    [Authorize(Roles = "veterinarian,shelter,user")]
+    [Authorize(Roles = "veterinarian,shelter")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePetDto dto)
     {
@@ -146,9 +197,9 @@ public class PetsController : ControllerBase
         return Ok(newPet);
     }
 
-    [Authorize(Roles = "veterinarian,shelter,user")]
+    [Authorize(Roles = "veterinarian,shelter")]
     [HttpPatch("{id}")]
-    public async Task<IActionResult> Patch(Guid id, [FromBody] Pet patch)
+    public async Task<IActionResult> Patch(Guid id, [FromBody] PatchPetDto patch)
     {
         var userId = GetUserId();
         if (userId == null)
@@ -160,29 +211,22 @@ public class PetsController : ControllerBase
 
         var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId);
         if (shelter == null || shelter.OwnerId != userId)
-            return Forbid("You do not own this shelter.");
+            return StatusCode(403, "You do not own this shelter.");
 
-        // Apply updates
-        if (!string.IsNullOrWhiteSpace(patch.Name)) pet.Name = patch.Name;
-        if (!string.IsNullOrWhiteSpace(patch.Description)) pet.Description = patch.Description;
-        if (!string.IsNullOrWhiteSpace(patch.ImageUrl)) pet.ImageUrl = patch.ImageUrl;
-        if (!string.IsNullOrWhiteSpace(patch.Color)) pet.Color = patch.Color;
-        if (!string.IsNullOrWhiteSpace(patch.Category)) pet.Category = patch.Category;
-        if (!string.IsNullOrWhiteSpace(patch.Price)) pet.Price = patch.Price;
-        if (!string.IsNullOrWhiteSpace(patch.ExternalUrl)) pet.ExternalUrl = patch.ExternalUrl;
+        if (patch.Name != null) pet.Name = patch.Name;
+        if (patch.Description != null) pet.Description = patch.Description;
+        if (patch.Color != null) pet.Color = patch.Color;
         if (patch.Age != null) pet.Age = patch.Age;
         if (patch.GenderId != null) pet.GenderId = patch.GenderId;
-        if (patch.BreedId != 0) pet.BreedId = patch.BreedId;
-        if (patch.SpeciesId != 0) pet.SpeciesId = patch.SpeciesId;
+        if (patch.SpeciesId != null) pet.SpeciesId = patch.SpeciesId.Value;
+        if (patch.StatusId != null) pet.StatusId = patch.StatusId.Value;
 
-        using var transaction = await _db.Database.BeginTransactionAsync();
         await _db.SaveChangesAsync();
-        await transaction.CommitAsync();
 
         return Ok(pet);
     }
 
-    [Authorize(Roles = "veterinarian,shelter,user")]
+    [Authorize(Roles = "veterinarian,shelter")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -196,7 +240,7 @@ public class PetsController : ControllerBase
 
         var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId);
         if (shelter == null || shelter.OwnerId != userId)
-            return Forbid("You do not own this shelter.");
+            return StatusCode(403, "You do not own this shelter.");
 
         using var transaction = await _db.Database.BeginTransactionAsync();
         _db.Pets.Remove(pet);
@@ -206,7 +250,7 @@ public class PetsController : ControllerBase
         return Ok("Pet deleted.");
     }
 
-    [Authorize(Roles = "veterinarian,shelter,user")]
+    [Authorize(Roles = "veterinarian,shelter")]
     [HttpPatch("{id}/breed")]
     public async Task<IActionResult> UpdateBreed(Guid id, [FromBody] UpdateBreedDto dto)
     {
@@ -222,7 +266,7 @@ public class PetsController : ControllerBase
 
         var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId);
         if (shelter == null || shelter.OwnerId != userId)
-            return Forbid("You do not own this shelter.");
+            return StatusCode(403, "You do not own this shelter.");
 
         // Resolve or create breed by name
         var breedName = dto?.breedName?.Trim();
@@ -237,6 +281,17 @@ public class PetsController : ControllerBase
 
         return Ok(new { message = "Breed updated", breedId, breedName });
     }
+}
+
+public class PatchPetDto
+{
+    public string? Name { get; set; }
+    public string? Description { get; set; }
+    public string? Color { get; set; }
+    public float? Age { get; set; }
+    public int? GenderId { get; set; }
+    public int? SpeciesId { get; set; }
+    public int? StatusId { get; set; }
 }
 
 public class UpdateBreedDto
