@@ -18,6 +18,7 @@ interface AnimalCardProps {
   description?: string;
   tags?: string[];
   shelterId?: string;
+  shelterOwnerId?: string;
 }
 
 const statusColors = {
@@ -37,16 +38,10 @@ const AnimalCard: React.FC<AnimalCardProps> = ({
   location,
   description,
   tags = [],
-  shelterId,
+  shelterOwnerId,
 }) => {
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
 
-  // Check if user can manage this pet (veterinarian, shelter, or pet owner)
-  const canManagePet = isAuthenticated && (
-    user?.role === 'veterinarian' || 
-    user?.role === 'shelter' || 
-    user?.role === 'user'
-  );
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -62,9 +57,7 @@ const AnimalCard: React.FC<AnimalCardProps> = ({
     }
   };
 
-  // Veterinarians can manage all pets. Shelter users can manage pets in their shelters.
-  // Users can manage their own pets (backend enforces ownership)
-  const isAuthorized = canManagePet;
+  const isAuthorized = isAuthenticated && user?.role === 'shelter' && user?.id === shelterOwnerId;
 
   return (
     <article className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col h-full">
