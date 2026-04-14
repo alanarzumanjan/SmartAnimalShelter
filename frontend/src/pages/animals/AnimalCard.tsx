@@ -96,7 +96,7 @@ const AnimalCard: React.FC<AnimalCardProps> = ({
       <div className="space-y-2 text-sm text-gray-500 mb-4">
         {age && <div>Age: {age}</div>}
         {location && <div>Location: {location}</div>}
-        {description && <p className="text-gray-600 leading-6">{description}</p>}
+        {description && <p className="text-gray-600 leading-6 line-clamp-2">{description}</p>}
       </div>
       {tags.length > 0 && (
         <div className="mt-auto flex flex-wrap gap-2">
