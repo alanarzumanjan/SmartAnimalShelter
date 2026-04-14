@@ -23,7 +23,7 @@ const AnimalsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [usingPreviewData, setUsingPreviewData] = useState(false);
 
-  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter');
+  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter' || user?.role === 'user');
 
   useEffect(() => {
     let isMounted = true;
