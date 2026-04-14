@@ -106,14 +106,14 @@ const AnimalDetailsPage: React.FC = () => {
 
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="bg-gray-100 min-h-[360px] flex items-center justify-center">
+          <div className="bg-gray-100 min-h-[360px] max-h-[480px] flex items-center justify-center overflow-hidden">
             {animal.imageUrl ? (
               <img src={animal.imageUrl} alt={animal.name} className="w-full h-full object-cover" />
             ) : (
               <span className="text-8xl text-gray-300">🐾</span>
             )}
           </div>
-          <div className="p-8 md:p-10">
+          <div className="p-8 md:p-10 overflow-y-auto max-h-[480px] min-w-0">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-4">
               <PawPrint className="w-4 h-4" />
               More Information
@@ -164,9 +164,9 @@ const AnimalDetailsPage: React.FC = () => {
       </section>
 
       <section className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 min-w-0 overflow-hidden">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Full description</h2>
-          <p className="text-gray-600 leading-7 mb-6">{animal.story ?? animal.description}</p>
+          <p className="text-gray-600 leading-7 mb-6 break-words overflow-wrap-anywhere">{animal.story ?? animal.description}</p>
 
           <div className="space-y-6">
             <div>
