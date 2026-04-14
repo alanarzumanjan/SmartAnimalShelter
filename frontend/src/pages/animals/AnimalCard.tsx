@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { Pencil, Trash2 } from 'lucide-react';
@@ -40,28 +40,13 @@ const AnimalCard: React.FC<AnimalCardProps> = ({
   shelterId,
 }) => {
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const [isOwned, setIsOwned] = useState(false);
 
-  useEffect(() => {
-    const checkOwnership = async () => {
-      if (!isAuthenticated || !user || (user.role !== 'veterinarian' && user.role !== 'shelter')) {
-        setIsOwned(false);
-        return;
-      }
-      if (user.role === 'veterinarian') {
-        setIsOwned(true);
-        return;
-      }
-      // For shelter role, check if they own the shelter
-      try {
-        const res = await api.get(`/shelters/${shelterId}`);
-        setIsOwned(res.data.ownerId === user.id);
-      } catch {
-        setIsOwned(false);
-      }
-    };
-    checkOwnership();
-  }, [id, shelterId, user, isAuthenticated]);
+  // Check if user can manage this pet (veterinarian, shelter, or pet owner)
+  const canManagePet = isAuthenticated && (
+    user?.role === 'veterinarian' || 
+    user?.role === 'shelter' || 
+    user?.role === 'user'
+  );
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -71,12 +56,15 @@ const AnimalCard: React.FC<AnimalCardProps> = ({
       await api.delete(`/pets/${id}`);
       toast.success(`${name}'s profile deleted`);
       window.location.reload();
-    } catch {
-      toast.error('Failed to delete');
+    } catch (err: any) {
+      const msg = err.response?.data || 'Failed to delete';
+      toast.error(typeof msg === 'string' ? msg : 'Failed to delete');
     }
   };
 
-  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter') && isOwned;
+  // Veterinarians can manage all pets. Shelter users can manage pets in their shelters.
+  // Users can manage their own pets (backend enforces ownership)
+  const isAuthorized = canManagePet;
 
   return (
     <article className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col h-full">
