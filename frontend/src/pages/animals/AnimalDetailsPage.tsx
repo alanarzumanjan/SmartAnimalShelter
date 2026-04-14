@@ -14,7 +14,6 @@ const AnimalDetailsPage: React.FC = () => {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
   const [animal, setAnimal] = useState<AnimalItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isOwned, setIsOwned] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -37,20 +36,6 @@ const AnimalDetailsPage: React.FC = () => {
         const response = await api.get(`/pets/${animalId}`);
         if (isMounted) {
           setAnimal(mapAnimal(response.data));
-          const shelterId = response.data.shelter?.id;
-          // Check ownership for edit/delete
-          if (isAuthenticated && user && (user.role === 'veterinarian' || user.role === 'shelter')) {
-            if (user.role === 'veterinarian') {
-              setIsOwned(true);
-            } else if (shelterId) {
-              try {
-                const res = await api.get(`/shelters/${shelterId}`);
-                setIsOwned(res.data.ownerId === user.id);
-              } catch {
-                setIsOwned(false);
-              }
-            }
-          }
         }
       } catch {
         if (isMounted) {
@@ -68,7 +53,7 @@ const AnimalDetailsPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [animalId, isAuthenticated, user]);
+  }, [animalId]);
 
   const handleDelete = async () => {
     if (!animalId || !window.confirm(`Delete ${animal?.name}'s profile? This cannot be undone.`)) return;
@@ -81,7 +66,9 @@ const AnimalDetailsPage: React.FC = () => {
     }
   };
 
-  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter') && isOwned;
+  // Veterinarians and shelter users can manage all pets
+  // Users can manage their own pets (backend enforces ownership)
+  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter' || user?.role === 'user');
 
   if (isLoading) {
     return <div className="py-16 text-center text-gray-400">Loading pet profile...</div>;
