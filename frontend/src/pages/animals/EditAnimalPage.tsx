@@ -189,7 +189,7 @@ const EditAnimalPage: React.FC = () => {
     }
   };
 
-  const isAuthorized = user?.role === 'veterinarian' || user?.role === 'shelter' || user?.role === 'user';
+  const isAuthorized = user?.role === 'veterinarian' || user?.role === 'shelter';
 
   if (!isAuthorized) {
     return (
