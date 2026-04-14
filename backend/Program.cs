@@ -29,11 +29,15 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
 // MongoDB
-var mongoUri = Environment.GetEnvironmentVariable("MONGO_URI");
+var mongoUri = Environment.GetEnvironmentVariable("MONGO_URI")
+               ?? Environment.GetEnvironmentVariable("MONGODB_CONNECTION_STRING")
+               ?? "mongodb://localhost:27017";
+Console.WriteLine($"🔗 MongoDB URI: {mongoUri}");
+
 var mongoClient = new MongoClient(mongoUri);
 var mongoDb = mongoClient.GetDatabase("PetShelterMedia");
 builder.Services.AddSingleton<IMongoClient>(mongoClient);
-builder.Services.AddSingleton(mongoDb);
+builder.Services.AddSingleton<IMongoDatabase>(mongoDb);
 
 // Swagger
 builder.Services.AddSwaggerGen(c =>
@@ -96,7 +100,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(frontendOrigin)
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
