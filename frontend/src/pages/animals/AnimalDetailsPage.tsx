@@ -68,7 +68,7 @@ const AnimalDetailsPage: React.FC = () => {
 
   // Veterinarians and shelter users can manage all pets
   // Users can manage their own pets (backend enforces ownership)
-  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter' || user?.role === 'user');
+  const isAuthorized = isAuthenticated && user?.role === 'shelter' && user?.id === animal?.shelterOwnerId;
 
   if (isLoading) {
     return <div className="py-16 text-center text-gray-400">Loading pet profile...</div>;
