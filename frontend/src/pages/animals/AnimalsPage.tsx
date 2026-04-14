@@ -23,7 +23,7 @@ const AnimalsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [usingPreviewData, setUsingPreviewData] = useState(false);
 
-  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter' || user?.role === 'user');
+  const isAuthorized = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter');
 
   useEffect(() => {
     let isMounted = true;
@@ -163,6 +163,7 @@ const AnimalsPage: React.FC = () => {
               description={animal.description}
               tags={animal.tags}
               shelterId={animal.shelterId}
+              shelterOwnerId={animal.shelterOwnerId}
             />
           ))}
         </section>
