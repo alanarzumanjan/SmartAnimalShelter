@@ -72,7 +72,7 @@ public class PetsController : ControllerBase
         return Ok(pet);
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "veterinarian,shelter,user")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePetDto dto)
     {
@@ -146,7 +146,7 @@ public class PetsController : ControllerBase
         return Ok(newPet);
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "veterinarian,shelter,user")]
     [HttpPatch("{id}")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] Pet patch)
     {
@@ -182,7 +182,7 @@ public class PetsController : ControllerBase
         return Ok(pet);
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "veterinarian,shelter,user")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -206,7 +206,7 @@ public class PetsController : ControllerBase
         return Ok("Pet deleted.");
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "veterinarian,shelter,user")]
     [HttpPatch("{id}/breed")]
     public async Task<IActionResult> UpdateBreed(Guid id, [FromBody] UpdateBreedDto dto)
     {
