@@ -121,6 +121,14 @@ export const mapAnimal = (animal: any, index = 0): AnimalItem => {
     }
   }
 
+  // Resolve image URL: prepend API base URL for relative paths
+  let resolvedImageUrl: string | undefined = undefined;
+  if (animal.imageUrl) {
+    resolvedImageUrl = animal.imageUrl.startsWith('http')
+      ? animal.imageUrl
+      : `${import.meta.env.VITE_API_URL || 'https://api.alantech.id.lv'}${animal.imageUrl}`;
+  }
+
   return {
   id: animal.id ?? `animal-${index}`,
   name: animal.name ?? 'Unnamed pet',
@@ -128,7 +136,7 @@ export const mapAnimal = (animal: any, index = 0): AnimalItem => {
   breed: animal.breed?.name ?? animal.breed ?? undefined,
   age: ageDisplay,
   status: normalizeStatus(animal.status?.name ?? animal.status),
-  imageUrl: animal.imageUrl ?? undefined,
+  imageUrl: resolvedImageUrl,
   location: animal.shelter?.name ?? 'Shelter network',
   shelterName: animal.shelter?.name ?? 'Shelter network',
   contactName: 'Shelter team',
