@@ -93,7 +93,7 @@ const Header: React.FC = () => {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/dashboard"
+                    to="/profile"
                     className="hidden sm:block rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
                   >
                     <User className="w-4 h-4 inline mr-1" />
