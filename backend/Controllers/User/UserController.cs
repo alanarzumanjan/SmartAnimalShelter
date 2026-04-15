@@ -100,6 +100,9 @@ public class UsersController : ControllerBase
             user.Phone = encryptedPhone ?? user.Phone;
         }
 
+        if (dto.address != null)
+            user.Address = dto.address;
+
         if (!string.IsNullOrWhiteSpace(dto.role))
             user.Role = dto.role;
 
@@ -135,8 +138,16 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
+        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
+            return Unauthorized();
+
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
+
         var user = await db.Users.FindAsync(id);
         if (user == null)
             return NotFound("User not found.");
@@ -196,8 +207,15 @@ public class UsersController : ControllerBase
         if (currentUserId != user.Id && !User.IsInRole("admin"))
             return Forbid();
 
+        if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
+            return BadRequest("Current password is required.");
+
         if (string.IsNullOrWhiteSpace(dto.NewPassword))
-            return BadRequest("Password is required.");
+            return BadRequest("New password is required.");
+
+        // Verify current password
+        if (!_passwordHashingService.VerifyPassword(dto.CurrentPassword, user.PasswordHash))
+            return BadRequest("Current password is incorrect.");
 
         user.PasswordHash = _passwordHashingService.HashPassword(dto.NewPassword);
         await db.SaveChangesAsync();
