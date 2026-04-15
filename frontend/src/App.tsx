@@ -22,6 +22,7 @@ import EditAnimalPage from '@/pages/animals/EditAnimalPage';
 import AdoptionFormPage from '@/pages/animals/AdoptionFormPage';
 import ChatPage from '@/pages/chat/ChatPage';
 import StorePage from '@/pages/store/StorePage';
+import ProfilePage from '@/pages/profile/ProfilePage';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -113,6 +114,14 @@ const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute requireAdmin>
                 <AdminPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
               </ProtectedRoute>
             }
           />
