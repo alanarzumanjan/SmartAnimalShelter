@@ -8,13 +8,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode;
 }
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  error,
-  icon,
-  className,
-  ...props
-}) => {
+export function Input({ label, error, icon, className, ...props }: InputProps) {
   return (
     <div className="w-full">
       {label && (
@@ -45,4 +39,4 @@ export const Input: React.FC<InputProps> = ({
       )}
     </div>
   );
-};
+}
