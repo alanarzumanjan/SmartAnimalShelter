@@ -5,7 +5,7 @@ import { RootState } from '@/store/store';
 import { Button } from '@/components/ui/Button';
 import { Heart, Wifi, BarChart3, ArrowRight, MessageSquare } from 'lucide-react';
 
-const HomePage: React.FC = () => {
+export default function HomePage() {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
   return (
@@ -78,6 +78,4 @@ const HomePage: React.FC = () => {
       </div>
     </div>
   );
-};
-
-export default HomePage;
+}
