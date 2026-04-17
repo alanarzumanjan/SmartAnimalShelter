@@ -29,24 +29,16 @@ interface ProtectedRouteProps {
   requireAdmin?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children,
-  requireAdmin = false,
-}) => {
+function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (requireAdmin && user?.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (requireAdmin && user?.role !== 'admin') return <Navigate to="/dashboard" replace />;
 
   return <>{children}</>;
-};
+}
 
-const AppRoutes: React.FC = () => {
+function AppRoutes() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -135,7 +127,7 @@ const AppRoutes: React.FC = () => {
   );
 };
 
-const App: React.FC = () => {
+export default function App() {
   return (
     <Provider store={store}>
       <ThemeProvider>
@@ -145,6 +137,4 @@ const App: React.FC = () => {
       </ThemeProvider>
     </Provider>
   );
-};
-
-export default App;
+}
