@@ -29,26 +29,24 @@ export interface CheckoutSessionStatus {
   customerName?: string | null;
 }
 
-interface CreateCheckoutSessionInput {
+interface CreateCheckoutInput {
   quantity: number;
   customerEmail?: string;
   customerName?: string;
   userId?: string;
 }
 
-const unwrapData = <T>(payload: any): T => payload?.data ?? payload;
-
 export async function getStoreProduct(): Promise<StoreProduct> {
-  const response = await api.get('/payments/store-product');
-  return unwrapData<StoreProduct>(response.data);
+  const { data } = await api.get('/payments/store-product');
+  return data?.data ?? data;
 }
 
-export async function createCheckoutSession(input: CreateCheckoutSessionInput): Promise<CheckoutSession> {
-  const response = await api.post('/payments/checkout-session', input);
-  return unwrapData<CheckoutSession>(response.data);
+export async function createCheckoutSession(input: CreateCheckoutInput): Promise<CheckoutSession> {
+  const { data } = await api.post('/payments/checkout-session', input);
+  return data?.data ?? data;
 }
 
 export async function getCheckoutSessionStatus(sessionId: string): Promise<CheckoutSessionStatus> {
-  const response = await api.get(`/payments/checkout-session/${encodeURIComponent(sessionId)}`);
-  return unwrapData<CheckoutSessionStatus>(response.data);
+  const { data } = await api.get(`/payments/checkout-session/${encodeURIComponent(sessionId)}`);
+  return data?.data ?? data;
 }
