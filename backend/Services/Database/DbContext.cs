@@ -32,6 +32,10 @@ public class AppDbContext : DbContext
     // Orders & Payments
     public DbSet<Order> Orders => Set<Order>();
 
+    // Chat
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<ChatRoomMember> ChatRoomMembers => Set<ChatRoomMember>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
