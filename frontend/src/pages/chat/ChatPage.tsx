@@ -85,6 +85,14 @@ export default function ChatPage() {
   }, []);
 
   async function switchRoom(roomId: string, recipientId?: string) {
+    // Ensure connected before joining the SignalR group
+    try {
+      await connect();
+      setConnected(true);
+    } catch {
+      setConnected(false);
+    }
+
     if (prevRoomRef.current && prevRoomRef.current !== roomId) {
       try { await leaveRoom(prevRoomRef.current); } catch { /* ignore */ }
     }
