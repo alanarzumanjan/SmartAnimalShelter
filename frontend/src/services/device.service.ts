@@ -29,81 +29,90 @@ interface DeviceRegisterInput {
   userId: string;
 }
 
-const unwrapData = <T>(payload: any): T => payload?.data ?? payload;
+type RawRecord = Record<string, unknown>;
 
-const normalizeDevice = (raw: any): DeviceRecord => {
-  const deviceId = String(raw?.deviceId ?? raw?.id ?? '');
+function unwrapData<T>(payload: unknown): T {
+  const p = payload as RawRecord;
+  return (p?.data ?? payload) as T;
+}
 
+function str(v: unknown, fallback = ''): string {
+  return v != null ? String(v) : fallback;
+}
+
+function normalizeDevice(raw: unknown): DeviceRecord {
+  const r = raw as RawRecord;
+  const deviceId = str(r?.deviceId ?? r?.id);
   return {
     id: deviceId,
-    uuid: raw?.uuid ? String(raw.uuid) : undefined,
+    uuid: r?.uuid ? str(r.uuid) : undefined,
     deviceId,
-    name: String(raw?.name ?? 'Unnamed Device'),
-    location: String(raw?.location ?? 'Unknown'),
-    description: raw?.description ? String(raw.description) : undefined,
-    registeredAt: raw?.registeredAt ? String(raw.registeredAt) : undefined,
-    lastSeenAt: raw?.lastSeenAt ? String(raw.lastSeenAt) : null,
-    userId: raw?.userId ? String(raw.userId) : undefined,
+    name: str(r?.name, 'Unnamed Device'),
+    location: str(r?.location, 'Unknown'),
+    description: r?.description ? str(r.description) : undefined,
+    registeredAt: r?.registeredAt ? str(r.registeredAt) : undefined,
+    lastSeenAt: r?.lastSeenAt ? str(r.lastSeenAt) : null,
+    userId: r?.userId ? str(r.userId) : undefined,
   };
-};
+}
 
-const normalizeMeasurement = (raw: any): MeasurementRecord => ({
-  id: String(raw?.id ?? crypto.randomUUID()),
-  deviceId: String(raw?.deviceId ?? ''),
-  co2: Number(raw?.co2 ?? 0),
-  temperature: Number(raw?.temperature ?? 0),
-  humidity: Number(raw?.humidity ?? 0),
-  timestamp: String(raw?.timestamp ?? ''),
-  userId: raw?.userId ? String(raw.userId) : undefined,
-});
+function normalizeMeasurement(raw: unknown): MeasurementRecord {
+  const r = raw as RawRecord;
+  return {
+    id: str(r?.id, crypto.randomUUID()),
+    deviceId: str(r?.deviceId),
+    co2: Number(r?.co2 ?? 0),
+    temperature: Number(r?.temperature ?? 0),
+    humidity: Number(r?.humidity ?? 0),
+    timestamp: str(r?.timestamp),
+    userId: r?.userId ? str(r.userId) : undefined,
+  };
+}
 
-export const getStoredUser = (): { id: string; name?: string; email?: string; role?: string } | null => {
+export function getStoredUser(): { id: string; name?: string; email?: string; role?: string } | null {
   const raw = localStorage.getItem('user');
-  if (!raw) {
-    return null;
-  }
-
+  if (!raw) return null;
   try {
     return JSON.parse(raw) as { id: string; name?: string; email?: string; role?: string };
   } catch {
     return null;
   }
-};
+}
 
 export async function getUserDevices(userId: string): Promise<DeviceRecord[]> {
-  const response = await api.get(`/devices/user/${userId}`);
-  const items = unwrapData<any[]>(response.data);
+  const { data } = await api.get(`/devices/user/${userId}`);
+  const items = unwrapData<unknown[]>(data);
   return Array.isArray(items) ? items.map(normalizeDevice) : [];
 }
 
 export async function getDevice(deviceId: string): Promise<DeviceRecord> {
-  const response = await api.get(`/devices/id/${encodeURIComponent(deviceId)}`);
-  return normalizeDevice(unwrapData<any>(response.data));
+  const { data } = await api.get(`/devices/id/${encodeURIComponent(deviceId)}`);
+  return normalizeDevice(unwrapData<unknown>(data));
 }
 
 export async function registerDevice(input: DeviceRegisterInput): Promise<DeviceRecord> {
-  const response = await api.post('/devices/register', input);
-  return normalizeDevice(unwrapData<any>(response.data));
+  const { data } = await api.post('/devices/register', input);
+  return normalizeDevice(unwrapData<unknown>(data));
 }
 
 export async function getLatestMeasurement(deviceId: string): Promise<MeasurementRecord | null> {
   try {
-    const response = await api.get(`/measurements/${encodeURIComponent(deviceId)}/latest`);
-    return normalizeMeasurement(unwrapData<any>(response.data));
+    const { data } = await api.get(`/measurements/${encodeURIComponent(deviceId)}/latest`);
+    return normalizeMeasurement(unwrapData<unknown>(data));
   } catch {
     return null;
   }
 }
 
 export async function getDeviceMeasurements(deviceId: string, limit = 50): Promise<MeasurementRecord[]> {
-  const response = await api.get(`/measurements/${encodeURIComponent(deviceId)}?limit=${limit}`);
-  const items = unwrapData<any[]>(response.data);
+  const { data } = await api.get(`/measurements/${encodeURIComponent(deviceId)}?limit=${limit}`);
+  const items = unwrapData<unknown[]>(data);
   return Array.isArray(items) ? items.map(normalizeMeasurement) : [];
 }
 
 export async function updateDevice(deviceId: string, updates: { name?: string; location?: string }): Promise<DeviceRecord> {
-  const response = await api.put(`/devices/${encodeURIComponent(deviceId)}`, updates);
-  return normalizeDevice(unwrapData<any>(response.data));
+  const { data } = await api.put(`/devices/${encodeURIComponent(deviceId)}`, updates);
+  return normalizeDevice(unwrapData<unknown>(data));
 }
 
 export async function getUserMeasurements(
@@ -116,13 +125,13 @@ export async function getUserMeasurements(
   if (options?.limit) params.set('limit', String(options.limit));
   if (options?.offset) params.set('offset', String(options.offset));
 
-  const response = await api.get(`/measurements/user/${userId}?${params.toString()}`);
-  const payload = response.data;
-  const items = payload?.data ?? payload;
+  const { data } = await api.get(`/measurements/user/${userId}?${params.toString()}`);
+  const payload = data as RawRecord;
+  const items = payload?.data ?? data;
   return {
-    data: Array.isArray(items) ? items.map(normalizeMeasurement) : [],
-    total: payload?.total ?? 0,
-    limit: payload?.limit ?? 0,
-    offset: payload?.offset ?? 0,
+    data: Array.isArray(items) ? (items as unknown[]).map(normalizeMeasurement) : [],
+    total: Number(payload?.total ?? 0),
+    limit: Number(payload?.limit ?? 0),
+    offset: Number(payload?.offset ?? 0),
   };
 }
