@@ -1,310 +1,339 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Building2, MessageSquare, Send, UserRound } from 'lucide-react';
-import { connectSignalR, disconnectSignalR, getSignalRConnection } from '@/services/signalr';
+import { useSelector } from 'react-redux';
+import { MessageSquare, Send, Plus } from 'lucide-react';
 
-interface Message {
-  user: string;
-  text: string;
-  timestamp: string;
-}
+import api from '@/services/api';
+import { connect, disconnect, getConnection, joinRoom, leaveRoom, sendMessage } from '@/services/signalr';
+import type { RootState } from '@/store/store';
 
-interface Conversation {
+interface ChatMessage {
   id: string;
-  title: string;
-  subtitle: string;
-  petName?: string;
-  messages: Message[];
+  roomId: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+  createdAt: string;
 }
 
-const defaultConversations: Conversation[] = [
-  {
-    id: 'riga-central-shelter',
-    title: 'Riga Central Shelter',
-    subtitle: 'Luna',
-    petName: 'Luna',
-    messages: [
-      {
-        user: 'Marta Ozola',
-        text: 'Hello. Luna is calm indoors and does best with a quiet introduction to a new space.',
-        timestamp: '09:14',
-      },
-      {
-        user: 'You',
-        text: 'Thank you. Is she comfortable with apartment living?',
-        timestamp: '09:17',
-      },
-    ],
-  },
-  {
-    id: 'jurmala-partner-shelter',
-    title: 'Jurmala Partner Shelter',
-    subtitle: 'Archie',
-    petName: 'Archie',
-    messages: [
-      {
-        user: 'Edgars Briedis',
-        text: 'Archie enjoys long walks and already knows several commands.',
-        timestamp: 'Yesterday',
-      },
-    ],
-  },
-  {
-    id: 'coastal-shelter-network',
-    title: 'Coastal Shelter Network',
-    subtitle: 'General inquiry',
-    messages: [
-      {
-        user: 'Laura Berzina',
-        text: 'Feel free to ask about matching, visits, or adoption preparation.',
-        timestamp: 'Monday',
-      },
-    ],
-  },
-];
+interface Room {
+  roomId: string;
+  lastMessage: {
+    senderName: string;
+    text: string;
+    createdAt: string;
+  };
+}
 
-const slugify = (value: string) =>
-  value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
+function formatTime(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  return isToday
+    ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
 
-const ChatPage: React.FC = () => {
+function roomIdFromTarget(target: string) {
+  return target.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+export default function ChatPage() {
   const [searchParams] = useSearchParams();
-  const [conversations, setConversations] = useState<Conversation[]>(defaultConversations);
-  const [activeConversationId, setActiveConversationId] = useState(defaultConversations[0].id);
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [activeRoom, setActiveRoom] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [connected, setConnected] = useState(false);
+  const [newRoomName, setNewRoomName] = useState('');
+  const [showNewRoom, setShowNewRoom] = useState(false);
 
-  const target = searchParams.get('target');
-  const pet = searchParams.get('pet');
+  // Keep a ref so the SignalR handler always sees the current room
+  const activeRoomRef = useRef<string | null>(null);
+  const prevRoomRef = useRef<string | null>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    let mounted = true;
+  function scrollToBottom() {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }
 
-    connectSignalR()
-      .then(() => {
-        if (mounted) {
-          setIsConnected(true);
-        }
-      })
-      .catch(() => {
-        if (mounted) {
-          setIsConnected(false);
-        }
+  async function loadRooms() {
+    try {
+      const { data } = await api.get('/chat/rooms');
+      setRooms(data);
+    } catch { /* no rooms yet */ }
+  }
+
+  const loadMessages = useCallback(async (roomId: string) => {
+    try {
+      const { data } = await api.get(`/chat/rooms/${encodeURIComponent(roomId)}/messages`);
+      // Merge with any messages already received via SignalR during loading
+      setMessages((prev) => {
+        const ids = new Set(data.map((m: ChatMessage) => m.id));
+        const extra = prev.filter((m) => !ids.has(m.id) && m.roomId === roomId);
+        return [...data, ...extra].sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
       });
+    } catch {
+      setMessages([]);
+    }
+  }, []);
 
-    const connection = getSignalRConnection();
-    const handleReceive = (user: string, text: string, timestamp: string) => {
-      setConversations((current) =>
-        current.map((conversation) =>
-          conversation.id === activeConversationId
-            ? {
-                ...conversation,
-                messages: [...conversation.messages, { user, text, timestamp }],
-              }
-            : conversation
-        )
-      );
-    };
-
-    connection.on('ReceiveMessage', handleReceive);
-
-    return () => {
-      mounted = false;
-      connection.off('ReceiveMessage', handleReceive);
-      disconnectSignalR();
-    };
-  }, [activeConversationId]);
-
-  useEffect(() => {
-    if (!target) {
-      return;
+  async function switchRoom(roomId: string, recipientId?: string) {
+    if (prevRoomRef.current && prevRoomRef.current !== roomId) {
+      try { await leaveRoom(prevRoomRef.current); } catch { /* ignore */ }
     }
 
-    const conversationId = slugify(target);
+    activeRoomRef.current = roomId;
+    setActiveRoom(roomId);
+    setMessages([]); // clear previous room messages immediately
+    prevRoomRef.current = roomId;
 
-    setConversations((current) => {
-      const existingConversation = current.find((conversation) => conversation.id === conversationId);
-      if (existingConversation) {
-        return current;
-      }
+    try {
+      await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
+        recipientId: recipientId || null,
+      });
+    } catch { /* ignore */ }
 
+    try { await joinRoom(roomId); } catch { /* ignore */ }
+    await loadMessages(roomId);
+  }
+
+  // Connect SignalR once on mount
+  useEffect(() => {
+    connect()
+      .then(() => setConnected(true))
+      .catch(() => setConnected(false));
+
+    const conn = getConnection();
+
+    conn.on('ReceiveMessage', (msg: ChatMessage) => {
+      // Only add if it belongs to the currently open room
+      if (msg.roomId !== activeRoomRef.current) return;
+      setMessages((prev) => {
+        // Avoid duplicates (optimistic update + server echo)
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+      loadRooms();
+    });
+
+    return () => {
+      conn.off('ReceiveMessage');
+      if (prevRoomRef.current) leaveRoom(prevRoomRef.current);
+      disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    loadRooms();
+  }, []);
+
+  // Handle ?target= from animal page
+  useEffect(() => {
+    const target = searchParams.get('target');
+    const pet = searchParams.get('pet');
+    const recipientId = searchParams.get('recipientId') || undefined;
+    if (!target) return;
+
+    const roomId = roomIdFromTarget(target);
+
+    setRooms((prev) => {
+      if (prev.find((r) => r.roomId === roomId)) return prev;
       return [
         {
-          id: conversationId,
-          title: target,
-          subtitle: pet ?? 'New inquiry',
-          petName: pet ?? undefined,
-          messages: [
-            {
-              user: target,
-              text: pet
-                ? `Thanks for reaching out about ${pet}. You can continue the conversation here.`
-                : 'Thanks for reaching out. You can continue the conversation here.',
-              timestamp: 'Now',
-            },
-          ],
+          roomId,
+          lastMessage: {
+            senderName: target,
+            text: pet ? `Inquiry about ${pet}` : 'New conversation',
+            createdAt: new Date().toISOString(),
+          },
         },
-        ...current,
+        ...prev,
       ];
     });
 
-    setActiveConversationId(conversationId);
-  }, [target, pet]);
+    switchRoom(roomId, recipientId);
+  }, [searchParams]);
 
-  const activeConversation = useMemo(
-    () => conversations.find((conversation) => conversation.id === activeConversationId) ?? conversations[0],
-    [activeConversationId, conversations]
-  );
-
+  // Auto-open first room
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConversation]);
-
-  const handleSend = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!input.trim() || !activeConversation) {
-      return;
+    if (!activeRoom && rooms.length > 0) {
+      switchRoom(rooms[0].roomId);
     }
+  }, [rooms]);
 
-    const newMessage: Message = {
-      user: 'You',
-      text: input.trim(),
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
+  // Scroll to bottom when messages load or new message arrives
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
-    setConversations((current) =>
-      current.map((conversation) =>
-        conversation.id === activeConversation.id
-          ? {
-              ...conversation,
-              messages: [...conversation.messages, newMessage],
-            }
-          : conversation
-      )
-    );
-
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!input.trim() || !activeRoom || !connected) return;
     try {
-      const connection = getSignalRConnection();
-      if (isConnected) {
-        await connection.invoke('SendMessage', input.trim());
-      }
-    } catch {
-      setIsConnected(false);
-    } finally {
+      await sendMessage(activeRoom, input.trim());
       setInput('');
+    } catch {
+      setConnected(false);
     }
-  };
+  }
 
-  if (!activeConversation) {
-    return null;
+  function handleCreateRoom(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newRoomName.trim()) return;
+    const roomId = roomIdFromTarget(newRoomName.trim());
+    setRooms((prev) => {
+      if (prev.find((r) => r.roomId === roomId)) return prev;
+      return [
+        {
+          roomId,
+          lastMessage: {
+            senderName: user?.name ?? 'You',
+            text: 'Conversation started',
+            createdAt: new Date().toISOString(),
+          },
+        },
+        ...prev,
+      ];
+    });
+    setNewRoomName('');
+    setShowNewRoom(false);
+    switchRoom(roomId);
   }
 
   return (
     <div className="py-8 space-y-6">
       <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-        <div className="flex items-center gap-3 mb-3">
-          <MessageSquare className="w-6 h-6 text-primary-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Chats</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="w-6 h-6 text-primary-600" />
+            <h1 className="text-3xl font-bold text-gray-900">Chats</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-300'}`} />
+            <span className="text-sm text-gray-500">{connected ? 'Connected' : 'Offline'}</span>
+          </div>
         </div>
-        <p className="text-gray-600 max-w-3xl">
-          Manage conversations with shelters and other people listing pets. Open a pet profile, press Chat, and the relevant conversation will appear here.
-        </p>
       </section>
 
-      <section className="grid lg:grid-cols-[320px_1fr] gap-6 min-h-[680px]">
-        <aside className="bg-white rounded-3xl border border-gray-100 shadow-sm p-4">
-          <div className="text-sm font-medium text-gray-500 px-3 py-2">Active conversations</div>
-          <div className="space-y-2">
-            {conversations.map((conversation) => {
-              const lastMessage = conversation.messages[conversation.messages.length - 1];
+      <section className="grid lg:grid-cols-[300px_1fr] gap-6 h-[600px]">
+        {/* Sidebar */}
+        <aside className="bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
+            <span className="text-sm font-medium text-gray-500">Conversations</span>
+            <button
+              onClick={() => setShowNewRoom((v) => !v)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
+              title="New conversation"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          </div>
 
-              return (
-                <button
-                  key={conversation.id}
-                  type="button"
-                  onClick={() => setActiveConversationId(conversation.id)}
-                  className={`w-full text-left rounded-2xl px-4 py-4 transition-colors ${
-                    activeConversation.id === conversation.id
-                      ? 'bg-primary-50 border border-primary-100'
-                      : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-1">
-                    <div className="font-semibold text-gray-900">{conversation.title}</div>
-                    <div className="text-xs text-gray-400">{lastMessage?.timestamp}</div>
-                  </div>
-                  <div className="text-sm text-gray-500 mb-2">{conversation.subtitle}</div>
-                  <div className="text-sm text-gray-600 line-clamp-2">{lastMessage?.text}</div>
-                </button>
-              );
-            })}
+          {showNewRoom && (
+            <form onSubmit={handleCreateRoom} className="px-3 py-2 border-b border-gray-100 shrink-0">
+              <input
+                autoFocus
+                type="text"
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                placeholder="Room name..."
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+              />
+            </form>
+          )}
+
+          <div className="flex-1 overflow-y-auto p-2 space-y-1">
+            {rooms.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-8">No conversations yet</p>
+            )}
+            {rooms.map((room) => (
+              <button
+                key={room.roomId}
+                type="button"
+                onClick={() => switchRoom(room.roomId)}
+                className={`w-full text-left rounded-2xl px-4 py-3 transition-colors ${
+                  activeRoom === room.roomId
+                    ? 'bg-primary-50 border border-primary-100'
+                    : 'hover:bg-gray-50 border border-transparent'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-semibold text-sm text-gray-900 truncate">{room.roomId}</span>
+                  <span className="text-xs text-gray-400 shrink-0 ml-2">{formatTime(room.lastMessage.createdAt)}</span>
+                </div>
+                <p className="text-xs text-gray-500 truncate">{room.lastMessage.text}</p>
+              </button>
+            ))}
           </div>
         </aside>
 
+        {/* Chat window */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">{activeConversation.title}</h2>
-              <p className="text-sm text-gray-500">
-                {activeConversation.petName ? `Conversation about ${activeConversation.petName}` : activeConversation.subtitle}
-              </p>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="inline-flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
-                Shelter contact
-              </div>
-              <div className="inline-flex items-center gap-2">
-                <UserRound className="w-4 h-4" />
-                {isConnected ? 'Live' : 'Offline draft'}
+          {!activeRoom ? (
+            <div className="flex-1 flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-200" />
+                <p>Select a conversation or start a new one</p>
               </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="px-6 py-4 border-b border-gray-100 shrink-0">
+                <h2 className="font-bold text-gray-900">{activeRoom}</h2>
+              </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-6 bg-gray-50">
-            {activeConversation.messages.map((message, index) => {
-              const isOwnMessage = message.user === 'You';
-
-              return (
-                <div key={`${message.timestamp}-${index}`} className={`mb-4 flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xl rounded-2xl px-4 py-3 shadow-sm ${isOwnMessage ? 'bg-primary-600 text-white' : 'bg-white text-gray-800'}`}>
-                    <div className={`text-xs mb-1 ${isOwnMessage ? 'text-primary-100' : 'text-gray-400'}`}>
-                      {message.user} • {message.timestamp}
-                    </div>
-                    <div>{message.text}</div>
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <form onSubmit={handleSend} className="p-5 border-t border-gray-100 bg-white">
-            <div className="flex gap-3">
-              <input
-                type="text"
-                className="flex-1 border border-gray-300 rounded-2xl px-4 py-3 outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder={isConnected ? 'Type your message...' : 'Connection unavailable, but you can still prepare the draft.'}
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-              />
-              <button
-                type="submit"
-                disabled={!input.trim()}
-                className="px-5 py-3 rounded-2xl bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+              {/* Messages — fixed height, internal scroll only */}
+              <div
+                ref={messagesContainerRef}
+                className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50 space-y-3"
               >
-                <Send className="w-4 h-4" />
-                Send
-              </button>
-            </div>
-          </form>
+                {messages.map((msg) => {
+                  const isOwn = msg.senderId === user?.id;
+                  return (
+                    <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-sm rounded-2xl px-4 py-2.5 shadow-sm ${isOwn ? 'bg-primary-600 text-white' : 'bg-white text-gray-800'}`}>
+                        {!isOwn && (
+                          <p className="text-xs font-medium mb-1 text-gray-400">{msg.senderName}</p>
+                        )}
+                        <p className="text-sm leading-relaxed">{msg.text}</p>
+                        <p className={`text-xs mt-1 ${isOwn ? 'text-primary-200' : 'text-gray-400'}`}>
+                          {formatTime(msg.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <form onSubmit={handleSend} className="p-4 border-t border-gray-100 bg-white flex gap-3 shrink-0">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={connected ? 'Type a message...' : 'Reconnecting...'}
+                  disabled={!connected}
+                  className="flex-1 border border-gray-300 rounded-2xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                />
+                <button
+                  type="submit"
+                  disabled={!input.trim() || !connected}
+                  className="px-5 py-2.5 rounded-2xl bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  <Send className="w-4 h-4" />
+                  Send
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </section>
     </div>
   );
-};
-
-export default ChatPage;
+}
