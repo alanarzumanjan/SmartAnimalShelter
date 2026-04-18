@@ -96,6 +96,69 @@ namespace SmartShelter.API.Migrations
                     b.ToTable("Breeds");
                 });
 
+            modelBuilder.Entity("Models.ChatMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RoomId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SenderName")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("RoomId", "CreatedAt");
+
+                    b.ToTable("ChatMessages");
+                });
+
+            modelBuilder.Entity("Models.ChatRoomMember", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RoomId")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("RoomId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ChatRoomMembers");
+                });
+
             modelBuilder.Entity("Models.Device", b =>
                 {
                     b.Property<Guid>("Id")
@@ -433,7 +496,7 @@ namespace SmartShelter.API.Migrations
                     b.Property<float?>("Age")
                         .HasColumnType("real");
 
-                    b.Property<int>("BreedId")
+                    b.Property<int?>("BreedId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Category")
@@ -674,6 +737,28 @@ namespace SmartShelter.API.Migrations
                     b.Navigation("Species");
                 });
 
+            modelBuilder.Entity("Models.ChatMessage", b =>
+                {
+                    b.HasOne("Models.User", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Sender");
+                });
+
+            modelBuilder.Entity("Models.ChatRoomMember", b =>
+                {
+                    b.HasOne("Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Models.Device", b =>
                 {
                     b.HasOne("Models.Enclosure", "Enclosure")
@@ -801,9 +886,7 @@ namespace SmartShelter.API.Migrations
                 {
                     b.HasOne("Models.Breed", "Breed")
                         .WithMany("Pets")
-                        .HasForeignKey("BreedId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("BreedId");
 
                     b.HasOne("Models.Enclosure", "Enclosure")
                         .WithMany("Pets")
