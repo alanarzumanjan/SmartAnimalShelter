@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { MessageSquare, Send, Plus } from 'lucide-react';
@@ -18,17 +18,12 @@ interface ChatMessage {
 
 interface Room {
   roomId: string;
-  lastMessage: {
-    senderName: string;
-    text: string;
-    createdAt: string;
-  };
+  lastMessage: { senderName: string; text: string; createdAt: string };
 }
 
 function formatTime(iso: string) {
   const d = new Date(iso);
-  const now = new Date();
-  const isToday = d.toDateString() === now.toDateString();
+  const isToday = d.toDateString() === new Date().toDateString();
   return isToday
     ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
@@ -42,7 +37,7 @@ export default function ChatPage() {
   const [searchParams] = useSearchParams();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [apiRooms, setApiRooms] = useState<Room[]>([]);
   const [activeRoom, setActiveRoom] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -50,28 +45,44 @@ export default function ChatPage() {
   const [newRoomName, setNewRoomName] = useState('');
   const [showNewRoom, setShowNewRoom] = useState(false);
 
-  // Keep a ref so the SignalR handler always sees the current room
   const activeRoomRef = useRef<string | null>(null);
   const prevRoomRef = useRef<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  const target = searchParams.get('target');
+  const pet = searchParams.get('pet');
+  const recipientId = searchParams.get('recipientId') || undefined;
+  const initialMessage = searchParams.get('message') || '';
+
+  const pendingMessageRef = useRef('');
+
+  // Merge URL target room into the rooms list without setState in effect
+  const rooms = useMemo<Room[]>(() => {
+    if (!target) return apiRooms;
+    const roomId = roomIdFromTarget(target);
+    const exists = apiRooms.find((r) => r.roomId === roomId);
+    if (exists) return apiRooms;
+    return [
+      {
+        roomId,
+        lastMessage: {
+          senderName: target,
+          text: pet ? `Inquiry about ${pet}` : 'New conversation',
+          createdAt: new Date().toISOString(),
+        },
+      },
+      ...apiRooms,
+    ];
+  }, [apiRooms, target, pet]);
+
   function scrollToBottom() {
     const el = messagesContainerRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }
-
-  async function loadRooms() {
-    try {
-      const { data } = await api.get('/chat/rooms');
-      setRooms(data);
-    } catch { /* no rooms yet */ }
+    if (el) el.scrollTop = el.scrollHeight;
   }
 
   const loadMessages = useCallback(async (roomId: string) => {
     try {
       const { data } = await api.get(`/chat/rooms/${encodeURIComponent(roomId)}/messages`);
-      // Merge with any messages already received via SignalR during loading
       setMessages((prev) => {
         const ids = new Set(data.map((m: ChatMessage) => m.id));
         const extra = prev.filter((m) => !ids.has(m.id) && m.roomId === roomId);
@@ -84,8 +95,7 @@ export default function ChatPage() {
     }
   }, []);
 
-  async function switchRoom(roomId: string, recipientId?: string) {
-    // Ensure connected before joining the SignalR group
+  async function switchRoom(roomId: string, recipient?: string) {
     try {
       await connect();
       setConnected(true);
@@ -99,36 +109,41 @@ export default function ChatPage() {
 
     activeRoomRef.current = roomId;
     setActiveRoom(roomId);
-    setMessages([]); // clear previous room messages immediately
+    setMessages([]);
     prevRoomRef.current = roomId;
 
     try {
       await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
-        recipientId: recipientId || null,
+        recipientId: recipient || null,
       });
     } catch { /* ignore */ }
 
     try { await joinRoom(roomId); } catch { /* ignore */ }
     await loadMessages(roomId);
+
+    // Apply pre-filled message from URL (e.g. coming from animal page)
+    if (pendingMessageRef.current) {
+      setInput(pendingMessageRef.current);
+      pendingMessageRef.current = '';
+    }
   }
 
-  // Connect SignalR once on mount
+  // SignalR connect + message handler
   useEffect(() => {
     connect()
       .then(() => setConnected(true))
       .catch(() => setConnected(false));
 
     const conn = getConnection();
-
     conn.on('ReceiveMessage', (msg: ChatMessage) => {
-      // Only add if it belongs to the currently open room
       if (msg.roomId !== activeRoomRef.current) return;
       setMessages((prev) => {
-        // Avoid duplicates (optimistic update + server echo)
         if (prev.some((m) => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
-      loadRooms();
+      api.get('/chat/rooms')
+        .then(({ data }) => setApiRooms(data))
+        .catch(() => {});
     });
 
     return () => {
@@ -138,45 +153,29 @@ export default function ChatPage() {
     };
   }, []);
 
+  // Load rooms from API on mount
   useEffect(() => {
-    loadRooms();
+    api.get('/chat/rooms')
+      .then(({ data }) => setApiRooms(data))
+      .catch(() => {});
   }, []);
 
-  // Handle ?target= from animal page
+  // Open target room from URL
   useEffect(() => {
-    const target = searchParams.get('target');
-    const pet = searchParams.get('pet');
-    const recipientId = searchParams.get('recipientId') || undefined;
     if (!target) return;
-
+    pendingMessageRef.current = initialMessage;
     const roomId = roomIdFromTarget(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void switchRoom(roomId, recipientId);
+  }, [target]);
 
-    setRooms((prev) => {
-      if (prev.find((r) => r.roomId === roomId)) return prev;
-      return [
-        {
-          roomId,
-          lastMessage: {
-            senderName: target,
-            text: pet ? `Inquiry about ${pet}` : 'New conversation',
-            createdAt: new Date().toISOString(),
-          },
-        },
-        ...prev,
-      ];
-    });
-
-    switchRoom(roomId, recipientId);
-  }, [searchParams]);
-
-  // Auto-open first room
+  // Auto-open first room if no target
   useEffect(() => {
-    if (!activeRoom && rooms.length > 0) {
+    if (!target && !activeRoom && rooms.length > 0) {
       switchRoom(rooms[0].roomId);
     }
-  }, [rooms]);
+  }, [rooms]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Scroll to bottom when messages load or new message arrives
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
@@ -196,7 +195,7 @@ export default function ChatPage() {
     e.preventDefault();
     if (!newRoomName.trim()) return;
     const roomId = roomIdFromTarget(newRoomName.trim());
-    setRooms((prev) => {
+    setApiRooms((prev) => {
       if (prev.find((r) => r.roomId === roomId)) return prev;
       return [
         {
@@ -231,7 +230,6 @@ export default function ChatPage() {
       </section>
 
       <section className="grid lg:grid-cols-[300px_1fr] gap-6 h-[600px]">
-        {/* Sidebar */}
         <aside className="bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
             <span className="text-sm font-medium text-gray-500">Conversations</span>
@@ -282,7 +280,6 @@ export default function ChatPage() {
           </div>
         </aside>
 
-        {/* Chat window */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
           {!activeRoom ? (
             <div className="flex-1 flex items-center justify-center text-gray-400">
@@ -297,19 +294,13 @@ export default function ChatPage() {
                 <h2 className="font-bold text-gray-900">{activeRoom}</h2>
               </div>
 
-              {/* Messages — fixed height, internal scroll only */}
-              <div
-                ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50 space-y-3"
-              >
+              <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50 space-y-3">
                 {messages.map((msg) => {
                   const isOwn = msg.senderId === user?.id;
                   return (
                     <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-sm rounded-2xl px-4 py-2.5 shadow-sm ${isOwn ? 'bg-primary-600 text-white' : 'bg-white text-gray-800'}`}>
-                        {!isOwn && (
-                          <p className="text-xs font-medium mb-1 text-gray-400">{msg.senderName}</p>
-                        )}
+                        {!isOwn && <p className="text-xs font-medium mb-1 text-gray-400">{msg.senderName}</p>}
                         <p className="text-sm leading-relaxed">{msg.text}</p>
                         <p className={`text-xs mt-1 ${isOwn ? 'text-primary-200' : 'text-gray-400'}`}>
                           {formatTime(msg.createdAt)}
