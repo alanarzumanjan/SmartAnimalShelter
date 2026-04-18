@@ -110,8 +110,9 @@ export default function ProfilePage() {
       toast.success('Profile updated');
       setIsEditing(false);
       loadProfile();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.toString() ?? 'Failed to update profile');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update profile';
+      toast.error(msg);
     }
   }
 
@@ -124,8 +125,9 @@ export default function ProfilePage() {
     try {
       await api.patch(`/users/${profile.id}/password`, { currentPassword, newPassword });
       toast.success('Password changed');
-    } catch (err: any) {
-      toast.error(err?.response?.data?.error ?? 'Failed to change password');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to change password';
+      toast.error(msg);
     }
   }
 
