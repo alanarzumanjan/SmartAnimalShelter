@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Gauge, MapPin, Thermometer, Waves, History as HistoryIcon, Edit2, X, Check } from 'lucide-react';
+import { ArrowLeft, History as HistoryIcon, Edit2, X, Check } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -508,7 +508,7 @@ const DeviceDetailPage: React.FC = () => {
                 <XAxis dataKey="timeLabel" fontSize={10} tickMargin={6} />
                 <YAxis yAxisId="co2" fontSize={10} tickMargin={6} />
                 <YAxis yAxisId="env" orientation="right" fontSize={10} tickMargin={6} />
-                <Tooltip content={(props: any) => <TooltipContent {...props} />} />
+                <Tooltip content={<TooltipContent />} />
                 <Line yAxisId="co2" type="monotone" dataKey="co2" stroke="#4f46e5" strokeWidth={2} dot={false} connectNulls />
                 <Line yAxisId="env" type="monotone" dataKey="temperature" stroke="#22c55e" strokeWidth={2} dot={false} connectNulls />
                 <Line yAxisId="env" type="monotone" dataKey="humidity" stroke="#f59e0b" strokeWidth={2} dot={false} connectNulls />
