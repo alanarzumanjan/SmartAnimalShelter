@@ -10,6 +10,7 @@ using Config;
 using MongoDB.Driver;
 using DotNetEnv;
 using Services.Payments;
+using Hubs;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -59,6 +60,16 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = ctx =>
+        {
+            var token = ctx.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(token) && ctx.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
+                ctx.Token = token;
+            return Task.CompletedTask;
+        }
+    };
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = !string.IsNullOrWhiteSpace(jwtSettings.Issuer),
@@ -80,6 +91,7 @@ builder.Services.AddScoped<UserEmailService>();
 
 // Controllers
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddHealthChecks();
 
 // Pets Parsing
@@ -160,6 +172,7 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapHub<ChatHub>("/chatHub");
 
 // PostgreSQL timestamp fix
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
