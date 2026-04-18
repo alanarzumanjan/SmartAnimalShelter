@@ -540,3 +540,46 @@ public class Order
     [ForeignKey(nameof(UserId))]
     public User User { get; set; } = null!;
 }
+
+// Chat
+[Index(nameof(RoomId), nameof(CreatedAt))]
+public class ChatMessage
+{
+    [Key]
+    public Guid Id { get; init; } = Guid.NewGuid();
+
+    [Required, MaxLength(128)]
+    public string RoomId { get; set; } = null!;
+
+    [Required]
+    public Guid SenderId { get; set; }
+
+    [Required, MaxLength(128)]
+    public string SenderName { get; set; } = null!;
+
+    [Required, MaxLength(4000)]
+    public string Text { get; set; } = null!;
+
+    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
+
+    [ForeignKey(nameof(SenderId))]
+    public User Sender { get; set; } = null!;
+}
+
+[Index(nameof(RoomId), nameof(UserId), IsUnique = true)]
+public class ChatRoomMember
+{
+    [Key]
+    public Guid Id { get; init; } = Guid.NewGuid();
+
+    [Required, MaxLength(128)]
+    public string RoomId { get; set; } = null!;
+
+    [Required]
+    public Guid UserId { get; set; }
+
+    public DateTime JoinedAt { get; init; } = DateTime.UtcNow;
+
+    [ForeignKey(nameof(UserId))]
+    public User User { get; set; } = null!;
+}
