@@ -2,6 +2,7 @@ import * as signalR from '@microsoft/signalr';
 import { config } from '../config';
 
 let connection: signalR.HubConnection | null = null;
+let connectingPromise: Promise<void> | null = null;
 
 export function getConnection(): signalR.HubConnection {
   if (connection) return connection;
@@ -19,8 +20,17 @@ export function getConnection(): signalR.HubConnection {
 
 export async function connect(): Promise<void> {
   const conn = getConnection();
+
+  if (conn.state === signalR.HubConnectionState.Connected) return;
+
+  // If already connecting — wait for that promise instead of starting a new one
+  if (connectingPromise) return connectingPromise;
+
   if (conn.state === signalR.HubConnectionState.Disconnected) {
-    await conn.start();
+    connectingPromise = conn.start().finally(() => {
+      connectingPromise = null;
+    });
+    return connectingPromise;
   }
 }
 
@@ -28,6 +38,7 @@ export async function disconnect(): Promise<void> {
   if (connection) {
     await connection.stop();
     connection = null;
+    connectingPromise = null;
   }
 }
 
