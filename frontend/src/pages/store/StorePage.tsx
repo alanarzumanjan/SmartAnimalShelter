@@ -63,9 +63,9 @@ const StorePage: React.FC = () => {
         if (isMounted) {
           setProduct(nextProduct);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (isMounted) {
-          toast.error(error?.response?.data?.error || 'Failed to load store product');
+          toast.error(error instanceof Error ? error.message : 'Failed to load store product');
         }
       } finally {
         if (isMounted) {
@@ -102,9 +102,9 @@ const StorePage: React.FC = () => {
         if (isMounted) {
           setCheckoutStatus(status);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (isMounted) {
-          setStatusError(error?.response?.data?.error || 'Failed to verify the payment status.');
+          setStatusError(error instanceof Error ? error.message : 'Failed to verify the payment status.');
         }
       } finally {
         if (isMounted) {
@@ -138,8 +138,8 @@ const StorePage: React.FC = () => {
       });
 
       window.location.assign(session.url);
-    } catch (error: any) {
-      toast.error(error?.response?.data?.error || 'Unable to start Stripe checkout');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Unable to start Stripe checkout');
       setIsCreatingCheckout(false);
     }
   };
