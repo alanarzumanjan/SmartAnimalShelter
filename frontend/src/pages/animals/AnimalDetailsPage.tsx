@@ -86,7 +86,7 @@ const AnimalDetailsPage: React.FC = () => {
     );
   }
 
-  const chatLink = `/dashboard/chats?target=${encodeURIComponent(animal.shelterName ?? 'Shelter team')}&pet=${encodeURIComponent(animal.name)}`;
+  const chatLink = `/dashboard/chats?target=${encodeURIComponent(animal.shelterName ?? 'Shelter team')}&pet=${encodeURIComponent(animal.name)}&recipientId=${animal.shelterOwnerId ?? ''}`;
 
   return (
     <div className="py-8 space-y-8">
