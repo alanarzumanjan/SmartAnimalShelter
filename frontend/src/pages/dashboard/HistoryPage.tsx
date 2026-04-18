@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Filter, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import {
   type MeasurementRecord,
@@ -45,9 +45,11 @@ function presetMs(p: PresetKey): number | null {
 }
 
 const HistoryPage: React.FC = () => {
+  const currentUser = getStoredUser();
+
   const [measurements, setMeasurements] = useState<MeasurementRecord[]>([]);
   const [devices, setDevices] = useState<DeviceRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(currentUser?.id));
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
 
@@ -61,8 +63,6 @@ const HistoryPage: React.FC = () => {
   // device filter
   const [deviceFilter, setDeviceFilter] = useState<string>('');
 
-  const currentUser = getStoredUser();
-
   // Load devices for filter dropdown
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -71,12 +71,7 @@ const HistoryPage: React.FC = () => {
 
   // Fetch measurements
   useEffect(() => {
-    if (!currentUser?.id) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
+    if (!currentUser?.id) return;
 
     const dur = presetMs(preset);
     let from: string | undefined;
@@ -112,7 +107,9 @@ const HistoryPage: React.FC = () => {
 
   // Preset changes
   const handlePresetChange = (p: PresetKey) => {
+    setLoading(true);
     setOffset(0);
+
     if (p === 'all') {
       setPreset('all');
     } else if (p === 'custom') {
@@ -197,7 +194,11 @@ const HistoryPage: React.FC = () => {
                 <input
                   type="datetime-local"
                   value={fromValue}
-                  onChange={(e) => { setOffset(0); setFromValue(e.target.value); }}
+                  onChange={(e) => {
+                    setLoading(true);
+                    setOffset(0);
+                    setFromValue(e.target.value);
+                  }}
                   className="px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white outline-none"
                 />
               </div>
@@ -206,7 +207,11 @@ const HistoryPage: React.FC = () => {
                 <input
                   type="datetime-local"
                   value={toValue}
-                  onChange={(e) => { setOffset(0); setToValue(e.target.value); }}
+                  onChange={(e) => {
+                    setLoading(true);
+                    setOffset(0);
+                    setToValue(e.target.value);
+                  }}
                   className="px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white outline-none"
                 />
               </div>
@@ -218,7 +223,11 @@ const HistoryPage: React.FC = () => {
               <label className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-500">Device</label>
               <select
                 value={deviceFilter}
-                onChange={(e) => { setOffset(0); setDeviceFilter(e.target.value); }}
+                onChange={(e) => {
+                  setLoading(true);
+                  setOffset(0);
+                  setDeviceFilter(e.target.value);
+                }}
                 className="px-3 py-2 rounded-xl text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white outline-none"
               >
                 <option value="">All devices</option>
@@ -302,7 +311,10 @@ const HistoryPage: React.FC = () => {
                 {offset > 0 && (
                   <button
                     type="button"
-                    onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
+                    onClick={() => {
+                      setLoading(true);
+                      setOffset((o) => Math.max(0, o - PAGE_SIZE));
+                    }}
                     className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                   >
                     ← Previous
@@ -311,7 +323,10 @@ const HistoryPage: React.FC = () => {
                 <button
                   type="button"
                   disabled={!hasMore}
-                  onClick={() => setOffset((o) => o + PAGE_SIZE)}
+                  onClick={() => {
+                    setLoading(true);
+                    setOffset((o) => o + PAGE_SIZE);
+                  }}
                   className={[
                     'px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors',
                     hasMore
