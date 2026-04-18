@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Cpu, MapPin, Thermometer, Waves, History as HistoryIcon } from 'lucide-react';
+import { Activity, Cpu, MapPin, History as HistoryIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TimeZoneSelect from '@/components/ui/TimeZoneSelect';
 import {
@@ -50,8 +50,9 @@ const DashboardPage: React.FC = () => {
       );
 
       setLatestByDevice(Object.fromEntries(measurementEntries));
-    } catch (error: any) {
-      toast.error(error?.response?.data?.error ?? 'Failed to load devices.');
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Failed to load devices.';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
