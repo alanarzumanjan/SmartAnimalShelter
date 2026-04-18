@@ -180,6 +180,7 @@ const buildTimeZoneOptions = (): TimeZoneOption[] =>
       };
     })
     .sort((left, right) => left.sortKey.localeCompare(right.sortKey))
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     .map(({ sortKey: _sortKey, ...option }) => option);
 
 export const timeZoneOptions: TimeZoneOption[] = buildTimeZoneOptions();
