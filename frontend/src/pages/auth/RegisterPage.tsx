@@ -65,11 +65,11 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center py-12 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+      <div className="w-full max-w-md rounded-[2rem] border border-white/70 bg-white/85 p-8 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.28)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_28px_90px_-36px_rgba(2,6,23,0.84)]">
         <div className="text-center mb-8">
           <div className="text-5xl mb-4">🐾</div>
-          <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-          <p className="mt-1 text-sm text-gray-500">Join Smart Shelter IoT</p>
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Create Account</h2>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Join Smart Shelter IoT</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -111,13 +111,13 @@ export default function RegisterPage() {
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Account Type</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Account Type</label>
             <div className="relative">
-              <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <Shield className="pointer-events-none absolute left-3 top-1/2 w-5 h-5 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value as Role)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-white text-gray-900 focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none cursor-pointer"
+                className="w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 <option value="user">🐾 User — browse and adopt pets</option>
                 <option value="veterinarian">🩺 Veterinarian — manage animal health records</option>
@@ -132,9 +132,9 @@ export default function RegisterPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
+        <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-300">
           Already have an account?{' '}
-          <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700">Sign In</Link>
+          <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">Sign In</Link>
         </p>
       </div>
     </div>
