@@ -64,24 +64,24 @@ export function formatCurrency(amountCents: number, currency: string) {
 
 export function getStatusColor(status: string) {
   switch (status.toLowerCase()) {
-    case 'pending':    return 'bg-amber-100 text-amber-800';
+    case 'pending':    return 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300';
     case 'approved':
-    case 'paid':       return 'bg-emerald-100 text-emerald-800';
+    case 'paid':       return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300';
     case 'rejected':
     case 'failed':
-    case 'refunded':   return 'bg-rose-100 text-rose-800';
-    case 'available':  return 'bg-blue-100 text-blue-800';
-    case 'adopted':    return 'bg-purple-100 text-purple-800';
-    case 'quarantine': return 'bg-orange-100 text-orange-800';
-    default:           return 'bg-gray-100 text-gray-800';
+    case 'refunded':   return 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300';
+    case 'available':  return 'bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-300';
+    case 'adopted':    return 'bg-purple-100 text-purple-800 dark:bg-purple-500/15 dark:text-purple-300';
+    case 'quarantine': return 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300';
+    default:           return 'bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-slate-300';
   }
 }
 
 export function getRoleBadge(role: string) {
   switch (role.toLowerCase()) {
-    case 'admin':        return 'bg-red-100 text-red-800';
-    case 'veterinarian': return 'bg-blue-100 text-blue-800';
-    case 'shelter':      return 'bg-green-100 text-green-800';
-    default:             return 'bg-gray-100 text-gray-800';
+    case 'admin':        return 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300';
+    case 'veterinarian': return 'bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-300';
+    case 'shelter':      return 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300';
+    default:             return 'bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-slate-300';
   }
 }
