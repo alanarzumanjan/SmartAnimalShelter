@@ -3,12 +3,65 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+  --app-bg: #f8fafc;
+  --app-bg-accent: rgba(59, 130, 246, 0.12);
+  --app-bg-accent-secondary: rgba(249, 115, 22, 0.08);
+  --app-text: #0f172a;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --app-bg: #020617;
+  --app-bg-accent: rgba(99, 102, 241, 0.18);
+  --app-bg-accent-secondary: rgba(14, 165, 233, 0.12);
+  --app-text: #e2e8f0;
 }
 
 @layer base {
+  html {
+    min-height: 100%;
+    background-color: var(--app-bg);
+  }
+
   body {
-    @apply antialiased;
+    @apply min-h-screen antialiased;
+    background-color: var(--app-bg);
+    background-image:
+      radial-gradient(circle at top left, var(--app-bg-accent), transparent 28rem),
+      radial-gradient(circle at top right, var(--app-bg-accent-secondary), transparent 24rem),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0) 26%),
+      linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg) 100%);
+    background-attachment: fixed;
+    color: var(--app-text);
+  }
+
+  :root.dark body {
+    background-image:
+      radial-gradient(circle at top left, var(--app-bg-accent), transparent 30rem),
+      radial-gradient(circle at top right, var(--app-bg-accent-secondary), transparent 26rem),
+      linear-gradient(180deg, rgba(15, 23, 42, 0.72) 0%, rgba(2, 6, 23, 0.2) 24%),
+      linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg) 100%);
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply placeholder:text-slate-400 dark:placeholder:text-slate-500;
+  }
+
+  ::selection {
+    background-color: rgba(59, 130, 246, 0.22);
+    color: #0f172a;
+  }
+
+  :root.dark ::selection {
+    background-color: rgba(99, 102, 241, 0.32);
+    color: #f8fafc;
   }
 }
 
@@ -16,4 +69,26 @@
   transition-property: background-color, border-color, color, fill, stroke;
   transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+  scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.5);
 }
