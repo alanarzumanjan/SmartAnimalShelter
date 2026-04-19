@@ -20,7 +20,7 @@ const filterBtn = (active: boolean) =>
   `px-4 py-2 rounded-full border text-sm transition-colors ${
     active
       ? 'bg-primary-600 text-white border-primary-600'
-      : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+      : 'bg-white/90 text-slate-600 border-slate-300 hover:bg-slate-50 dark:bg-slate-900/80 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-800'
   }`;
 
 export default function AnimalsPage() {
@@ -68,15 +68,15 @@ export default function AnimalsPage() {
 
   return (
     <div className="py-8 space-y-8">
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-10">
+      <section className="rounded-[2rem] border border-white/70 bg-white/80 p-8 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-[0_28px_90px_-36px_rgba(2,6,23,0.82)] md:p-10">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-4">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700 dark:bg-primary-500/10 dark:text-primary-200">
               <HeartHandshake className="w-4 h-4" />
               Adoption catalog
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Animals</h1>
-            <p className="text-gray-600 text-lg leading-7">
+            <h1 className="mb-3 text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">Animals</h1>
+            <p className="text-lg leading-7 text-slate-600 dark:text-slate-300">
               Browse animals available for adoption. Live data when connected, preview cards otherwise.
             </p>
           </div>
@@ -89,22 +89,22 @@ export default function AnimalsPage() {
               </Button>
             )}
             <div className="grid grid-cols-2 gap-3 min-w-[200px]">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Showing</p>
-                <p className="text-2xl font-bold text-gray-900">{filtered.length}</p>
+              <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Showing</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{filtered.length}</p>
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <p className="text-sm text-gray-500">Source</p>
-                <p className="text-sm font-semibold text-gray-900">{isPreview ? 'Preview' : 'Live'}</p>
+              <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Source</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">{isPreview ? 'Preview' : 'Live'}</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 space-y-4">
+      <section className="space-y-4 rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <span className="flex items-center gap-2 text-gray-500 text-sm shrink-0">
+          <span className="flex shrink-0 items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
             <SlidersHorizontal className="w-4 h-4" />
             Status
           </span>
@@ -119,7 +119,7 @@ export default function AnimalsPage() {
 
         {speciesOptions.length > 0 && (
           <div className="flex flex-col md:flex-row md:items-center gap-4">
-            <span className="flex items-center gap-2 text-gray-500 text-sm shrink-0">
+            <span className="flex shrink-0 items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
               <SlidersHorizontal className="w-4 h-4" />
               Species
             </span>
@@ -133,16 +133,16 @@ export default function AnimalsPage() {
         )}
 
         {isPreview && (
-          <p className="text-sm text-amber-700 bg-amber-50 rounded-2xl px-4 py-3">
+          <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
             Showing preview cards — no live data available right now.
           </p>
         )}
       </section>
 
       {isLoading ? (
-        <p className="text-center text-gray-400 py-12">Loading animals...</p>
+        <p className="py-12 text-center text-slate-400 dark:text-slate-500">Loading animals...</p>
       ) : filtered.length === 0 ? (
-        <div className="bg-white rounded-3xl border border-dashed border-gray-200 p-12 text-center text-gray-400">
+        <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-500">
           No animals match the selected filters.
         </div>
       ) : (
