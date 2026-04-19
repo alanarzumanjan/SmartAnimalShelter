@@ -151,12 +151,12 @@ const StorePage: React.FC = () => {
           className={[
             'max-w-5xl mx-auto rounded-3xl border px-6 py-5 shadow-sm',
             checkoutStatus?.isPaid
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200'
               : checkoutState === 'cancelled'
-                ? 'border-amber-200 bg-amber-50 text-amber-900'
+                ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200'
                 : statusError
-                  ? 'border-rose-200 bg-rose-50 text-rose-900'
-                  : 'border-sky-200 bg-sky-50 text-sky-900',
+                  ? 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200'
+                  : 'border-sky-200 bg-sky-50 text-sky-900 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200',
           ].join(' ')}
         >
           {isLoadingStatus ? (
@@ -198,18 +198,18 @@ const StorePage: React.FC = () => {
         </section>
       )}
 
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 md:p-10 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-4">
+      <section className="rounded-[2rem] border border-white/70 bg-white/80 p-8 text-center shadow-[0_24px_80px_-32px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-[0_28px_90px_-36px_rgba(2,6,23,0.82)] md:p-10">
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700 dark:bg-primary-500/10 dark:text-primary-200">
           <Cpu className="w-4 h-4" />
           Stripe checkout enabled storefront
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Store</h1>
-        <p className="max-w-3xl mx-auto text-gray-600 text-lg leading-7">
+        <h1 className="mb-4 text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">Store</h1>
+        <p className="mx-auto max-w-3xl text-lg leading-7 text-slate-600 dark:text-slate-300">
           A focused product page for one core shelter device. The page now starts a real Stripe Checkout flow and returns here with the verified payment status.
         </p>
       </section>
 
-      <section className="max-w-5xl mx-auto bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+      <section className="mx-auto max-w-5xl overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-[0_28px_90px_-36px_rgba(2,6,23,0.82)]">
         <div className="grid lg:grid-cols-[1fr_0.95fr]">
           <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-700 text-white p-10 flex flex-col justify-between min-h-[520px]">
             <div>
@@ -244,35 +244,35 @@ const StorePage: React.FC = () => {
 
           <div className="p-8 md:p-10 flex flex-col">
             <div className="mb-6">
-              <div className="text-sm text-gray-500 mb-2">Unit price</div>
-              <div className="text-4xl font-bold text-gray-900">
+              <div className="mb-2 text-sm text-slate-500 dark:text-slate-400">Unit price</div>
+              <div className="text-4xl font-bold text-slate-900 dark:text-white">
                 {isLoadingProduct ? 'Loading...' : formatCurrency(unitAmount, currency)}
               </div>
             </div>
 
-            <div className="rounded-3xl bg-gray-50 p-5 mb-6">
-              <div className="text-sm text-gray-500 mb-3">Quantity</div>
+            <div className="mb-6 rounded-3xl bg-slate-100/80 p-5 dark:bg-slate-800/80">
+              <div className="mb-3 text-sm text-slate-500 dark:text-slate-400">Quantity</div>
               <div className="flex items-center justify-between gap-4">
                 <div className="inline-flex items-center gap-3">
                   <button
                     type="button"
-                    className="w-11 h-11 rounded-full border border-gray-300 flex items-center justify-center hover:bg-white transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 transition-colors hover:bg-white dark:border-slate-700 dark:hover:bg-slate-900"
                     onClick={() => setQuantity((current) => Math.max(1, current - 1))}
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="text-2xl font-bold text-gray-900 min-w-10 text-center">{quantity}</span>
+                  <span className="min-w-10 text-center text-2xl font-bold text-slate-900 dark:text-white">{quantity}</span>
                   <button
                     type="button"
-                    className="w-11 h-11 rounded-full border border-gray-300 flex items-center justify-center hover:bg-white transition-colors"
+                    className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 transition-colors hover:bg-white dark:border-slate-700 dark:hover:bg-slate-900"
                     onClick={() => setQuantity((current) => current + 1)}
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-gray-500">Total price</div>
-                  <div className="text-2xl font-bold text-gray-900">{formatCurrency(totalPrice, currency)}</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">Total price</div>
+                  <div className="text-2xl font-bold text-slate-900 dark:text-white">{formatCurrency(totalPrice, currency)}</div>
                 </div>
               </div>
             </div>
@@ -285,21 +285,21 @@ const StorePage: React.FC = () => {
             >
               {isCreatingCheckout ? 'Redirecting to Stripe...' : 'Buy with Stripe'}
             </button>
-            <p className="mb-8 text-sm text-gray-500 leading-6">
+            <p className="mb-8 text-sm leading-6 text-slate-500 dark:text-slate-400">
               {product?.stripeEnabled
                 ? 'Checkout opens on Stripe-hosted pages so card details never touch this frontend or backend.'
                 : 'Stripe is not configured yet. Add the Stripe secret key on the backend to enable purchases.'}
             </p>
 
-            <div className="space-y-6 text-gray-600 leading-7">
+            <div className="space-y-6 leading-7 text-slate-600 dark:text-slate-300">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Why this device matters</h3>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">Why this device matters</h3>
                 <p>
                   The device helps shelters maintain safer conditions by making environmental changes visible sooner. It supports daily operations, pet comfort, and future alerting workflows.
                 </p>
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Recommended use</h3>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">Recommended use</h3>
                 <p>
                   Use it in adoption rooms, cat zones, dog rooms, medical spaces, or home environments where air quality and temperature consistency matter.
                 </p>
@@ -310,11 +310,11 @@ const StorePage: React.FC = () => {
       </section>
 
       <section className="max-w-5xl mx-auto grid lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">Installation recommendations</h3>
+        <div className="rounded-[2rem] border border-white/70 bg-white/80 p-8 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
+          <h3 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">Installation recommendations</h3>
           <ul className="space-y-3">
             {installationTips.map((tip) => (
-              <li key={tip} className="flex items-start gap-3 text-gray-600">
+              <li key={tip} className="flex items-start gap-3 text-slate-600 dark:text-slate-300">
                 <ShieldCheck className="w-5 h-5 text-primary-600 mt-1" />
                 <span>{tip}</span>
               </li>
@@ -322,9 +322,9 @@ const StorePage: React.FC = () => {
           </ul>
         </div>
 
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">What is included</h3>
-          <div className="space-y-4 text-gray-600 leading-7">
+        <div className="rounded-[2rem] border border-white/70 bg-white/80 p-8 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
+          <h3 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">What is included</h3>
+          <div className="space-y-4 leading-7 text-slate-600 dark:text-slate-300">
             <p>The box includes the IoT device, wall-mount accessories, power adapter, and quick-start setup guide.</p>
             <p>The page is intentionally structured so stock availability, webhook-based fulfillment, shipping status, and installation services can be added later without redesigning the store.</p>
           </div>
