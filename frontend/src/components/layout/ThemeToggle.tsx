@@ -6,10 +6,11 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="relative inline-flex h-9 w-16 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-950"
-      style={{
-        backgroundColor: theme === "dark" ? "#334155" : "#cbd5e1",
-      }}
+      className={`relative inline-flex h-9 w-16 items-center rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-950 ${
+        theme === "dark"
+          ? "border-slate-700 bg-slate-800/90 shadow-inner shadow-slate-950/40"
+          : "border-slate-300 bg-slate-200/90 shadow-inner shadow-white/70"
+      }`}
       aria-label="Toggle theme"
       type="button"
     >
