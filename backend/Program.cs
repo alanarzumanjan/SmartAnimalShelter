@@ -94,9 +94,7 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddHealthChecks();
 
-// Pets Parsing
-builder.Services.AddHostedService<PetImportBackgroundService>();
-builder.Services.AddScoped<PetParser>();
+// Pets
 builder.Services.AddScoped<BreedResolver>();
 builder.Services.AddScoped<GenderResolver>();
 builder.Services.AddSingleton<MongoService>();
