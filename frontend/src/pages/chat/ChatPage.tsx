@@ -216,26 +216,26 @@ export default function ChatPage() {
 
   return (
     <div className="py-8 space-y-6">
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+      <section className="rounded-[2rem] border border-white/70 bg-white/80 p-8 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-[0_28px_90px_-36px_rgba(2,6,23,0.82)]">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <MessageSquare className="w-6 h-6 text-primary-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Chats</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Chats</h1>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-gray-300'}`} />
-            <span className="text-sm text-gray-500">{connected ? 'Connected' : 'Offline'}</span>
+            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
+            <span className="text-sm text-slate-500 dark:text-slate-400">{connected ? 'Connected' : 'Offline'}</span>
           </div>
         </div>
       </section>
 
       <section className="grid lg:grid-cols-[300px_1fr] gap-6 h-[600px]">
-        <aside className="bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 shrink-0">
-            <span className="text-sm font-medium text-gray-500">Conversations</span>
+        <aside className="flex flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
+          <div className="flex shrink-0 items-center justify-between border-b border-slate-200/80 px-4 py-3 dark:border-slate-800">
+            <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Conversations</span>
             <button
               onClick={() => setShowNewRoom((v) => !v)}
-              className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
+              className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               title="New conversation"
             >
               <Plus className="w-4 h-4" />
@@ -243,21 +243,21 @@ export default function ChatPage() {
           </div>
 
           {showNewRoom && (
-            <form onSubmit={handleCreateRoom} className="px-3 py-2 border-b border-gray-100 shrink-0">
+            <form onSubmit={handleCreateRoom} className="shrink-0 border-b border-slate-200/80 px-3 py-2 dark:border-slate-800">
               <input
                 autoFocus
                 type="text"
                 value={newRoomName}
                 onChange={(e) => setNewRoomName(e.target.value)}
                 placeholder="Room name..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               />
             </form>
           )}
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {rooms.length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-8">No conversations yet</p>
+              <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">No conversations yet</p>
             )}
             {rooms.map((room) => (
               <button
@@ -266,43 +266,47 @@ export default function ChatPage() {
                 onClick={() => switchRoom(room.roomId)}
                 className={`w-full text-left rounded-2xl px-4 py-3 transition-colors ${
                   activeRoom === room.roomId
-                    ? 'bg-primary-50 border border-primary-100'
-                    : 'hover:bg-gray-50 border border-transparent'
+                    ? 'border border-primary-100 bg-primary-50 dark:border-primary-400/20 dark:bg-primary-500/10'
+                    : 'border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/80'
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-sm text-gray-900 truncate">{room.roomId}</span>
-                  <span className="text-xs text-gray-400 shrink-0 ml-2">{formatTime(room.lastMessage.createdAt)}</span>
+                  <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">{room.roomId}</span>
+                  <span className="ml-2 shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatTime(room.lastMessage.createdAt)}</span>
                 </div>
-                <p className="text-xs text-gray-500 truncate">{room.lastMessage.text}</p>
+                <p className="truncate text-xs text-slate-500 dark:text-slate-400">{room.lastMessage.text}</p>
               </button>
             ))}
           </div>
         </aside>
 
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm flex flex-col overflow-hidden">
+        <div className="flex flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
           {!activeRoom ? (
-            <div className="flex-1 flex items-center justify-center text-gray-400">
+            <div className="flex flex-1 items-center justify-center text-slate-400 dark:text-slate-500">
               <div className="text-center">
-                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-200" />
+                <MessageSquare className="mx-auto mb-3 h-12 w-12 text-slate-200 dark:text-slate-700" />
                 <p>Select a conversation or start a new one</p>
               </div>
             </div>
           ) : (
             <>
-              <div className="px-6 py-4 border-b border-gray-100 shrink-0">
-                <h2 className="font-bold text-gray-900">{activeRoom}</h2>
+              <div className="shrink-0 border-b border-slate-200/80 px-6 py-4 dark:border-slate-800">
+                <h2 className="font-bold text-slate-900 dark:text-white">{activeRoom}</h2>
               </div>
 
-              <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-4 bg-gray-50 space-y-3">
+              <div ref={messagesContainerRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50/80 px-6 py-4 dark:bg-slate-950/50">
                 {messages.map((msg) => {
                   const isOwn = msg.senderId === user?.id;
                   return (
                     <div key={msg.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-sm rounded-2xl px-4 py-2.5 shadow-sm ${isOwn ? 'bg-primary-600 text-white' : 'bg-white text-gray-800'}`}>
-                        {!isOwn && <p className="text-xs font-medium mb-1 text-gray-400">{msg.senderName}</p>}
+                      <div className={`max-w-sm rounded-2xl px-4 py-2.5 shadow-sm ${
+                        isOwn
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white text-slate-800 dark:bg-slate-900 dark:text-slate-100'
+                      }`}>
+                        {!isOwn && <p className="mb-1 text-xs font-medium text-slate-400 dark:text-slate-500">{msg.senderName}</p>}
                         <p className="text-sm leading-relaxed">{msg.text}</p>
-                        <p className={`text-xs mt-1 ${isOwn ? 'text-primary-200' : 'text-gray-400'}`}>
+                        <p className={`mt-1 text-xs ${isOwn ? 'text-primary-200' : 'text-slate-400 dark:text-slate-500'}`}>
                           {formatTime(msg.createdAt)}
                         </p>
                       </div>
@@ -311,14 +315,14 @@ export default function ChatPage() {
                 })}
               </div>
 
-              <form onSubmit={handleSend} className="p-4 border-t border-gray-100 bg-white flex gap-3 shrink-0">
+              <form onSubmit={handleSend} className="flex shrink-0 gap-3 border-t border-slate-200/80 bg-white/90 p-4 dark:border-slate-800 dark:bg-slate-900/90">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={connected ? 'Type a message...' : 'Reconnecting...'}
                   disabled={!connected}
-                  className="flex-1 border border-gray-300 rounded-2xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50"
+                  className="flex-1 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-transparent focus:ring-2 focus:ring-primary-500 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 />
                 <button
                   type="submit"
