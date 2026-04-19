@@ -4,7 +4,7 @@ import { Provider, useSelector } from 'react-redux';
 import { store } from '@/store/store';
 import type { RootState } from '@/store/store';
 import { Toaster } from 'react-hot-toast';
-import { ThemeProvider } from '@/components/layout/ThemeContext';
+import { ThemeProvider, useTheme } from '@/components/layout/ThemeContext';
 
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -39,10 +39,12 @@ function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps)
 }
 
 function AppRoutes() {
+  const { theme } = useTheme();
+
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col bg-transparent text-slate-900 dark:text-slate-100">
       <Header />
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="relative flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -122,7 +124,23 @@ function AppRoutes() {
         </Routes>
       </main>
       <Footer />
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            borderRadius: '18px',
+            padding: '14px 16px',
+            border: theme === 'dark' ? '1px solid rgba(148, 163, 184, 0.18)' : '1px solid rgba(148, 163, 184, 0.22)',
+            background: theme === 'dark' ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.94)',
+            color: theme === 'dark' ? '#e2e8f0' : '#0f172a',
+            boxShadow: theme === 'dark'
+              ? '0 24px 60px -28px rgba(2, 6, 23, 0.8)'
+              : '0 24px 50px -28px rgba(15, 23, 42, 0.3)',
+            backdropFilter: 'blur(18px)',
+          },
+        }}
+      />
     </div>
   );
 };
