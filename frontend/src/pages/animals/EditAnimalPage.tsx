@@ -194,9 +194,9 @@ const EditAnimalPage: React.FC = () => {
   if (!isAuthorized) {
     return (
       <div className="py-8 text-center">
-        <PawPrint className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-        <p className="text-gray-600">Only pet owners can edit animal profiles.</p>
+        <PawPrint className="mx-auto mb-4 h-16 w-16 text-slate-300 dark:text-slate-600" />
+        <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-white">Access Denied</h2>
+        <p className="text-slate-600 dark:text-slate-300">Only pet owners can edit animal profiles.</p>
         <Button onClick={() => navigate(-1)} className="mt-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Go Back
@@ -224,21 +224,21 @@ const EditAnimalPage: React.FC = () => {
         </Button>
       </div>
 
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+      <div className="rounded-[2rem] border border-white/70 bg-white/85 p-8 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_28px_90px_-36px_rgba(2,6,23,0.84)]">
         <div className="flex items-center gap-3 mb-6">
           <PawPrint className="w-8 h-8 text-primary-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Edit Animal Profile</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Edit Animal Profile</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Image Upload */}
           <div className="flex items-start gap-6">
             <div className="flex-shrink-0">
-              <div className="w-40 h-40 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50">
+              <div className="flex h-40 w-40 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/80">
                 {imagePreview ? (
                   <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <Upload className="w-10 h-10 text-gray-400" />
+                  <Upload className="h-10 w-10 text-slate-400 dark:text-slate-500" />
                 )}
               </div>
               <label className="mt-2 block">
@@ -247,14 +247,14 @@ const EditAnimalPage: React.FC = () => {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer"
+                  className="block w-full cursor-pointer text-sm text-slate-500 dark:text-slate-400 file:mr-4 file:rounded-full file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-primary-700 hover:file:bg-primary-100 dark:file:bg-primary-500/10 dark:file:text-primary-200"
                 />
               </label>
               {imagePreview && imagePreview !== currentImageUrl && (
                 <button
                   type="button"
                   onClick={() => { setImageFile(null); setImagePreview(currentImageUrl); }}
-                  className="mt-2 text-sm text-red-600 hover:text-red-700 flex items-center gap-1"
+                  className="mt-2 flex items-center gap-1 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                 >
                   <X className="w-3 h-3" /> Remove new image
                 </button>
@@ -272,11 +272,11 @@ const EditAnimalPage: React.FC = () => {
               />
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Status</label>
                 <select
                   value={formData.statusId}
                   onChange={(e: ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, statusId: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 >
                   <option value="1">Available</option>
                   <option value="2">Adopted</option>
@@ -289,11 +289,11 @@ const EditAnimalPage: React.FC = () => {
           {/* Species & Breed */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Species</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Species</label>
               <select
                 value={formData.speciesId}
                 onChange={(e: ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, speciesId: e.target.value })}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white ${errors.speciesId ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full rounded-xl border bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:text-white ${errors.speciesId ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'}`}
               >
                 <option value="">Select species...</option>
                 {speciesList.map((s) => (
@@ -304,12 +304,12 @@ const EditAnimalPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Breed</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Breed</label>
               <input
                 type="text"
                 value={formData.breed}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, breed: e.target.value })}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent ${errors.breed ? 'border-red-500' : 'border-gray-300'}`}
+                className={`w-full rounded-xl border bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:bg-slate-900 dark:text-white ${errors.breed ? 'border-red-500' : 'border-slate-300 dark:border-slate-700'}`}
                 placeholder="e.g., Golden Retriever, Mixed, etc."
               />
               {errors.breed && <p className="mt-1 text-sm text-red-600">{errors.breed}</p>}
@@ -319,11 +319,11 @@ const EditAnimalPage: React.FC = () => {
           {/* Gender, Age, Color */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Gender</label>
               <select
                 value={formData.gender}
                 onChange={(e: ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, gender: e.target.value })}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 <option value="">Not specified</option>
                 <option value="1">♂ Male</option>
@@ -332,7 +332,7 @@ const EditAnimalPage: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Age</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Age</label>
               <div className="flex gap-2">
                 <input
                   type="number"
@@ -340,13 +340,13 @@ const EditAnimalPage: React.FC = () => {
                   min="0"
                   value={formData.ageValue}
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, ageValue: e.target.value })}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                   placeholder="e.g., 6"
                 />
                 <select
                   value={formData.ageUnit}
                   onChange={(e: ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, ageUnit: e.target.value as 'years' | 'months' })}
-                  className="px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                  className="rounded-xl border border-slate-300 bg-white px-3 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                 >
                   <option value="years">years</option>
                   <option value="months">months</option>
@@ -365,12 +365,12 @@ const EditAnimalPage: React.FC = () => {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description / Story</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">Description / Story</label>
             <textarea
               rows={4}
               value={formData.description}
               onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+              className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               placeholder="Tell us about this animal's personality, history, and what makes them special..."
             />
           </div>
