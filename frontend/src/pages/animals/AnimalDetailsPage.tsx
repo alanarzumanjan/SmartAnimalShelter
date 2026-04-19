@@ -71,15 +71,15 @@ const AnimalDetailsPage: React.FC = () => {
   const isAuthorized = isAuthenticated && user?.role === 'shelter' && user?.id === animal?.shelterOwnerId;
 
   if (isLoading) {
-    return <div className="py-16 text-center text-gray-400">Loading pet profile...</div>;
+    return <div className="py-16 text-center text-slate-400 dark:text-slate-500">Loading pet profile...</div>;
   }
 
   if (!animal) {
     return (
       <div className="py-16 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">Pet not found</h1>
-        <p className="text-gray-500 mb-6">This profile is unavailable right now.</p>
-        <Link to="/animals" className="text-primary-600 font-medium hover:text-primary-700">
+        <h1 className="mb-3 text-3xl font-bold text-slate-900 dark:text-white">Pet not found</h1>
+        <p className="mb-6 text-slate-500 dark:text-slate-400">This profile is unavailable right now.</p>
+        <Link to="/animals" className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
           Back to animals
         </Link>
       </div>
@@ -104,41 +104,41 @@ const AnimalDetailsPage: React.FC = () => {
         </div>
       )}
 
-      <section className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.24)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-[0_28px_90px_-36px_rgba(2,6,23,0.82)]">
         <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="bg-gray-100 min-h-[360px] max-h-[480px] flex items-center justify-center overflow-hidden">
+          <div className="flex min-h-[360px] max-h-[480px] items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800/80">
             {animal.imageUrl ? (
               <img src={animal.imageUrl} alt={animal.name} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-8xl text-gray-300">🐾</span>
+              <span className="text-8xl text-slate-300 dark:text-slate-600">🐾</span>
             )}
           </div>
           <div className="p-8 md:p-10 overflow-y-auto max-h-[480px] min-w-0">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-50 text-primary-700 text-sm font-medium mb-4">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1 text-sm font-medium text-primary-700 dark:bg-primary-500/10 dark:text-primary-200">
               <PawPrint className="w-4 h-4" />
               More Information
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">{animal.name}</h1>
-            <p className="text-gray-500 text-lg mb-6">
+            <h1 className="mb-2 text-4xl font-bold text-slate-900 dark:text-white">{animal.name}</h1>
+            <p className="mb-6 text-lg text-slate-500 dark:text-slate-400">
               {animal.species}{animal.breed ? ` • ${animal.breed}` : ''}
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-8">
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="text-sm text-gray-500">Status</div>
-                <div className="font-semibold text-gray-900">{animal.status}</div>
+              <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                <div className="text-sm text-slate-500 dark:text-slate-400">Status</div>
+                <div className="font-semibold text-slate-900 dark:text-white">{animal.status}</div>
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="text-sm text-gray-500">Age</div>
-                <div className="font-semibold text-gray-900">{animal.age ?? 'To be confirmed'}</div>
+              <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                <div className="text-sm text-slate-500 dark:text-slate-400">Age</div>
+                <div className="font-semibold text-slate-900 dark:text-white">{animal.age ?? 'To be confirmed'}</div>
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="text-sm text-gray-500">Shelter</div>
-                <div className="font-semibold text-gray-900">{animal.shelterName ?? 'Shelter team'}</div>
+              <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                <div className="text-sm text-slate-500 dark:text-slate-400">Shelter</div>
+                <div className="font-semibold text-slate-900 dark:text-white">{animal.shelterName ?? 'Shelter team'}</div>
               </div>
-              <div className="rounded-2xl bg-gray-50 p-4">
-                <div className="text-sm text-gray-500">Contact</div>
-                <div className="font-semibold text-gray-900">{animal.contactName ?? 'Shelter team'}</div>
+              <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                <div className="text-sm text-slate-500 dark:text-slate-400">Contact</div>
+                <div className="font-semibold text-slate-900 dark:text-white">{animal.contactName ?? 'Shelter team'}</div>
               </div>
             </div>
 
@@ -155,7 +155,7 @@ const AnimalDetailsPage: React.FC = () => {
             </div>
 
             {!isAuthenticated && (
-              <p className="mt-4 text-sm text-gray-500">
+              <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
                 You can view pet details without signing in. Starting a chat will ask you to log in first.
               </p>
             )}
@@ -164,16 +164,16 @@ const AnimalDetailsPage: React.FC = () => {
       </section>
 
       <section className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 min-w-0 overflow-hidden">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Full description</h2>
-          <p className="text-gray-600 leading-7 mb-6 break-words overflow-wrap-anywhere">{animal.story ?? animal.description}</p>
+        <div className="min-w-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-8 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
+          <h2 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">Full description</h2>
+          <p className="mb-6 break-words leading-7 text-slate-600 dark:text-slate-300 overflow-wrap-anywhere">{animal.story ?? animal.description}</p>
 
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Personality</h3>
+              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Personality</h3>
               <div className="flex flex-wrap gap-2">
                 {(animal.personality ?? []).map((item) => (
-                  <span key={item} className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm">
+                  <span key={item} className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">
                     {item}
                   </span>
                 ))}
@@ -181,8 +181,8 @@ const AnimalDetailsPage: React.FC = () => {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Care highlights</h3>
-              <ul className="space-y-2 text-gray-600">
+              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Care highlights</h3>
+              <ul className="space-y-2 text-slate-600 dark:text-slate-300">
                 {(animal.careHighlights ?? []).map((item) => (
                   <li key={item} className="flex items-start gap-2">
                     <ShieldCheck className="w-4 h-4 mt-1 text-primary-600" />
@@ -195,22 +195,22 @@ const AnimalDetailsPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Medical notes</h3>
-            <p className="text-gray-600 leading-7">{animal.medicalNotes}</p>
+          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
+            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Medical notes</h3>
+            <p className="leading-7 text-slate-600 dark:text-slate-300">{animal.medicalNotes}</p>
           </section>
 
-          <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">Ideal home</h3>
-            <p className="text-gray-600 leading-7">{animal.idealHome}</p>
+          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
+            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Ideal home</h3>
+            <p className="leading-7 text-slate-600 dark:text-slate-300">{animal.idealHome}</p>
           </section>
 
-          <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
             <div className="flex items-start gap-3">
               <MapPin className="w-5 h-5 text-primary-600 mt-1" />
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Location</h3>
-                <p className="text-gray-600">{animal.location ?? animal.shelterName ?? 'Shelter network'}</p>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">Location</h3>
+                <p className="text-slate-600 dark:text-slate-300">{animal.location ?? animal.shelterName ?? 'Shelter network'}</p>
               </div>
             </div>
           </section>
