@@ -23,9 +23,9 @@ interface AnimalCardProps {
 }
 
 const statusColors = {
-  Available: 'bg-green-100 text-green-700',
-  Adopted: 'bg-blue-100 text-blue-700',
-  Quarantine: 'bg-yellow-100 text-yellow-700',
+  Available: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300',
+  Adopted: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300',
+  Quarantine: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-300',
 };
 
 export default function AnimalCard({
@@ -59,25 +59,25 @@ export default function AnimalCard({
   }
 
   return (
-    <article className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex flex-col h-full">
-      <div className="w-full h-52 bg-gray-100 rounded-2xl mb-4 overflow-hidden flex items-center justify-center relative">
+    <article className="flex h-full flex-col rounded-[1.75rem] border border-white/70 bg-white/80 p-4 shadow-[0_18px_60px_-30px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-[0_26px_80px_-40px_rgba(2,6,23,0.82)]">
+      <div className="relative mb-4 flex h-52 w-full items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800/80">
         {imageUrl ? (
           <img src={imageUrl} alt={name} className="object-cover w-full h-full" />
         ) : (
-          <span className="text-6xl text-gray-300">🐾</span>
+          <span className="text-6xl text-slate-300 dark:text-slate-600">🐾</span>
         )}
         {canEdit && (
           <div className="absolute top-2 right-2 flex gap-1">
             <Link
               to={`/animals/${id}/edit`}
-              className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+              className="rounded-full bg-white/90 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-white dark:bg-slate-900/85 dark:hover:bg-slate-800"
               title="Edit"
             >
-              <Pencil className="w-4 h-4 text-gray-700" />
+              <Pencil className="h-4 w-4 text-slate-700 dark:text-slate-200" />
             </Link>
             <button
               onClick={handleDelete}
-              className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-red-50 transition-colors"
+              className="rounded-full bg-white/90 p-1.5 shadow-sm backdrop-blur-sm transition-colors hover:bg-red-50 dark:bg-slate-900/85 dark:hover:bg-red-500/10"
               title="Delete"
             >
               <Trash2 className="w-4 h-4 text-red-500" />
@@ -88,24 +88,24 @@ export default function AnimalCard({
 
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <h3 className="font-bold text-lg text-gray-900">{name}</h3>
-          <p className="text-gray-500 text-sm">{species}{breed ? ` · ${breed}` : ''}</p>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">{name}</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{species}{breed ? ` · ${breed}` : ''}</p>
         </div>
         <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusColors[status]}`}>
           {status}
         </span>
       </div>
 
-      <div className="space-y-1 text-sm text-gray-500 mb-4">
+      <div className="mb-4 space-y-1 text-sm text-slate-500 dark:text-slate-400">
         {age && <p>Age: {age}</p>}
         {location && <p>Location: {location}</p>}
-        {description && <p className="text-gray-600 leading-6 line-clamp-2">{description}</p>}
+        {description && <p className="line-clamp-2 leading-6 text-slate-600 dark:text-slate-300">{description}</p>}
       </div>
 
       {tags.length > 0 && (
         <div className="mt-auto flex flex-wrap gap-2 mb-4">
           {tags.map((tag) => (
-            <span key={tag} className="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 text-xs">
+            <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
               {tag}
             </span>
           ))}
@@ -122,7 +122,7 @@ export default function AnimalCard({
         {canEdit && (
           <Link
             to={`/animals/${id}/edit`}
-            className="inline-flex items-center justify-center px-3 py-3 rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            className="inline-flex items-center justify-center rounded-full bg-slate-100 px-3 py-3 text-slate-700 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
             title="Edit profile"
           >
             <Pencil className="w-4 h-4" />
