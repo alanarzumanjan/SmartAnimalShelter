@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { PawPrint, Save, ArrowLeft, Upload, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isAxiosError } from 'axios';
 import type { RootState } from '@/store/store';
+import { resolveOwnedShelterId } from '@/services/shelter.service';
 
 interface Species {
   id: number;
@@ -80,15 +82,13 @@ const CreateAnimalPage: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // Find the user's shelter
-      const sheltersRes = await api.get('/shelters');
-      const userShelters = (sheltersRes.data.shelters || []).filter(
-        (s: any) => s.ownerId === user?.id
-      );
+      const shelterId = user?.id
+        ? await resolveOwnedShelterId(user.id)
+        : '00000000-0000-0000-0000-000000000000';
 
       // If no shelter exists yet, send a placeholder — backend will auto-create one
-      const shelterId = userShelters.length > 0
-        ? userShelters[0].id
+      const canonicalShelterId = shelterId
+        ? shelterId
         : '00000000-0000-0000-0000-000000000000';
 
       // Calculate age in years (backend expects years)
@@ -109,7 +109,7 @@ const CreateAnimalPage: React.FC = () => {
         color: formData.color || null,
         statusId: Number(formData.statusId),
         description: formData.description || null,
-        shelterId,
+        shelterId: canonicalShelterId,
       };
 
       const response = await api.post('/pets', petData);
@@ -129,8 +129,10 @@ const CreateAnimalPage: React.FC = () => {
 
       toast.success('Animal profile created successfully!');
       navigate(`/animals/${response.data.id}`);
-    } catch (error: any) {
-      const message = error.response?.data?.message || error.response?.data || 'Failed to create animal';
+    } catch (error: unknown) {
+      const message = isAxiosError(error)
+        ? error.response?.data?.message || error.response?.data || 'Failed to create animal'
+        : 'Failed to create animal';
       if (typeof message === 'string') {
         toast.error(message);
       } else {
