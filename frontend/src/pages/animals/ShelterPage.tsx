@@ -192,7 +192,7 @@ export default function ShelterPage() {
   }
 
   const chatLink = shelter?.ownerId
-    ? `/dashboard/chats?target=${encodeURIComponent(shelter.name)}&recipientId=${shelter.ownerId}`
+    ? `/dashboard/chats?recipientId=${shelter.ownerId}&recipientName=${encodeURIComponent(shelter.name)}`
     : null;
 
   if (isLoading) {
