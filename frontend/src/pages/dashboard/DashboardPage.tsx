@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, Cpu, MapPin, History as HistoryIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -31,7 +31,7 @@ const DashboardPage: React.FC = () => {
 
   const currentUser = getStoredUser();
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     if (!currentUser?.id) {
       setDevices([]);
       setLatestByDevice({});
@@ -56,11 +56,11 @@ const DashboardPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [currentUser?.id]);
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    void loadDashboard();
+  }, [loadDashboard]);
 
   const latestMeasurements = useMemo(
     () =>
