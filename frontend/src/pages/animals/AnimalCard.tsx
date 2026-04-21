@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Building2, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isAxiosError } from 'axios';
 
 import api from '@/services/api';
 import type { RootState } from '@/store/store';
@@ -18,6 +19,7 @@ interface AnimalCardProps {
   location?: string;
   description?: string;
   tags?: string[];
+  shelterName?: string;
   shelterId?: string;
   shelterOwnerId?: string;
 }
@@ -39,10 +41,13 @@ export default function AnimalCard({
   location,
   description,
   tags = [],
+  shelterName,
+  shelterId,
   shelterOwnerId,
 }: AnimalCardProps) {
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const canEdit = isAuthenticated && user?.role === 'shelter' && user?.id === shelterOwnerId;
+  const showLocation = Boolean(location && location !== shelterName);
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
@@ -52,8 +57,8 @@ export default function AnimalCard({
       await api.delete(`/pets/${id}`);
       toast.success(`${name} removed`);
       window.location.reload();
-    } catch (err: any) {
-      const msg = err.response?.data;
+    } catch (err: unknown) {
+      const msg = isAxiosError(err) ? err.response?.data : undefined;
       toast.error(typeof msg === 'string' ? msg : 'Failed to delete');
     }
   }
@@ -98,9 +103,19 @@ export default function AnimalCard({
 
       <div className="mb-4 space-y-1 text-sm text-slate-500 dark:text-slate-400">
         {age && <p>Age: {age}</p>}
-        {location && <p>Location: {location}</p>}
+        {showLocation && <p>Location: {location}</p>}
         {description && <p className="line-clamp-2 leading-6 text-slate-600 dark:text-slate-300">{description}</p>}
       </div>
+
+      {shelterId && shelterName && (
+        <Link
+          to={`/shelters/${shelterId}`}
+          className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-primary-300 hover:text-primary-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-primary-500/40 dark:hover:text-primary-300"
+        >
+          <Building2 className="h-3.5 w-3.5" />
+          {shelterName}
+        </Link>
+      )}
 
       {tags.length > 0 && (
         <div className="mt-auto flex flex-wrap gap-2 mb-4">
@@ -117,7 +132,7 @@ export default function AnimalCard({
           to={`/animals/${id}`}
           className="flex-1 inline-flex items-center justify-center px-4 py-3 rounded-full bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors"
         >
-          More Information
+          View Profile
         </Link>
         {canEdit && (
           <Link
