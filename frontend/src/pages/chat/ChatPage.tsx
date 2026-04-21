@@ -95,7 +95,7 @@ export default function ChatPage() {
     }
   }, []);
 
-  async function switchRoom(roomId: string, recipient?: string) {
+  const switchRoom = useCallback(async (roomId: string, recipient?: string) => {
     try {
       await connect();
       setConnected(true);
@@ -126,7 +126,7 @@ export default function ChatPage() {
       setInput(pendingMessageRef.current);
       pendingMessageRef.current = '';
     }
-  }
+  }, [loadMessages]);
 
   // SignalR connect + message handler
   useEffect(() => {
@@ -165,16 +165,21 @@ export default function ChatPage() {
     if (!target) return;
     pendingMessageRef.current = initialMessage;
     const roomId = roomIdFromTarget(target);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    void switchRoom(roomId, recipientId);
-  }, [target]);
+    const timeoutId = window.setTimeout(() => {
+      void switchRoom(roomId, recipientId);
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [initialMessage, recipientId, switchRoom, target]);
 
   // Auto-open first room if no target
   useEffect(() => {
     if (!target && !activeRoom && rooms.length > 0) {
-      switchRoom(rooms[0].roomId);
+      const timeoutId = window.setTimeout(() => {
+        void switchRoom(rooms[0].roomId);
+      }, 0);
+      return () => window.clearTimeout(timeoutId);
     }
-  }, [rooms]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeRoom, rooms, switchRoom, target]);
 
   useEffect(() => {
     scrollToBottom();
