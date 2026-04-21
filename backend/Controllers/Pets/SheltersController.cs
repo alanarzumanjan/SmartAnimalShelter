@@ -34,6 +34,36 @@ public class SheltersController : ControllerBase
             return null;
     }
 
+    private string? TryDecrypt(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        try
+        {
+            return EncryptionService.Decrypt(value);
+        }
+        catch
+        {
+            return value;
+        }
+    }
+
+    private object ToShelterResponse(Shelter shelter, string? addressOverride = null, string? phoneOverride = null, string? emailOverride = null)
+    {
+        return new
+        {
+            shelter.Id,
+            shelter.Name,
+            shelter.Description,
+            shelter.OwnerId,
+            shelter.CreatedAt,
+            address = addressOverride ?? shelter.Address,
+            phone = phoneOverride ?? shelter.Phone,
+            email = emailOverride ?? TryDecrypt(shelter.Email),
+        };
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
@@ -99,8 +129,20 @@ public class SheltersController : ControllerBase
         if (shelter == null)
             return NotFound("Shelter not found.");
 
-        shelter.Email = EncryptionService.Decrypt(shelter.Email);
-        return Ok(shelter);
+        string? ownerPhone = null;
+        try { if (!string.IsNullOrWhiteSpace(shelter.Owner?.Phone)) ownerPhone = EncryptionService.Decrypt(shelter.Owner.Phone); } catch { }
+
+        string? ownerAddress = shelter.Owner?.Address;
+
+        return Ok(ToShelterResponse(
+            shelter,
+            addressOverride: !string.IsNullOrWhiteSpace(shelter.Address) && shelter.Address != "Address to be updated"
+                ? shelter.Address
+                : ownerAddress,
+            phoneOverride: !string.IsNullOrWhiteSpace(shelter.Phone)
+                ? shelter.Phone
+                : ownerPhone
+        ));
     }
 
     [Authorize(Roles = "veterinarian,shelter")]
@@ -137,7 +179,12 @@ public class SheltersController : ControllerBase
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return Ok(newShelter);
+            return Ok(ToShelterResponse(
+                newShelter,
+                addressOverride: newShelter.Address,
+                phoneOverride: newShelter.Phone,
+                emailOverride: dto.email
+            ));
         }
         catch (Exception ex)
         {
@@ -181,7 +228,7 @@ public class SheltersController : ControllerBase
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            return Ok(shelter);
+            return Ok(ToShelterResponse(shelter));
         }
         catch (Exception ex)
         {
