@@ -10,23 +10,14 @@ public static class PriceResolver
         try
         {
             var match = Regex.Match(description, @"(\d[\d\s]*[\.,]?\d*)\s*€");
-            if (match.Success)
-            {
-                string raw = match.Groups[1].Value;
-                raw = raw.Replace(" ", "").Replace(",", ".");
-                return raw;
-            }
-            else
-            {
-                // Console.WriteLine("[DEBUG] Сena not in description.");
-            }
+            if (!match.Success) return null;
+
+            var raw = match.Groups[1].Value.Replace(" ", "").Replace(",", ".");
+            return raw;
         }
-        catch (Exception ex)
+        catch
         {
-            Console.WriteLine($"⚠️ Error with cena: {ex.Message}");
+            return null;
         }
-
-        return null;
-
     }
 }
