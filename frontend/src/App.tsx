@@ -20,6 +20,7 @@ import AnimalDetailsPage from '@/pages/animals/AnimalDetailsPage';
 import CreateAnimalPage from '@/pages/animals/CreateAnimalPage';
 import EditAnimalPage from '@/pages/animals/EditAnimalPage';
 import AdoptionFormPage from '@/pages/animals/AdoptionFormPage';
+import ShelterPage from '@/pages/animals/ShelterPage';
 import ChatPage from '@/pages/chat/ChatPage';
 import StorePage from '@/pages/store/StorePage';
 import ProfilePage from '@/pages/profile/ProfilePage';
@@ -68,6 +69,7 @@ function AppRoutes() {
             }
           />
           <Route path="/adoption" element={<AdoptionFormPage />} />
+          <Route path="/shelters/:shelterId" element={<ShelterPage />} />
           <Route path="/store" element={<StorePage />} />
 
           <Route
