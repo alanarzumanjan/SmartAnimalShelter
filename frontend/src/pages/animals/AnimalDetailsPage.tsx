@@ -134,7 +134,16 @@ const AnimalDetailsPage: React.FC = () => {
               </div>
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
                 <div className="text-sm text-slate-500 dark:text-slate-400">Shelter</div>
-                <div className="font-semibold text-slate-900 dark:text-white">{animal.shelterName ?? 'Shelter team'}</div>
+                {animal.shelterId ? (
+                  <Link
+                    to={`/shelters/${animal.shelterId}`}
+                    className="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
+                  >
+                    {animal.shelterName ?? 'Shelter team'}
+                  </Link>
+                ) : (
+                  <div className="font-semibold text-slate-900 dark:text-white">{animal.shelterName ?? 'Shelter team'}</div>
+                )}
               </div>
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
                 <div className="text-sm text-slate-500 dark:text-slate-400">Contact</div>
