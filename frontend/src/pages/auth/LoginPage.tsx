@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isAxiosError } from 'axios';
 
 import type { AppDispatch } from '@/store/store';
 import { loginStart, loginSuccess, loginFailure } from '@/store/slices/authSlice';
@@ -41,9 +42,10 @@ export default function LoginPage() {
       dispatch(loginSuccess(data));
       toast.success('Welcome back!');
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err: unknown) {
       dispatch(loginFailure());
-      toast.error(err.response?.data?.message || 'Login failed');
+      const message = isAxiosError(err) ? err.response?.data?.message : null;
+      toast.error(typeof message === 'string' ? message : 'Login failed');
     } finally {
       setIsLoading(false);
     }
