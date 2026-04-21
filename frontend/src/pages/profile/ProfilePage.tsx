@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
-import { User, Lock, PawPrint, Heart, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { User, Lock, PawPrint, Heart, ShoppingBag, AlertTriangle, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { RootState, AppDispatch } from '@/store/store';
 import { logout } from '@/store/slices/authSlice';
 import api from '@/services/api';
+import { resolveOwnedShelterId } from '@/services/shelter.service';
 
 import type { UserProfile, AdoptionRecord, OrderRecord, AnimalItem, TabKey } from './types';
 import { formatDate, getRoleBadge } from './types';
@@ -18,7 +19,6 @@ import OrdersTab from './OrdersTab';
 import DangerTab from './DangerTab';
 
 type EditForm = { name: string; email: string; phone: string; address: string };
-
 export default function ProfilePage() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -34,20 +34,11 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [shelterId, setShelterId] = useState<string | null>(null);
 
   const isShelter = user?.role === 'veterinarian' || user?.role === 'shelter';
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'animals' && animals.length === 0 && isShelter) loadAnimals();
-    if (activeTab === 'adoptions' && adoptions.length === 0) loadAdoptions();
-    if (activeTab === 'orders' && orders.length === 0) loadOrders();
-  }, [activeTab]);
-
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     try {
       const { data } = await api.get('/users/me');
       setProfile(data);
@@ -60,22 +51,35 @@ export default function ProfilePage() {
     } catch {
       toast.error('Failed to load profile');
     }
-  }
+  }, []);
 
-  async function loadAnimals() {
-    if (!user?.id) return;
+  const loadShelter = useCallback(async () => {
+    if (!isShelter || !user?.id) {
+      setShelterId(null);
+      return;
+    }
+
+    try {
+      setShelterId(await resolveOwnedShelterId(user.id));
+    } catch {
+      setShelterId(null);
+    }
+  }, [isShelter, user?.id]);
+
+  const loadAnimals = useCallback(async () => {
+    if (!shelterId) return;
     setIsLoadingData(true);
     try {
-      const { data } = await api.get(`/pets?shelterId=${user.id}&page=1&pageSize=50`);
+      const { data } = await api.get(`/pets?shelterId=${shelterId}&page=1&pageSize=50`);
       setAnimals(data?.pets ?? []);
     } catch {
       toast.error('Failed to load animals');
     } finally {
       setIsLoadingData(false);
     }
-  }
+  }, [shelterId]);
 
-  async function loadAdoptions() {
+  const loadAdoptions = useCallback(async () => {
     if (!user?.id) return;
     setIsLoadingData(true);
     try {
@@ -87,9 +91,9 @@ export default function ProfilePage() {
     } finally {
       setIsLoadingData(false);
     }
-  }
+  }, [user?.id]);
 
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     if (!token) return;
     setIsLoadingData(true);
     try {
@@ -101,7 +105,18 @@ export default function ProfilePage() {
     } finally {
       setIsLoadingData(false);
     }
-  }
+  }, [token]);
+
+  useEffect(() => {
+    void loadProfile();
+    void loadShelter();
+  }, [loadProfile, loadShelter]);
+
+  useEffect(() => {
+    if (activeTab === 'animals' && animals.length === 0 && isShelter && shelterId) void loadAnimals();
+    if (activeTab === 'adoptions' && adoptions.length === 0) void loadAdoptions();
+    if (activeTab === 'orders' && orders.length === 0) void loadOrders();
+  }, [activeTab, animals.length, adoptions.length, isShelter, loadAdoptions, loadAnimals, loadOrders, orders.length, shelterId]);
 
   async function handleUpdateProfile() {
     if (!profile) return;
@@ -109,7 +124,7 @@ export default function ProfilePage() {
       await api.patch(`/users/${profile.id}`, editForm);
       toast.success('Profile updated');
       setIsEditing(false);
-      loadProfile();
+      void loadProfile();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to update profile';
       toast.error(msg);
@@ -179,6 +194,15 @@ export default function ProfilePage() {
                 Member since {formatDate(profile.createdAt)}
               </span>
             </div>
+            {isShelter && shelterId && (
+              <Link
+                to={`/shelters/${shelterId}`}
+                className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-sm font-medium border border-slate-200 text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                View my shelter page
+              </Link>
+            )}
           </div>
         </div>
       </section>
