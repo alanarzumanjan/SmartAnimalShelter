@@ -18,6 +18,7 @@ interface ChatMessage {
 
 interface Room {
   roomId: string;
+  recipientName?: string;
   lastMessage: { senderName: string; text: string; createdAt: string };
 }
 
@@ -29,8 +30,9 @@ function formatTime(iso: string) {
     : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-function roomIdFromTarget(target: string) {
-  return target.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function dmRoomId(userA: string, userB: string): string {
+  const [a, b] = [userA, userB].sort();
+  return `dm-${a}-${b}`;
 }
 
 export default function ChatPage() {
@@ -39,41 +41,44 @@ export default function ChatPage() {
 
   const [apiRooms, setApiRooms] = useState<Room[]>([]);
   const [activeRoom, setActiveRoom] = useState<string | null>(null);
+  const [activeRoomName, setActiveRoomName] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [connected, setConnected] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
   const [showNewRoom, setShowNewRoom] = useState(false);
+  const [roomNames, setRoomNames] = useState<Record<string, string>>({});
 
   const activeRoomRef = useRef<string | null>(null);
   const prevRoomRef = useRef<string | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-  const target = searchParams.get('target');
-  const pet = searchParams.get('pet');
   const recipientId = searchParams.get('recipientId') || undefined;
+  const recipientName = searchParams.get('recipientName') || 'Chat';
   const initialMessage = searchParams.get('message') || '';
 
   const pendingMessageRef = useRef('');
 
-  // Merge URL target room into the rooms list without setState in effect
+  const userId = user?.id ?? null;
+
   const rooms = useMemo<Room[]>(() => {
-    if (!target) return apiRooms;
-    const roomId = roomIdFromTarget(target);
+    if (!recipientId || !userId) return apiRooms;
+    const roomId = dmRoomId(userId, recipientId);
     const exists = apiRooms.find((r) => r.roomId === roomId);
     if (exists) return apiRooms;
     return [
       {
         roomId,
+        recipientName,
         lastMessage: {
-          senderName: target,
-          text: pet ? `Inquiry about ${pet}` : 'New conversation',
+          senderName: recipientName,
+          text: 'New conversation',
           createdAt: new Date().toISOString(),
         },
       },
       ...apiRooms,
     ];
-  }, [apiRooms, target, pet]);
+  }, [apiRooms, recipientId, recipientName, userId]);
 
   function scrollToBottom() {
     const el = messagesContainerRef.current;
@@ -95,7 +100,7 @@ export default function ChatPage() {
     }
   }, []);
 
-  const switchRoom = useCallback(async (roomId: string, recipient?: string) => {
+  const switchRoom = useCallback(async (roomId: string, recipient?: string, recipientName?: string) => {
     try {
       await connect();
       setConnected(true);
@@ -109,6 +114,7 @@ export default function ChatPage() {
 
     activeRoomRef.current = roomId;
     setActiveRoom(roomId);
+    setActiveRoomName(recipientName ?? null);
     setMessages([]);
     prevRoomRef.current = roomId;
 
@@ -130,25 +136,35 @@ export default function ChatPage() {
 
   // SignalR connect + message handler
   useEffect(() => {
-    connect()
-      .then(() => setConnected(true))
-      .catch(() => setConnected(false));
+    let cancelled = false;
 
     const conn = getConnection();
+
+    conn.off('ReceiveMessage');
     conn.on('ReceiveMessage', (msg: ChatMessage) => {
+      if (cancelled) return;
       if (msg.roomId !== activeRoomRef.current) return;
       setMessages((prev) => {
         if (prev.some((m) => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
       api.get('/chat/rooms')
-        .then(({ data }) => setApiRooms(data))
+        .then(({ data }) => { if (!cancelled) setApiRooms(data); })
         .catch(() => {});
     });
 
+    conn.onreconnected(() => { if (!cancelled) setConnected(true); });
+    conn.onreconnecting(() => { if (!cancelled) setConnected(false); });
+    conn.onclose(() => { if (!cancelled) setConnected(false); });
+
+    connect()
+      .then(() => { if (!cancelled) setConnected(true); })
+      .catch(() => { if (!cancelled) setConnected(false); });
+
     return () => {
+      cancelled = true;
       conn.off('ReceiveMessage');
-      if (prevRoomRef.current) leaveRoom(prevRoomRef.current);
+      if (prevRoomRef.current) leaveRoom(prevRoomRef.current).catch(() => {});
       disconnect();
     };
   }, []);
@@ -160,26 +176,27 @@ export default function ChatPage() {
       .catch(() => {});
   }, []);
 
-  // Open target room from URL
+  // Open DM room from URL
   useEffect(() => {
-    if (!target) return;
+    if (!recipientId || !userId) return;
     pendingMessageRef.current = initialMessage;
-    const roomId = roomIdFromTarget(target);
+    const roomId = dmRoomId(userId, recipientId);
     const timeoutId = window.setTimeout(() => {
-      void switchRoom(roomId, recipientId);
+      void switchRoom(roomId, recipientId, recipientName);
     }, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [initialMessage, recipientId, switchRoom, target]);
+  }, [initialMessage, recipientId, recipientName, switchRoom, userId]);
 
-  // Auto-open first room if no target
+  // Auto-open first room if no recipientId in URL
   useEffect(() => {
-    if (!target && !activeRoom && rooms.length > 0) {
+    if (!recipientId && !activeRoom && rooms.length > 0) {
+      const first = rooms[0];
       const timeoutId = window.setTimeout(() => {
-        void switchRoom(rooms[0].roomId);
+        void switchRoom(first.roomId, undefined, first.recipientName ?? undefined);
       }, 0);
       return () => window.clearTimeout(timeoutId);
     }
-  }, [activeRoom, rooms, switchRoom, target]);
+  }, [activeRoom, recipientId, rooms, switchRoom]);
 
   useEffect(() => {
     scrollToBottom();
@@ -198,8 +215,9 @@ export default function ChatPage() {
 
   function handleCreateRoom(e: React.FormEvent) {
     e.preventDefault();
-    if (!newRoomName.trim()) return;
-    const roomId = roomIdFromTarget(newRoomName.trim());
+    if (!newRoomName.trim() || !user?.id) return;
+    const roomId = newRoomName.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    setRoomNames((prev) => ({ ...prev, [roomId]: newRoomName.trim() }));
     setApiRooms((prev) => {
       if (prev.find((r) => r.roomId === roomId)) return prev;
       return [
@@ -268,7 +286,7 @@ export default function ChatPage() {
               <button
                 key={room.roomId}
                 type="button"
-                onClick={() => switchRoom(room.roomId)}
+                onClick={() => switchRoom(room.roomId, undefined, room.recipientName ?? undefined)}
                 className={`w-full text-left rounded-2xl px-4 py-3 transition-colors ${
                   activeRoom === room.roomId
                     ? 'border border-primary-100 bg-primary-50 dark:border-primary-400/20 dark:bg-primary-500/10'
@@ -276,7 +294,9 @@ export default function ChatPage() {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">{room.roomId}</span>
+                  <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                    {room.recipientName ?? roomNames[room.roomId] ?? room.lastMessage.senderName ?? room.roomId}
+                  </span>
                   <span className="ml-2 shrink-0 text-xs text-slate-400 dark:text-slate-500">{formatTime(room.lastMessage.createdAt)}</span>
                 </div>
                 <p className="truncate text-xs text-slate-500 dark:text-slate-400">{room.lastMessage.text}</p>
@@ -296,7 +316,9 @@ export default function ChatPage() {
           ) : (
             <>
               <div className="shrink-0 border-b border-slate-200/80 px-6 py-4 dark:border-slate-800">
-                <h2 className="font-bold text-slate-900 dark:text-white">{activeRoom}</h2>
+                <h2 className="font-bold text-slate-900 dark:text-white">
+                  {activeRoomName ?? roomNames[activeRoom] ?? activeRoom}
+                </h2>
               </div>
 
               <div ref={messagesContainerRef} className="flex-1 space-y-3 overflow-y-auto bg-slate-50/80 px-6 py-4 dark:bg-slate-950/50">
