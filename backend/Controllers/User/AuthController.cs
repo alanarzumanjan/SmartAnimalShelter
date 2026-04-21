@@ -21,7 +21,8 @@ public class AuthController : ControllerBase
     private readonly RedisService _redis;
 
     private static readonly TimeSpan AuthRateWindow = TimeSpan.FromMinutes(15);
-    private const int AuthRateLimit = 10;
+    private static readonly int AuthRateLimit =
+        int.TryParse(Environment.GetEnvironmentVariable("AUTH_RATE_LIMIT"), out var v) ? v : 10;
 
     public AuthController(
         AppDbContext db,
