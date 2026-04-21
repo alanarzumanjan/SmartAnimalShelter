@@ -114,7 +114,7 @@ public class DeviceUsersController : ControllerBase
             });
         }
 
-        // ✅ Уже есть ключ — не выдаём новый
+        // ✅ Key already exists — don't issue a new one
         return Ok(new DeviceLoginResponse 
         { 
             DeviceUsersId = link.Id, 
