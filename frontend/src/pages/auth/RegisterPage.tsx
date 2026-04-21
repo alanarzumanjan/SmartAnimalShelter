@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, UserPlus, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { isAxiosError } from 'axios';
 
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
@@ -42,8 +43,8 @@ export default function RegisterPage() {
       localStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Account created!');
       navigate('/dashboard');
-    } catch (err: any) {
-      if (err.response?.status === 400) {
+    } catch (err: unknown) {
+      if (isAxiosError(err) && err.response?.status === 400) {
         const be = err.response.data?.errors;
         if (be) {
           setErrors({
@@ -53,7 +54,8 @@ export default function RegisterPage() {
           });
           toast.error('Please fix the errors below');
         } else {
-          toast.error(err.response.data?.message ?? err.response.data);
+          const message = err.response.data?.message ?? err.response.data;
+          toast.error(typeof message === 'string' ? message : 'Registration failed, please try again');
         }
       } else {
         toast.error('Registration failed, please try again');
