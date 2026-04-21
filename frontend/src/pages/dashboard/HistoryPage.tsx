@@ -67,7 +67,7 @@ const HistoryPage: React.FC = () => {
   useEffect(() => {
     if (!currentUser?.id) return;
     getUserDevices(currentUser.id).then(setDevices).catch(() => {});
-  }, []);
+  }, [currentUser?.id]);
 
   // Fetch measurements
   useEffect(() => {
