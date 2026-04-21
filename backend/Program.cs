@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Data;
 using Services;
+using Services.Redis;
 using ImageFetchers;
 using Config;
 using MongoDB.Driver;
 using DotNetEnv;
 using Services.Payments;
 using Hubs;
+using StackExchange.Redis;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -89,9 +91,16 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddSingleton<PasswordHashingService>();
 builder.Services.AddScoped<UserEmailService>();
 
+// Redis
+var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "localhost:6379";
+var redisMultiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
+builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
+builder.Services.AddSingleton<RedisService>();
+
 // Controllers
 builder.Services.AddControllers();
-builder.Services.AddSignalR();
+builder.Services.AddSignalR()
+    .AddStackExchangeRedis(redisConnectionString);
 builder.Services.AddHealthChecks();
 
 // Pets
