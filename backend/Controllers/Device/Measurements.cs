@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Models;
 using Dtos;
 using Data;
+using Services.Redis;
 
 namespace Controllers;
 
@@ -13,8 +14,17 @@ namespace Controllers;
 public class MeasurementsController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly RedisService _redis;
 
-    public MeasurementsController(AppDbContext db) => _db = db;
+    // SCD41 hardware minimum interval is ~5 seconds per measurement
+    private static readonly TimeSpan IotRateWindow = TimeSpan.FromSeconds(10);
+    private const int IotRateLimit = 2;
+
+    public MeasurementsController(AppDbContext db, RedisService redis)
+    {
+        _db = db;
+        _redis = redis;
+    }
 
     private static string NormalizeMac(string mac)
     {
@@ -54,6 +64,11 @@ public class MeasurementsController : ControllerBase
         var mac = NormalizeMac(request.DeviceId!);
         if (!IsValidMac(mac))
             return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
+
+        // Rate limit per MAC — guards against a stuck device spamming the endpoint
+        var allowed = await _redis.AllowRequestAsync($"ratelimit:iot:{mac}", IotRateLimit, IotRateWindow);
+        if (!allowed)
+            return StatusCode(429, new { error = "Too many requests. Device is sending data too fast." });
 
         try
         {
@@ -114,6 +129,9 @@ public class MeasurementsController : ControllerBase
 
             var message = $"> Measurement saved: device={mac}, userId={userId}, link={link.Id}, co2={request.CO2}, ts={ts:o}";
             Console.WriteLine(message);
+
+            // Cache the latest reading so the dashboard doesn't hammer the DB
+            await _redis.SetAsync($"device:latest:{mac}", MeasurementOutDTO.FromEntity(entity), TimeSpan.FromMinutes(5));
 
             return Ok(new { message, data = MeasurementOutDTO.FromEntity(entity) });
         }
@@ -260,6 +278,11 @@ public async Task<IActionResult> GetByDevice(
         {
             var mac = NormalizeMac(deviceId);
 
+            // Check Redis first — the dashboard polls this endpoint frequently
+            var cached = await _redis.GetAsync<MeasurementOutDTO>($"device:latest:{mac}");
+            if (cached != null)
+                return Ok(new { data = cached, source = "cache" });
+
             var item = await _db.Measurements
                 .AsNoTracking()
                 .Where(m => m.DeviceId == mac)
@@ -269,7 +292,10 @@ public async Task<IActionResult> GetByDevice(
             if (item == null)
                 return NotFound(new { error = "No measurements yet." });
 
-            return Ok(new { data = MeasurementOutDTO.FromEntity(item) });
+            var dto = MeasurementOutDTO.FromEntity(item);
+            await _redis.SetAsync($"device:latest:{mac}", dto, TimeSpan.FromMinutes(5));
+
+            return Ok(new { data = dto, source = "db" });
         }
         catch (Exception ex)
         {
