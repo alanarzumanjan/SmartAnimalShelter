@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Validation;
 using Services;
+using Services.Redis;
 using Config;
 using Models;
 using Dtos;
@@ -17,22 +18,32 @@ public class AuthController : ControllerBase
     private readonly JwtService _jwtService;
     private readonly PasswordHashingService _passwordHashingService;
     private readonly UserEmailService _userEmailService;
+    private readonly RedisService _redis;
+
+    private static readonly TimeSpan AuthRateWindow = TimeSpan.FromMinutes(15);
+    private const int AuthRateLimit = 10;
 
     public AuthController(
-        AppDbContext db, 
-        JwtService jwtService, 
+        AppDbContext db,
+        JwtService jwtService,
         PasswordHashingService passwordHashingService,
-        UserEmailService userEmailService)
+        UserEmailService userEmailService,
+        RedisService redis)
     {
         this.db = db;
         _jwtService = jwtService;
         _passwordHashingService = passwordHashingService;
         _userEmailService = userEmailService;
+        _redis = redis;
     }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] UserRegisterDto user)
     {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        if (!await _redis.AllowRequestAsync($"ratelimit:auth:{ip}", AuthRateLimit, AuthRateWindow))
+            return StatusCode(429, new { error = "Too many attempts. Try again later." });
+
         var validator = new UserRegisterValidator();
         var errors = validator.Validate(user);
 
@@ -128,6 +139,10 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] UserLoginDto loginRequest)
     {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        if (!await _redis.AllowRequestAsync($"ratelimit:auth:{ip}", AuthRateLimit, AuthRateWindow))
+            return StatusCode(429, new { error = "Too many attempts. Try again later." });
+
         var validator = new UserLoginValidator();
         var errors = validator.Validate(loginRequest);
 
