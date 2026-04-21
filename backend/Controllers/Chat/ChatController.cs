@@ -24,7 +24,6 @@ public class ChatController : ControllerBase
         return Guid.TryParse(raw, out var id) ? id : null;
     }
 
-    // GET /chat/rooms — rooms where the current user is a member
     [HttpGet("rooms")]
     public async Task<IActionResult> GetRooms()
     {
@@ -38,6 +37,23 @@ public class ChatController : ControllerBase
 
         if (roomIds.Count == 0) return Ok(new List<object>());
 
+        var allMembers = await _db.ChatRoomMembers
+            .Where(m => roomIds.Contains(m.RoomId) && m.UserId != userId)
+            .ToListAsync();
+
+        var recipientIds = allMembers.Select(m => m.UserId).Distinct().ToList();
+        var recipients = await _db.Users
+            .Where(u => recipientIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.Username })
+            .ToDictionaryAsync(u => u.Id);
+
+        var recipientByRoom = allMembers
+            .GroupBy(m => m.RoomId)
+            .ToDictionary(
+                g => g.Key,
+                g => recipients.TryGetValue(g.First().UserId, out var u) ? u.Username : null
+            );
+
         // Load last message per room in memory
         var messages = await _db.ChatMessages
             .Where(m => roomIds.Contains(m.RoomId))
@@ -49,21 +65,25 @@ public class ChatController : ControllerBase
             .Select(g =>
             {
                 var last = g.First();
+                recipientByRoom.TryGetValue(g.Key, out var recipientName);
                 return new
                 {
                     roomId = g.Key,
+                    recipientName,
                     lastMessage = new { last.SenderName, last.Text, last.CreatedAt },
                 };
             })
             .OrderByDescending(r => r.lastMessage.CreatedAt)
-            .ToList();
+            .ToList<object>();
 
         // Include rooms with no messages yet
-        foreach (var roomId in roomIds.Where(id => rooms.All(r => r.roomId != id)))
+        foreach (var roomId in roomIds.Where(id => rooms.All(r => ((dynamic)r).roomId != id)))
         {
+            recipientByRoom.TryGetValue(roomId, out var recipientName);
             rooms.Add(new
             {
                 roomId,
+                recipientName,
                 lastMessage = new { SenderName = "", Text = "No messages yet", CreatedAt = DateTime.UtcNow },
             });
         }
@@ -71,7 +91,6 @@ public class ChatController : ControllerBase
         return Ok(rooms);
     }
 
-    // GET /chat/rooms/{roomId}/messages
     [HttpGet("rooms/{roomId}/messages")]
     public async Task<IActionResult> GetMessages(string roomId, [FromQuery] int limit = 50)
     {
@@ -94,7 +113,6 @@ public class ChatController : ControllerBase
         return Ok(messages);
     }
 
-    // POST /chat/rooms/{roomId}/join — join a room via REST (for initial setup)
     [HttpPost("rooms/{roomId}/join")]
     public async Task<IActionResult> JoinRoom(string roomId, [FromBody] JoinRoomDto? dto)
     {
