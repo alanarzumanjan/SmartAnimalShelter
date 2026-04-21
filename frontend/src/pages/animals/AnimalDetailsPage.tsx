@@ -86,7 +86,7 @@ const AnimalDetailsPage: React.FC = () => {
     );
   }
 
-  const chatLink = `/dashboard/chats?target=${encodeURIComponent(animal.shelterName ?? 'Shelter team')}&pet=${encodeURIComponent(animal.name)}&recipientId=${animal.shelterOwnerId ?? ''}&message=${encodeURIComponent(`Hi! I'm interested in adopting ${animal.name} (${animal.species}). Could you tell me more?`)}`;
+  const chatLink = `/dashboard/chats?recipientId=${animal.shelterOwnerId ?? ''}&recipientName=${encodeURIComponent(animal.shelterName ?? 'Shelter')}&message=${encodeURIComponent(`Hi! I'm interested in adopting ${animal.name} (${animal.species}). Could you tell me more?`)}`;
 
   return (
     <div className="py-8 space-y-8">
