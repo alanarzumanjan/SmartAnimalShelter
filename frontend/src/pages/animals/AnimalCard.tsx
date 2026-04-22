@@ -14,7 +14,7 @@ interface AnimalCardProps {
   species: string;
   breed?: string;
   age?: string;
-  status: 'Available' | 'Adopted' | 'Quarantine';
+  status: 'Available' | 'Adopted';
   imageUrl?: string;
   location?: string;
   description?: string;
@@ -27,7 +27,6 @@ interface AnimalCardProps {
 const statusColors = {
   Available: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300',
   Adopted: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300',
-  Quarantine: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/15 dark:text-yellow-300',
 };
 
 export default function AnimalCard({
