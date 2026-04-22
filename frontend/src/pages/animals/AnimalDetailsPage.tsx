@@ -5,7 +5,7 @@ import { MessageSquare, MapPin, PawPrint, ShieldCheck, Pencil, Trash2 } from 'lu
 import type { RootState } from '@/store/store';
 import api from '@/services/api';
 import { Button } from '@/components/ui/Button';
-import { getPreviewAnimalById, mapAnimal, type AnimalItem } from './animalCatalog';
+import { mapAnimal, type AnimalItem } from './animalCatalog';
 import toast from 'react-hot-toast';
 
 const AnimalDetailsPage: React.FC = () => {
@@ -21,13 +21,6 @@ const AnimalDetailsPage: React.FC = () => {
     const loadAnimal = async () => {
       if (!animalId) {
         setAnimal(null);
-        setIsLoading(false);
-        return;
-      }
-
-      const previewAnimal = getPreviewAnimalById(animalId);
-      if (previewAnimal) {
-        setAnimal(previewAnimal);
         setIsLoading(false);
         return;
       }
@@ -87,6 +80,12 @@ const AnimalDetailsPage: React.FC = () => {
   }
 
   const chatLink = `/dashboard/chats?recipientId=${animal.shelterOwnerId ?? ''}&recipientName=${encodeURIComponent(animal.shelterName ?? 'Shelter')}&message=${encodeURIComponent(`Hi! I'm interested in adopting ${animal.name} (${animal.species}). Could you tell me more?`)}`;
+
+  function boolBadge(val: boolean | null | undefined) {
+    if (val === true)  return <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Yes</span>;
+    if (val === false) return <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">No</span>;
+    return <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">Unknown</span>;
+  }
 
   return (
     <div className="py-8 space-y-8">
@@ -149,6 +148,32 @@ const AnimalDetailsPage: React.FC = () => {
                 <div className="text-sm text-slate-500 dark:text-slate-400">Contact</div>
                 <div className="font-semibold text-slate-900 dark:text-white">{animal.contactName ?? 'Shelter team'}</div>
               </div>
+              {animal.size && (
+                <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">Size</div>
+                  <div className="font-semibold text-slate-900 dark:text-white">{animal.size}</div>
+                </div>
+              )}
+              {animal.weight != null && (
+                <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">Weight</div>
+                  <div className="font-semibold text-slate-900 dark:text-white">{animal.weight} kg</div>
+                </div>
+              )}
+              {animal.energyLevel && (
+                <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">Energy</div>
+                  <div className="font-semibold text-slate-900 dark:text-white">{animal.energyLevel}</div>
+                </div>
+              )}
+              {animal.adoptionFee != null && (
+                <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
+                  <div className="text-sm text-slate-500 dark:text-slate-400">Adoption fee</div>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    {animal.adoptionFee === 0 ? 'Free' : `€${animal.adoptionFee}`}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -204,17 +229,40 @@ const AnimalDetailsPage: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
-            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Medical notes</h3>
-            <p className="leading-7 text-slate-600 dark:text-slate-300">{animal.medicalNotes}</p>
+          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Medical</h3>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-4 text-sm">
+                <span className="flex items-center gap-2 text-slate-500">Neutered: {boolBadge(animal.isNeutered)}</span>
+                <span className="flex items-center gap-2 text-slate-500">Chipped: {boolBadge(animal.isChipped)}</span>
+              </div>
+              {animal.chipNumber && <p className="text-sm text-slate-500">Chip: <span className="font-mono text-slate-700 dark:text-slate-300">{animal.chipNumber}</span></p>}
+              {animal.medicalNotes && <p className="leading-7 text-slate-600 dark:text-slate-300">{animal.medicalNotes}</p>}
+              {animal.specialNeeds && <div><p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Special needs</p><p className="text-sm text-slate-600 dark:text-slate-300">{animal.specialNeeds}</p></div>}
+              {animal.currentMedications && <div><p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Medications</p><p className="text-sm text-slate-600 dark:text-slate-300">{animal.currentMedications}</p></div>}
+            </div>
           </section>
 
-          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
-            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Ideal home</h3>
-            <p className="leading-7 text-slate-600 dark:text-slate-300">{animal.idealHome}</p>
+          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Compatibility</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between"><span className="text-slate-500">House trained</span>{boolBadge(animal.isHouseTrained)}</div>
+              <div className="flex items-center justify-between"><span className="text-slate-500">Good with kids</span>{boolBadge(animal.goodWithKids)}</div>
+              <div className="flex items-center justify-between"><span className="text-slate-500">Good with dogs</span>{boolBadge(animal.goodWithDogs)}</div>
+              <div className="flex items-center justify-between"><span className="text-slate-500">Good with cats</span>{boolBadge(animal.goodWithCats)}</div>
+              {animal.experienceLevel && <div className="flex items-center justify-between"><span className="text-slate-500">Owner experience</span><span className="font-medium text-slate-700 dark:text-slate-300">{animal.experienceLevel}</span></div>}
+              {animal.housingRequirement && <div className="flex items-center justify-between"><span className="text-slate-500">Housing</span><span className="font-medium text-slate-700 dark:text-slate-300">{animal.housingRequirement}</span></div>}
+            </div>
           </section>
 
-          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
+          {animal.idealHome && (
+            <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
+              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Ideal home</h3>
+              <p className="leading-7 text-slate-600 dark:text-slate-300">{animal.idealHome}</p>
+            </section>
+          )}
+
+          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
             <div className="flex items-start gap-3">
               <MapPin className="w-5 h-5 text-primary-600 mt-1" />
               <div>
