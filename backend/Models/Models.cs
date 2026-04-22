@@ -205,6 +205,54 @@ public class Pet
     [MaxLength(1000)]
     public string? Description { get; set; }
 
+    [MaxLength(2000)]
+    public string? MedicalNotes { get; set; }
+
+    [MaxLength(1000)]
+    public string? IdealHome { get; set; }
+
+    [MaxLength(1000)]
+    public string? SpecialNeeds { get; set; }
+
+    [MaxLength(500)]
+    public string? CurrentMedications { get; set; }
+
+    [MaxLength(1000)]
+    public string? IntakeReason { get; set; }
+
+    public DateTime? IntakeDate { get; set; }
+
+    public float? Weight { get; set; }
+
+    [MaxLength(20)]
+    public string? Size { get; set; }
+
+    [MaxLength(20)]
+    public string? EnergyLevel { get; set; }
+
+    [MaxLength(20)]
+    public string? ExperienceLevel { get; set; }
+
+    [MaxLength(20)]
+    public string? HousingRequirement { get; set; }
+
+    public bool? IsNeutered { get; set; }
+
+    public bool? IsChipped { get; set; }
+
+    [MaxLength(100)]
+    public string? ChipNumber { get; set; }
+
+    public bool? IsHouseTrained { get; set; }
+
+    public bool? GoodWithKids { get; set; }
+
+    public bool? GoodWithDogs { get; set; }
+
+    public bool? GoodWithCats { get; set; }
+
+    public decimal? AdoptionFee { get; set; }
+
     [MaxLength(1000)]
     public string? ImageUrl { get; set; }
 
