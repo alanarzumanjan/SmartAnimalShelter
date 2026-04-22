@@ -1,4 +1,4 @@
-export type AnimalStatus = 'Available' | 'Adopted' | 'Quarantine';
+export type AnimalStatus = 'Available' | 'Adopted';
 
 export interface AnimalItem {
   id: string;
@@ -20,6 +20,23 @@ export interface AnimalItem {
   careHighlights?: string[];
   medicalNotes?: string;
   idealHome?: string;
+  weight?: number;
+  size?: string;
+  energyLevel?: string;
+  experienceLevel?: string;
+  housingRequirement?: string;
+  isNeutered?: boolean | null;
+  isChipped?: boolean | null;
+  chipNumber?: string;
+  isHouseTrained?: boolean | null;
+  goodWithKids?: boolean | null;
+  goodWithDogs?: boolean | null;
+  goodWithCats?: boolean | null;
+  adoptionFee?: number;
+  specialNeeds?: string;
+  currentMedications?: string;
+  intakeReason?: string;
+  intakeDate?: string;
 }
 
 export interface PreviewShelter {
@@ -64,6 +81,44 @@ interface BackendAnimal {
   color?: string | null;
   price?: string | number | null;
   externalUrl?: string | null;
+  medicalNotes?: string | null;
+  idealHome?: string | null;
+  MedicalNotes?: string | null;
+  IdealHome?: string | null;
+  weight?: number | null;
+  Weight?: number | null;
+  size?: string | null;
+  Size?: string | null;
+  energyLevel?: string | null;
+  EnergyLevel?: string | null;
+  experienceLevel?: string | null;
+  ExperienceLevel?: string | null;
+  housingRequirement?: string | null;
+  HousingRequirement?: string | null;
+  isNeutered?: boolean | null;
+  IsNeutered?: boolean | null;
+  isChipped?: boolean | null;
+  IsChipped?: boolean | null;
+  chipNumber?: string | null;
+  ChipNumber?: string | null;
+  isHouseTrained?: boolean | null;
+  IsHouseTrained?: boolean | null;
+  goodWithKids?: boolean | null;
+  GoodWithKids?: boolean | null;
+  goodWithDogs?: boolean | null;
+  GoodWithDogs?: boolean | null;
+  goodWithCats?: boolean | null;
+  GoodWithCats?: boolean | null;
+  adoptionFee?: number | null;
+  AdoptionFee?: number | null;
+  specialNeeds?: string | null;
+  SpecialNeeds?: string | null;
+  currentMedications?: string | null;
+  CurrentMedications?: string | null;
+  intakeReason?: string | null;
+  IntakeReason?: string | null;
+  intakeDate?: string | null;
+  IntakeDate?: string | null;
 }
 
 const getEntityName = (value?: BackendNamedEntity | string | null) => {
@@ -162,7 +217,7 @@ export const previewAnimals: AnimalItem[] = [
     species: 'Rabbit',
     breed: 'Mini Lop',
     age: '1 year',
-    status: 'Quarantine',
+    status: 'Available',
     imageUrl: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?auto=format&fit=crop&w=1200&q=80',
     location: 'Medical observation unit',
     shelterName: 'Northern Rescue Unit',
@@ -199,10 +254,7 @@ export const previewAnimals: AnimalItem[] = [
 ];
 
 export const normalizeStatus = (value: unknown): AnimalStatus => {
-  if (value === 'Adopted' || value === 'Quarantine') {
-    return value;
-  }
-
+  if (value === 'Adopted') return 'Adopted';
   return 'Available';
 };
 
@@ -255,8 +307,25 @@ export const mapAnimal = (animal: BackendAnimal, index = 0): AnimalItem => {
       animal.externalUrl ? 'External listing available' : undefined,
       getEntityName(animal.status),
     ].filter((value): value is string => Boolean(value)),
-    medicalNotes: 'Medical details can be expanded here when shelter records are available.',
-    idealHome: 'The ideal-home summary can be connected to backend notes later.',
+    medicalNotes: animal.medicalNotes ?? animal.MedicalNotes ?? undefined,
+    idealHome: animal.idealHome ?? animal.IdealHome ?? undefined,
+    weight: animal.weight ?? animal.Weight ?? undefined,
+    size: animal.size ?? animal.Size ?? undefined,
+    energyLevel: animal.energyLevel ?? animal.EnergyLevel ?? undefined,
+    experienceLevel: animal.experienceLevel ?? animal.ExperienceLevel ?? undefined,
+    housingRequirement: animal.housingRequirement ?? animal.HousingRequirement ?? undefined,
+    isNeutered: animal.isNeutered ?? animal.IsNeutered ?? null,
+    isChipped: animal.isChipped ?? animal.IsChipped ?? null,
+    chipNumber: animal.chipNumber ?? animal.ChipNumber ?? undefined,
+    isHouseTrained: animal.isHouseTrained ?? animal.IsHouseTrained ?? null,
+    goodWithKids: animal.goodWithKids ?? animal.GoodWithKids ?? null,
+    goodWithDogs: animal.goodWithDogs ?? animal.GoodWithDogs ?? null,
+    goodWithCats: animal.goodWithCats ?? animal.GoodWithCats ?? null,
+    adoptionFee: animal.adoptionFee ?? animal.AdoptionFee ?? undefined,
+    specialNeeds: animal.specialNeeds ?? animal.SpecialNeeds ?? undefined,
+    currentMedications: animal.currentMedications ?? animal.CurrentMedications ?? undefined,
+    intakeReason: animal.intakeReason ?? animal.IntakeReason ?? undefined,
+    intakeDate: animal.intakeDate ?? animal.IntakeDate ?? undefined,
     tags: [
       getEntityName(animal.gender),
       animal.category,
