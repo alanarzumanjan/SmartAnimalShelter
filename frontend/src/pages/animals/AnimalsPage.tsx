@@ -5,15 +5,14 @@ import { HeartHandshake, Plus, ChevronDown } from 'lucide-react';
 
 import AnimalCard from './AnimalCard';
 import api from '@/services/api';
-import { type AnimalItem, type AnimalStatus, mapAnimal, previewAnimals } from './animalCatalog';
+import { type AnimalItem, type AnimalStatus, mapAnimal } from './animalCatalog';
 import { Button } from '@/components/ui/Button';
 import type { RootState } from '@/store/store';
 
 const statusOptions: { value: '' | AnimalStatus; label: string }[] = [
-  { value: '',            label: 'All' },
+  { value: '',           label: 'All' },
   { value: 'Available',  label: 'Available' },
   { value: 'Adopted',    label: 'Adopted' },
-  { value: 'Quarantine', label: 'Quarantine' },
 ];
 
 function Dropdown({
@@ -97,7 +96,6 @@ export default function AnimalsPage() {
   const [species, setSpecies] = useState('');
   const [shelter, setShelter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isPreview, setIsPreview] = useState(false);
 
   const canCreate = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter');
 
@@ -106,15 +104,9 @@ export default function AnimalsPage() {
       try {
         const { data } = await api.get('/pets?page=1&pageSize=50');
         const items: AnimalItem[] = Array.isArray(data?.pets) ? data.pets.map(mapAnimal) : [];
-        if (items.length > 0) {
-          setAnimals(items);
-        } else {
-          setAnimals(previewAnimals);
-          setIsPreview(true);
-        }
+        setAnimals(items);
       } catch {
-        setAnimals(previewAnimals);
-        setIsPreview(true);
+        setAnimals([]);
       } finally {
         setIsLoading(false);
       }
@@ -141,7 +133,7 @@ export default function AnimalsPage() {
     [animals, status, species, shelter],
   );
 
-  const hasFilters = !isPreview && (speciesOptions.length > 0 || shelterOptions.length > 0);
+  const hasFilters = speciesOptions.length > 0 || shelterOptions.length > 0;
 
   return (
     <div className="py-8 space-y-6">
@@ -166,14 +158,10 @@ export default function AnimalsPage() {
                 Add Animal
               </Button>
             )}
-            <div className="grid grid-cols-2 gap-3 min-w-[200px]">
+            <div className="grid grid-cols-1 gap-3 min-w-[100px]">
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
                 <p className="text-sm text-slate-500 dark:text-slate-400">Showing</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white">{filtered.length}</p>
-              </div>
-              <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Source</p>
-                <p className="text-sm font-semibold text-slate-900 dark:text-white">{isPreview ? 'Preview' : 'Live'}</p>
               </div>
             </div>
           </div>
@@ -242,6 +230,11 @@ export default function AnimalsPage() {
       {/* Grid */}
       {isLoading ? (
         <p className="py-12 text-center text-slate-400 dark:text-slate-500">Loading animals...</p>
+      ) : animals.length === 0 ? (
+        <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-12 text-center dark:border-slate-700 dark:bg-slate-900/60">
+          <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No animals listed yet</p>
+          <p className="text-slate-500 dark:text-slate-400">Shelters haven't added any animals yet.</p>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-500">
           No animals match the selected filters.
