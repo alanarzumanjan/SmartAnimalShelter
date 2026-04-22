@@ -99,8 +99,27 @@ public class PetsController : ControllerBase
             pet.Id,
             pet.Name,
             pet.Age,
+            pet.Weight,
             pet.Color,
+            pet.Size,
             pet.Description,
+            pet.MedicalNotes,
+            pet.IdealHome,
+            pet.SpecialNeeds,
+            pet.CurrentMedications,
+            pet.IntakeReason,
+            pet.IntakeDate,
+            pet.EnergyLevel,
+            pet.ExperienceLevel,
+            pet.HousingRequirement,
+            pet.IsNeutered,
+            pet.IsChipped,
+            pet.ChipNumber,
+            pet.IsHouseTrained,
+            pet.GoodWithKids,
+            pet.GoodWithDogs,
+            pet.GoodWithCats,
+            pet.AdoptionFee,
             pet.ImageUrl,
             pet.MongoImageId,
             pet.Category,
@@ -182,9 +201,28 @@ public class PetsController : ControllerBase
             BreedId = breedId,
             GenderId = dto.genderId,
             Age = dto.age,
+            Weight = dto.weight,
             Color = dto.color,
+            Size = dto.size,
             StatusId = dto.statusId,
             Description = dto.description,
+            MedicalNotes = dto.medicalNotes,
+            IdealHome = dto.idealHome,
+            SpecialNeeds = dto.specialNeeds,
+            CurrentMedications = dto.currentMedications,
+            IntakeReason = dto.intakeReason,
+            IntakeDate = dto.intakeDate,
+            EnergyLevel = dto.energyLevel,
+            ExperienceLevel = dto.experienceLevel,
+            HousingRequirement = dto.housingRequirement,
+            ChipNumber = dto.chipNumber,
+            AdoptionFee = dto.adoptionFee,
+            IsNeutered = dto.isNeutered,
+            IsChipped = dto.isChipped,
+            IsHouseTrained = dto.isHouseTrained,
+            GoodWithKids = dto.goodWithKids,
+            GoodWithDogs = dto.goodWithDogs,
+            GoodWithCats = dto.goodWithCats,
             ShelterId = shelter.Id,
             CreatedAt = DateTime.UtcNow
         };
@@ -215,11 +253,30 @@ public class PetsController : ControllerBase
 
         if (patch.Name != null) pet.Name = patch.Name;
         if (patch.Description != null) pet.Description = patch.Description;
+        if (patch.MedicalNotes != null) pet.MedicalNotes = patch.MedicalNotes;
+        if (patch.IdealHome != null) pet.IdealHome = patch.IdealHome;
+        if (patch.SpecialNeeds != null) pet.SpecialNeeds = patch.SpecialNeeds;
+        if (patch.CurrentMedications != null) pet.CurrentMedications = patch.CurrentMedications;
+        if (patch.IntakeReason != null) pet.IntakeReason = patch.IntakeReason;
+        if (patch.IntakeDate != null) pet.IntakeDate = patch.IntakeDate;
         if (patch.Color != null) pet.Color = patch.Color;
         if (patch.Age != null) pet.Age = patch.Age;
+        if (patch.Weight != null) pet.Weight = patch.Weight;
+        if (patch.Size != null) pet.Size = patch.Size;
+        if (patch.EnergyLevel != null) pet.EnergyLevel = patch.EnergyLevel;
+        if (patch.ExperienceLevel != null) pet.ExperienceLevel = patch.ExperienceLevel;
+        if (patch.HousingRequirement != null) pet.HousingRequirement = patch.HousingRequirement;
         if (patch.GenderId != null) pet.GenderId = patch.GenderId;
         if (patch.SpeciesId != null) pet.SpeciesId = patch.SpeciesId.Value;
         if (patch.StatusId != null) pet.StatusId = patch.StatusId.Value;
+        if (patch.IsNeutered != null) pet.IsNeutered = patch.IsNeutered;
+        if (patch.IsChipped != null) pet.IsChipped = patch.IsChipped;
+        if (patch.ChipNumber != null) pet.ChipNumber = patch.ChipNumber;
+        if (patch.IsHouseTrained != null) pet.IsHouseTrained = patch.IsHouseTrained;
+        if (patch.GoodWithKids != null) pet.GoodWithKids = patch.GoodWithKids;
+        if (patch.GoodWithDogs != null) pet.GoodWithDogs = patch.GoodWithDogs;
+        if (patch.GoodWithCats != null) pet.GoodWithCats = patch.GoodWithCats;
+        if (patch.AdoptionFee != null) pet.AdoptionFee = patch.AdoptionFee;
 
         await _db.SaveChangesAsync();
 
@@ -287,11 +344,30 @@ public class PatchPetDto
 {
     public string? Name { get; set; }
     public string? Description { get; set; }
+    public string? MedicalNotes { get; set; }
+    public string? IdealHome { get; set; }
+    public string? SpecialNeeds { get; set; }
+    public string? CurrentMedications { get; set; }
+    public string? IntakeReason { get; set; }
+    public DateTime? IntakeDate { get; set; }
     public string? Color { get; set; }
     public float? Age { get; set; }
+    public float? Weight { get; set; }
+    public string? Size { get; set; }
+    public string? EnergyLevel { get; set; }
+    public string? ExperienceLevel { get; set; }
+    public string? HousingRequirement { get; set; }
     public int? GenderId { get; set; }
     public int? SpeciesId { get; set; }
     public int? StatusId { get; set; }
+    public bool? IsNeutered { get; set; }
+    public bool? IsChipped { get; set; }
+    public string? ChipNumber { get; set; }
+    public bool? IsHouseTrained { get; set; }
+    public bool? GoodWithKids { get; set; }
+    public bool? GoodWithDogs { get; set; }
+    public bool? GoodWithCats { get; set; }
+    public decimal? AdoptionFee { get; set; }
 }
 
 public class UpdateBreedDto
@@ -307,8 +383,27 @@ public class CreatePetDto
     public int? breedId { get; set; }
     public int? genderId { get; set; }
     public float? age { get; set; }
+    public float? weight { get; set; }
     public string? color { get; set; }
+    public string? size { get; set; }
     public int statusId { get; set; }
     public string? description { get; set; }
+    public string? medicalNotes { get; set; }
+    public string? idealHome { get; set; }
+    public string? specialNeeds { get; set; }
+    public string? currentMedications { get; set; }
+    public string? intakeReason { get; set; }
+    public DateTime? intakeDate { get; set; }
+    public string? energyLevel { get; set; }
+    public string? experienceLevel { get; set; }
+    public string? housingRequirement { get; set; }
+    public string? chipNumber { get; set; }
+    public decimal? adoptionFee { get; set; }
+    public bool? isNeutered { get; set; }
+    public bool? isChipped { get; set; }
+    public bool? isHouseTrained { get; set; }
+    public bool? goodWithKids { get; set; }
+    public bool? goodWithDogs { get; set; }
+    public bool? goodWithCats { get; set; }
     public Guid shelterId { get; set; }
 }
