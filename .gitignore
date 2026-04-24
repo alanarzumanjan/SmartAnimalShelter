@@ -21,3 +21,6 @@ docs/STRIPE_SETUP.md
 .cloudflared/*.json
 .cloudflared/*.pem
 .cloudflared/config.yml
+
+deploy_key
+deploy_key.pub
