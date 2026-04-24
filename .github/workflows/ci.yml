@@ -152,22 +152,22 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Trivy vulnerability scanner (Backend)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.30.0
         with:
-          image-ref: 'Dockerfile'
           scan-type: 'fs'
           scan-ref: './backend'
           format: 'sarif'
           output: 'trivy-backend-results.sarif'
+          exit-code: '0'
 
       - name: Run Trivy vulnerability scanner (Frontend)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.30.0
         with:
-          image-ref: 'Dockerfile'
           scan-type: 'fs'
           scan-ref: './frontend'
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
+          exit-code: '0'
 
       - name: Upload Trivy scan results
         uses: actions/upload-artifact@v4
