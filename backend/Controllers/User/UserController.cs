@@ -28,9 +28,9 @@ public class UsersController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetAll(
-        [FromQuery] string? role, 
-        [FromQuery] string? name, 
-        [FromQuery] string? email, 
+        [FromQuery] string? role,
+        [FromQuery] string? name,
+        [FromQuery] string? email,
         [FromQuery] string? sort = "name")
     {
         var query = db.Users.AsNoTracking().AsQueryable();
@@ -120,18 +120,18 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound("User not found.");
 
-        try 
-        { 
+        try
+        {
             if (!string.IsNullOrWhiteSpace(user.Email))
                 user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email;
-        } 
+        }
         catch { }
 
-        try 
-        { 
+        try
+        {
             if (!string.IsNullOrWhiteSpace(user.Phone))
                 user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone;
-        } 
+        }
         catch { }
 
         return Ok(user);

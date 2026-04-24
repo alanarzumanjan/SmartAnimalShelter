@@ -9,4 +9,4 @@ public class ShelterCreateDto
     public string? description { get; set; }
 }
 
-public class ShelterUpdateDto : ShelterCreateDto {}
+public class ShelterUpdateDto : ShelterCreateDto { }

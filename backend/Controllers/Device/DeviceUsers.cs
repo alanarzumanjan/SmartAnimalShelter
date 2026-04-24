@@ -17,7 +17,7 @@ public class DeviceUsersController : ControllerBase
     private readonly AppDbContext _db;
     private readonly UserEmailService _userEmailService;
 
-    public DeviceUsersController(AppDbContext db, UserEmailService userEmailService) 
+    public DeviceUsersController(AppDbContext db, UserEmailService userEmailService)
     {
         _db = db;
         _userEmailService = userEmailService;
@@ -50,7 +50,7 @@ public class DeviceUsersController : ControllerBase
             return BadRequest(new { error = "Email and password are required." });
 
         var user = await _userEmailService.FindByEmailAsync(email);
-        
+
         if (user?.PasswordHash == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             return Unauthorized(new { error = "Invalid credentials." });
 
@@ -115,13 +115,13 @@ public class DeviceUsersController : ControllerBase
         }
 
         // ✅ Key already exists — don't issue a new one
-        return Ok(new DeviceLoginResponse 
-        { 
-            DeviceUsersId = link.Id, 
-            DeviceId = device.Id, 
-            Mac = mac, 
-            DeviceKey = null, 
-            KeyIssued = false 
+        return Ok(new DeviceLoginResponse
+        {
+            DeviceUsersId = link.Id,
+            DeviceId = device.Id,
+            Mac = mac,
+            DeviceKey = null,
+            KeyIssued = false
         });
     }
 

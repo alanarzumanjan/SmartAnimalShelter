@@ -176,7 +176,7 @@ public class AuthController : ControllerBase
                 return Unauthorized("Incorrect email or password.");
             }
 
-            string role = user.Role ?? "user"; 
+            string role = user.Role ?? "user";
             string token = _jwtService.GenerateToken(user.Id, role);
 
             var logMessage2 = $"> ✅ Login success: {user.Username}, Role: {role}";
@@ -185,17 +185,17 @@ public class AuthController : ControllerBase
             string? decryptedEmail = null;
             string? decryptedPhone = null;
 
-            try 
-            { 
-                decryptedEmail = EncryptionService.Decrypt(user.Email); 
-            } 
+            try
+            {
+                decryptedEmail = EncryptionService.Decrypt(user.Email);
+            }
             catch { }
 
-            try 
-            { 
+            try
+            {
                 if (!string.IsNullOrWhiteSpace(user.Phone))
-                    decryptedPhone = EncryptionService.Decrypt(user.Phone); 
-            } 
+                    decryptedPhone = EncryptionService.Decrypt(user.Phone);
+            }
             catch { }
 
             return Ok(new
