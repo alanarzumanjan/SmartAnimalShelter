@@ -81,14 +81,14 @@ jobs:
         continue-on-error: true
 
       - name: Run unit tests
-        run: dotnet test backend.Tests/backend.Tests.csproj --no-build --verbosity normal --filter "FullyQualifiedName~UnitTest1"
+        run: dotnet test ../backend.Tests/backend.Tests.csproj --no-build --verbosity normal --filter "FullyQualifiedName~UnitTest1"
         env:
           POSTGRES_CONNECTION_STRING: "Host=localhost;Port=5432;Database=shelter_test;Username=test;Password=test;"
           REDIS_CONNECTION_STRING: "localhost:6379"
           MONGODB_CONNECTION_STRING: "mongodb://localhost:27017"
 
       - name: Run integration tests
-        run: dotnet test backend.Tests/backend.Tests.csproj --no-build --verbosity normal --filter "FullyQualifiedName~IntegrationTest1"
+        run: dotnet test ../backend.Tests/backend.Tests.csproj --no-build --verbosity normal --filter "FullyQualifiedName~IntegrationTest1"
         env:
           POSTGRES_CONNECTION_STRING: "Host=localhost;Port=5432;Database=shelter_test;Username=test;Password=test;"
           REDIS_CONNECTION_STRING: "localhost:6379"
