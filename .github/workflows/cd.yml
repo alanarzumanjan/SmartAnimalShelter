@@ -1,0 +1,192 @@
+name: CD
+
+on:
+  push:
+    branches: [main, master]
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ${{ github.repository }}/backend
+  FRONTEND_IMAGE: ${{ github.repository }}/frontend
+
+jobs:
+  version:
+    name: Generate Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      short_sha: ${{ steps.version.outputs.short_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version
+        id: version
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          if git describe --tags --abbrev=0 >/dev/null 2>&1; then
+            LAST_TAG=$(git describe --tags --abbrev=0)
+            echo "version=${LAST_TAG}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          else
+            echo "version=0.0.0-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          fi
+
+  build-backend:
+    name: Build & Push Backend
+    runs-on: ubuntu-latest
+    needs: version
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ needs.version.outputs.version }}
+            type=sha,prefix=,suffix=,format=short
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-frontend:
+    name: Build & Push Frontend
+    runs-on: ubuntu-latest
+    needs: version
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ needs.version.outputs.version }}
+            type=sha,prefix=,suffix=,format=short
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend, version]
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create .env on server
+        run: |
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > /tmp/prod.env
+          scp -o StrictHostKeyChecking=no /tmp/prod.env ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/SmartAnimalShelter/.env
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
+            cd ~/SmartAnimalShelter
+
+            echo "🔄 Pulling latest images..."
+            docker compose -f docker-compose.prod.yml pull
+
+            echo "📦 Creating backup tag..."
+            docker tag $(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/backend:latest 2>/dev/null || echo "none") ghcr.io/${{ github.repository }}/backend:backup-${{ needs.version.outputs.short_sha }} 2>/dev/null || true
+            docker tag $(docker inspect --format='{{index .RepoDigests 0}}' ghcr.io/${{ github.repository }}/frontend:latest 2>/dev/null || echo "none") ghcr.io/${{ github.repository }}/frontend:backup-${{ needs.version.outputs.short_sha }} 2>/dev/null || true
+
+            echo "🚀 Starting services..."
+            docker compose -f docker-compose.prod.yml up -d --pull always
+
+            echo "⏳ Waiting for backend health check..."
+            for i in {1..30}; do
+              if curl -sf http://localhost:5000/health > /dev/null 2>&1; then
+                echo "✅ Backend is healthy!"
+                exit 0
+              fi
+              echo "   Attempt $i/30..."
+              sleep 5
+            done
+
+            echo "❌ Backend health check failed after 30 attempts!"
+            echo "🔙 Rolling back to previous images..."
+            docker compose -f docker-compose.prod.yml down
+            docker compose -f docker-compose.prod.yml up -d
+            exit 1
+          EOF
+
+      - name: Health check from GitHub runner
+        run: |
+          for i in {1..20}; do
+            if curl -sf http://${{ secrets.SSH_HOST }}:5000/health > /dev/null 2>&1; then
+              echo "✅ External health check passed!"
+              exit 0
+            fi
+            echo "   External attempt $i/20..."
+            sleep 5
+          done
+          echo "❌ External health check failed!"
+          exit 1
+
