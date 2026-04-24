@@ -137,9 +137,9 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        
+
         var pendingMigrations = await dbContext.Database.GetPendingMigrationsAsync();
-        
+
         if (pendingMigrations.Any())
         {
             Console.WriteLine($"📦 Found {pendingMigrations.Count()} pending migration(s). Applying...");
@@ -147,7 +147,7 @@ using (var scope = app.Services.CreateScope())
             {
                 Console.WriteLine($"   - {migration}");
             }
-            
+
             await dbContext.Database.MigrateAsync();
             Console.WriteLine("✅ Database migrations applied successfully");
         }
@@ -155,7 +155,7 @@ using (var scope = app.Services.CreateScope())
         {
             Console.WriteLine("✅ Database is up to date. No migrations needed.");
         }
-        
+
         await DbInitializer.EnsureDbIsInitializedAsync(dbContext);
     }
     catch (Exception ex)

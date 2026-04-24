@@ -209,8 +209,8 @@ public class PaymentsController : ControllerBase
             return;
         }
 
-        var productName = session.Metadata?.GetValueOrDefault("productName") 
-                          ?? session.Metadata?.GetValueOrDefault("productType") 
+        var productName = session.Metadata?.GetValueOrDefault("productName")
+                          ?? session.Metadata?.GetValueOrDefault("productType")
                           ?? "device";
         var productType = session.Metadata?.GetValueOrDefault("productType") ?? "device";
         var quantity = 1;

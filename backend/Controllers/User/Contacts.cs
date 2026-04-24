@@ -24,8 +24,8 @@ public class ContactsController : ControllerBase
             var passwordEnv = Environment.GetEnvironmentVariable("EMAIL_PASSWORD");
             var nameEnv = Environment.GetEnvironmentVariable("EMAIL_NAME") ?? "Iot meter Support Team";
 
-                var logMessage1 = $"> 📧 Contact form received from {form.Email}: {form.Message}";
-                Console.WriteLine(logMessage1);
+            var logMessage1 = $"> 📧 Contact form received from {form.Email}: {form.Message}";
+            Console.WriteLine(logMessage1);
 
             // Check if email is configured
             if (string.IsNullOrEmpty(emailEnv) || string.IsNullOrEmpty(passwordEnv))

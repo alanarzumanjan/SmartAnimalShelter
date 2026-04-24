@@ -5,7 +5,7 @@ using Data;
 public class BreedResolver
 {
     private readonly AppDbContext _db;
-    
+
     public BreedResolver(AppDbContext db)
     {
         _db = db;

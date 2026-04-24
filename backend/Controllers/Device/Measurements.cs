@@ -150,61 +150,61 @@ public class MeasurementsController : ControllerBase
     }
 
     [HttpGet("measurements/{deviceId}")]
-public async Task<IActionResult> GetByDevice(
+    public async Task<IActionResult> GetByDevice(
     string deviceId,
     [FromQuery] DateTime? from = null,
     [FromQuery] DateTime? to = null,
     [FromQuery] int limit = 0,          // 0 = "no limit" (but capped)
     [FromQuery] int offset = 0)
-{
-    try
     {
-        offset = Math.Max(0, offset);
-
-        // safety cap: "no limit" is still capped
-        const int HARD_CAP = 1000000;
-        if (limit <= 0) limit = HARD_CAP;
-        limit = Math.Clamp(limit, 1, HARD_CAP);
-
-        var mac = NormalizeMac(deviceId);
-
-        var query = _db.Measurements
-            .AsNoTracking()
-            .Where(m => m.DeviceId == mac);
-
-        if (from.HasValue)
+        try
         {
-            var f = DateTime.SpecifyKind(from.Value, DateTimeKind.Utc);
-            query = query.Where(m => m.Timestamp >= f);
+            offset = Math.Max(0, offset);
+
+            // safety cap: "no limit" is still capped
+            const int HARD_CAP = 1000000;
+            if (limit <= 0) limit = HARD_CAP;
+            limit = Math.Clamp(limit, 1, HARD_CAP);
+
+            var mac = NormalizeMac(deviceId);
+
+            var query = _db.Measurements
+                .AsNoTracking()
+                .Where(m => m.DeviceId == mac);
+
+            if (from.HasValue)
+            {
+                var f = DateTime.SpecifyKind(from.Value, DateTimeKind.Utc);
+                query = query.Where(m => m.Timestamp >= f);
+            }
+
+            if (to.HasValue)
+            {
+                var t = DateTime.SpecifyKind(to.Value, DateTimeKind.Utc);
+                query = query.Where(m => m.Timestamp <= t);
+            }
+
+            query = query.OrderByDescending(m => m.Timestamp);
+
+            var total = await query.CountAsync();
+            var items = await query.Skip(offset).Take(limit).ToListAsync();
+
+            return Ok(new
+            {
+                total,
+                limit,
+                offset,
+                from,
+                to,
+                data = items.Select(MeasurementOutDTO.FromEntity)
+            });
         }
-
-        if (to.HasValue)
+        catch (Exception ex)
         {
-            var t = DateTime.SpecifyKind(to.Value, DateTimeKind.Utc);
-            query = query.Where(m => m.Timestamp <= t);
+            Console.WriteLine($"❌ Failed to fetch by device: {ex.Message}");
+            return StatusCode(500, new { error = "Failed to fetch measurements." });
         }
-
-        query = query.OrderByDescending(m => m.Timestamp);
-
-        var total = await query.CountAsync();
-        var items = await query.Skip(offset).Take(limit).ToListAsync();
-
-        return Ok(new
-        {
-            total,
-            limit,
-            offset,
-            from,
-            to,
-            data = items.Select(MeasurementOutDTO.FromEntity)
-        });
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"❌ Failed to fetch by device: {ex.Message}");
-        return StatusCode(500, new { error = "Failed to fetch measurements." });
-    }
-}
 
 
     [HttpGet("measurements/by-link/{deviceUsersId:guid}")]

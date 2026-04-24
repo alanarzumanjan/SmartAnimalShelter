@@ -101,7 +101,7 @@ public class Enclosure
     public Guid Id { get; init; } = Guid.NewGuid();
 
     [Required, MaxLength(100)]
-    public string Name { get; set; } = null!; 
+    public string Name { get; set; } = null!;
 
     [MaxLength(500)]
     public string? Description { get; set; }
@@ -346,7 +346,7 @@ public class Favorite
     public Guid PetId { get; set; }
 
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
-    
+
     // Navigation properties
     [ForeignKey(nameof(UserId))]
     public User User { get; set; } = null!;
