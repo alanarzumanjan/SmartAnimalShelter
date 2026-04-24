@@ -9,7 +9,6 @@ frontend/**/node_modules/
 frontend/**/dist/
 frontend/**/build/
 frontend/**/.npm
-package-lock.json
 
 # Secrets & Local Configs
 .env
