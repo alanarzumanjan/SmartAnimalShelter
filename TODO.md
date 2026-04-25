@@ -1,7 +1,7 @@
 # CI/CD Implementation TODO
 
 ## Phase 1: Test Infrastructure
-- [x] Create `backend.Tests/` project (xUnit + Testcontainers)
+- [x] Create `tests/` project (xUnit + Testcontainers)
 - [x] Add `UnitTest1.cs` placeholder with example tests (PasswordHashing, JwtService)
 - [x] Add `IntegrationTest1.cs` placeholder with Testcontainers (PostgreSQL)
 - [x] Update `backend.slnx` to include test project
