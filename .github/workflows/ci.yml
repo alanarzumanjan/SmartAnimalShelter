@@ -83,16 +83,28 @@ jobs:
       - name: Run unit tests
         run: dotnet test ../tests/tests.csproj --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName~UnitTests"
         env:
-          POSTGRES_CONNECTION_STRING: "Host=localhost;Port=5432;Database=shelter_test;Username=test;Password=test;"
-          REDIS_CONNECTION_STRING: "localhost:6379"
-          MONGODB_CONNECTION_STRING: "mongodb://localhost:27017"
+          POSTGRES_CONNECTION_STRING: ${{ secrets.POSTGRES_CONNECTION_STRING }}
+          REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+          MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+          JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_NAME: ${{ secrets.EMAIL_NAME }}
 
       - name: Run integration tests
         run: dotnet test ../tests/tests.csproj --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName~IntegrationTests"
         env:
-          POSTGRES_CONNECTION_STRING: "Host=localhost;Port=5432;Database=shelter_test;Username=test;Password=test;"
-          REDIS_CONNECTION_STRING: "localhost:6379"
-          MONGODB_CONNECTION_STRING: "mongodb://localhost:27017"
+          POSTGRES_CONNECTION_STRING: ${{ secrets.POSTGRES_CONNECTION_STRING }}
+          REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+          MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
+          JWT_KEY: ${{ secrets.JWT_KEY }}
+          JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+          JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_NAME: ${{ secrets.EMAIL_NAME }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
