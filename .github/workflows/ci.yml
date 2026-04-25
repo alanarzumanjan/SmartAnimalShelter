@@ -2,7 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, master, dev2]
+    branches: [main, master, dev, dev2]
+  push:
+    branches: [main, master, dev, dev2]
   workflow_dispatch:
     inputs:
       run_integration_tests:
@@ -11,14 +13,48 @@ on:
         default: true
         type: boolean
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DOTNET_VERSION: '9.0.x'
   NODE_VERSION: '20'
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      docker: ${{ steps.filter.outputs.docker }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'tests/**'
+            frontend:
+              - 'frontend/**'
+            docker:
+              - 'backend/Dockerfile'
+              - 'frontend/docker/Dockerfile'
+              - 'docker-compose*.yml'
+
   backend:
     name: Backend CI
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch' }}
     defaults:
       run:
         working-directory: ./backend
@@ -81,12 +117,9 @@ jobs:
       - name: Build
         run: dotnet build backend.slnx --no-restore --configuration Release
 
-      - name: Install dotnet-format
-        run: dotnet tool install -g dotnet-format || true
-
       - name: Check formatting
-        run: dotnet format --verify-no-changes --no-restore backend.slnx
-        continue-on-error: true
+        run: |
+          dotnet format --verify-no-changes --no-restore backend.slnx
 
       - name: Run unit tests
         run: dotnet test ../tests/tests.csproj --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName~UnitTests"
@@ -102,6 +135,7 @@ jobs:
           EMAIL_NAME: ${{ secrets.EMAIL_NAME }}
 
       - name: Run integration tests
+        if: ${{ github.event.inputs.run_integration_tests != 'false' }}
         run: dotnet test ../tests/tests.csproj --no-build --configuration Release --verbosity normal --filter "FullyQualifiedName~IntegrationTests"
         env:
           POSTGRES_CONNECTION_STRING: ${{ secrets.POSTGRES_CONNECTION_STRING }}
@@ -124,6 +158,9 @@ jobs:
   frontend:
     name: Frontend CI
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch' }}
     defaults:
       run:
         working-directory: ./frontend
@@ -147,7 +184,6 @@ jobs:
 
       - name: Check formatting (Prettier)
         run: npm run format:check
-        continue-on-error: true
 
       - name: Type check
         run: npx tsc --noEmit
@@ -162,10 +198,49 @@ jobs:
           name: frontend-test-results
           path: frontend/coverage/
 
+  docker-build-test:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true' || needs.changes.outputs.docker == 'true' || github.event_name == 'workflow_dispatch' }}
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: backend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/docker/Dockerfile
+          push: false
+          load: true
+          tags: frontend:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: [backend, frontend]
+    if: ${{ always() && (needs.backend.result == 'success' || needs.frontend.result == 'success') }}
 
     steps:
       - name: Checkout
@@ -178,7 +253,8 @@ jobs:
           scan-ref: './backend'
           format: 'sarif'
           output: 'trivy-backend-results.sarif'
-          exit-code: '0'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
 
       - name: Run Trivy vulnerability scanner (Frontend)
         uses: aquasecurity/trivy-action@master
@@ -187,7 +263,8 @@ jobs:
           scan-ref: './frontend'
           format: 'sarif'
           output: 'trivy-frontend-results.sarif'
-          exit-code: '0'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
 
       - name: Upload Trivy scan results
         uses: actions/upload-artifact@v4

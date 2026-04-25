@@ -1,8 +1,10 @@
 name: CD
 
 on:
-  push:
-    branches: [main, master, dev2]
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [master, dev2, dev]
   workflow_dispatch:
     inputs:
       deploy:
@@ -10,6 +12,10 @@ on:
         required: false
         default: true
         type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   REGISTRY: ghcr.io
@@ -20,9 +26,11 @@ jobs:
   version:
     name: Generate Version
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     outputs:
       version: ${{ steps.version.outputs.version }}
       short_sha: ${{ steps.version.outputs.short_sha }}
+      branch_tag: ${{ steps.version.outputs.branch_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,6 +42,18 @@ jobs:
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
           echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+          # Determine branch tag
+          BRANCH="${{ github.ref_name }}"
+          if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
+            echo "branch_tag=latest" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == "dev2" ]]; then
+            echo "branch_tag=dev" >> $GITHUB_OUTPUT
+          else
+            echo "branch_tag=$BRANCH" >> $GITHUB_OUTPUT
+          fi
+
+          # Generate semantic version
           if git describe --tags --abbrev=0 >/dev/null 2>&1; then
             LAST_TAG=$(git describe --tags --abbrev=0)
             echo "version=${LAST_TAG}-${SHORT_SHA}" >> $GITHUB_OUTPUT
@@ -44,14 +64,21 @@ jobs:
   build-backend:
     name: Build & Push Backend
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: version
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -69,31 +96,60 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=${{ needs.version.outputs.branch_tag }}
             type=raw,value=${{ needs.version.outputs.version }}
             type=sha,prefix=,suffix=,format=short
 
       - name: Build and push backend
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ./backend
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}:${{ needs.version.outputs.branch_tag }}
+          format: spdx-json
+          output-file: backend-sbom.spdx.json
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-sbom
+          path: backend-sbom.spdx.json
+
   build-frontend:
     name: Build & Push Frontend
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: version
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -111,20 +167,66 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=${{ needs.version.outputs.branch_tag }}
             type=raw,value=${{ needs.version.outputs.version }}
             type=sha,prefix=,suffix=,format=short
 
       - name: Build and push frontend
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ./frontend
           file: ./frontend/docker/Dockerfile
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}:${{ needs.version.outputs.branch_tag }}
+          format: spdx-json
+          output-file: frontend-sbom.spdx.json
 
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-sbom
+          path: frontend-sbom.spdx.json
+
+  cleanup-old-images:
+    name: Cleanup Old Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [build-backend, build-frontend]
+    if: ${{ always() && needs.build-backend.result == 'success' && needs.build-frontend.result == 'success' }}
+    permissions:
+      packages: write
+
+    steps:
+      - name: Delete old package versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'smartanimalshelter/backend'
+          package-type: 'container'
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: true
+
+      - name: Delete old frontend versions
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: 'smartanimalshelter/frontend'
+          package-type: 'container'
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: true
 
