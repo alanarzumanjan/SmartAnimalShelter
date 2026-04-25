@@ -137,12 +137,12 @@ jobs:
           REPO="${{ github.repository }}"
           IMAGE="ghcr.io/${REPO,,}/backend:latest"
           docker pull "$IMAGE"
-          docker run --rm "$IMAGE" dotnet --version
+          docker run --rm --entrypoint dotnet "$IMAGE" --version
 
       - name: Pull and test frontend image
         run: |
           REPO="${{ github.repository }}"
           IMAGE="ghcr.io/${REPO,,}/frontend:latest"
           docker pull "$IMAGE"
-          docker run --rm "$IMAGE" nginx -v
+          docker run --rm --entrypoint nginx "$IMAGE" -v
 
