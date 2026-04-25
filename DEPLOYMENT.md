@@ -45,7 +45,7 @@ If the `/health` endpoint does not return `200 OK` within ~2.5 minutes, the pipe
 ### Backend tests
 ```bash
 cd backend
-dotnet test ../backend.Tests/backend.Tests.csproj
+dotnet test ../tests/tests.csproj
 ```
 
 ### Frontend tests
