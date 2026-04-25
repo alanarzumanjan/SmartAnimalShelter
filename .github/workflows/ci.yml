@@ -67,6 +67,14 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('backend/backend.csproj', 'tests/tests.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
       - name: Restore dependencies
         run: dotnet restore backend.slnx
 
@@ -187,3 +195,4 @@ jobs:
         with:
           name: trivy-scan-results
           path: trivy-*.sarif
+
