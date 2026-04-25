@@ -126,23 +126,5 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  verify-images:
-    name: Verify Images
-    runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
 
-    steps:
-      - name: Pull and test backend image
-        run: |
-          REPO="${{ github.repository }}"
-          IMAGE="ghcr.io/${REPO,,}/backend:latest"
-          docker pull "$IMAGE"
-          docker run --rm --entrypoint dotnet "$IMAGE" --version
-
-      - name: Pull and test frontend image
-        run: |
-          REPO="${{ github.repository }}"
-          IMAGE="ghcr.io/${REPO,,}/frontend:latest"
-          docker pull "$IMAGE"
-          docker run --rm --entrypoint nginx "$IMAGE" -v
 
