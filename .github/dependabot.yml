@@ -2,43 +2,70 @@ version: 2
 updates:
   - package-ecosystem: "nuget"
     directory: "/backend"
+    target-branch: "dependabot-updates"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 1
+    groups:
+      all-nuget:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "backend"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
+    target-branch: "dependabot-updates"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 1
+    groups:
+      all-npm:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "frontend"
 
   - package-ecosystem: "docker"
     directory: "/"
+    target-branch: "dependabot-updates"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      all-docker:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "docker"
 
   - package-ecosystem: "docker"
     directory: "/backend"
+    target-branch: "dependabot-updates"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      all-docker-backend:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "docker"
 
   - package-ecosystem: "docker"
     directory: "/frontend/docker"
+    target-branch: "dependabot-updates"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 1
+    groups:
+      all-docker-frontend:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "docker"
-
