@@ -4,9 +4,9 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
 
-namespace backend.Tests;
+namespace tests;
 
-public class UnitTest1
+public class UnitTests
 {
     [Fact]
     public void PasswordHashingService_HashPassword_ReturnsNonEmptyHash()

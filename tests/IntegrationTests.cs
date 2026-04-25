@@ -2,9 +2,9 @@ using Data;
 using Microsoft.EntityFrameworkCore;
 using Testcontainers.PostgreSql;
 
-namespace backend.Tests;
+namespace tests;
 
-public class IntegrationTest1 : IAsyncLifetime
+public class IntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgresContainer;
 
