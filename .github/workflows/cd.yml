@@ -134,11 +134,15 @@ jobs:
     steps:
       - name: Pull and test backend image
         run: |
-          docker pull ghcr.io/${{ github.repository }}/backend:latest
-          docker run --rm ghcr.io/${{ github.repository }}/backend:latest dotnet --version
+          REPO="${{ github.repository }}"
+          IMAGE="ghcr.io/${REPO,,}/backend:latest"
+          docker pull "$IMAGE"
+          docker run --rm "$IMAGE" dotnet --version
 
       - name: Pull and test frontend image
         run: |
-          docker pull ghcr.io/${{ github.repository }}/frontend:latest
-          docker run --rm ghcr.io/${{ github.repository }}/frontend:latest nginx -v
+          REPO="${{ github.repository }}"
+          IMAGE="ghcr.io/${REPO,,}/frontend:latest"
+          docker pull "$IMAGE"
+          docker run --rm "$IMAGE" nginx -v
 
