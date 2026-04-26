@@ -161,7 +161,6 @@ Security is implemented using a **Defense-in-Depth** strategy:
       <img src="docs/api_documentation2.png" alt="System API documentation second part" width="500px" />
     </td>
   </tr>
-  <br/>
 </table>
 
 <p align="center">
