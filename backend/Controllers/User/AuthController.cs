@@ -12,6 +12,7 @@ namespace Controllers;
 
 [ApiController]
 [Route("/")]
+[Produces("application/json")]
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext db;
@@ -39,6 +40,9 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Register([FromBody] UserRegisterDto user)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -138,6 +142,10 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status429TooManyRequests)]
     public async Task<IActionResult> Login([FromBody] UserLoginDto loginRequest)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
