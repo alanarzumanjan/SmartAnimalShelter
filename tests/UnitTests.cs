@@ -75,13 +75,13 @@ public class UnitTests
         var originalKey = Environment.GetEnvironmentVariable("JWT_KEY");
         var originalIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
         var originalAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
-        
+
         try
         {
             Environment.SetEnvironmentVariable("JWT_KEY", null);
             Environment.SetEnvironmentVariable("JWT_ISSUER", null);
             Environment.SetEnvironmentVariable("JWT_AUDIENCE", null);
-            
+
             var config = new ConfigurationBuilder()
                 .AddInMemoryCollection(new Dictionary<string, string?>())
                 .Build();
