@@ -152,12 +152,26 @@ Security is implemented using a **Defense-in-Depth** strategy:
 
 ### API Documentation
 
-<p align="center">
-  <img src="docs/api_documentation.png" alt="Api Documentation" heigh="1000" />
-  <br/>
-  <em> System API documentation with Swagger implementation</em>
-</p>
+<table>
+  <tr>
+    <td align="center">
+      <img src="docs/api_documentation1.png" alt="System API documentation first part" width="100%" />
+    </td>
+    <td align="center">
+      <img src="docs/api_documentation2.png" alt="System API documentation second part" width="100%" />
+    </td>
+    <br><em>System API documentation with Swagger implementation</em>
+  </tr>
+</table>
+---
 
+### CI/CD Piplines diagram
+
+<p align="center">
+  <img src="../docs/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" />
+  <br/>
+  <em> CI/CD Piplines diagram</em>
+</p>
 ---
 
 ## Authors

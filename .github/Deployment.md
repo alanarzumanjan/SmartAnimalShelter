@@ -1,5 +1,19 @@
 # CI/CD
 
+```mermaid
+flowchart LR
+    A[Push/PR] --> B{CI}
+    B --> C[Backend]
+    B --> D[Frontend]
+    B --> E[Security]
+    C & D & E --> F{CD}
+    F --> G[Build & Push]
+    G --> H[Deploy]
+    H --> I{Health?}
+    I -->|ok| J[Done]
+    I -->|fail| K[Rollback]
+```
+
 ## CI — `.github/workflows/ci.yml`
 
 **Trigger:** PR/push to `main`, `master`, `dev`, `dev2`; manual dispatch (`run_integration_tests` toggle).  
