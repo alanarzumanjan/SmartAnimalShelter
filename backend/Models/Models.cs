@@ -92,7 +92,6 @@ public class Shelter
 
     [JsonIgnore]
     public ICollection<Review> Reviews { get; init; } = new List<Review>();
-    public Guid ShelterOwnerId { get; internal set; }
 }
 
 public class Enclosure
