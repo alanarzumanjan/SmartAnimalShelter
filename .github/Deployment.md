@@ -100,6 +100,20 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
 - `docker-image.yml` should be removed to avoid duplication.
 - Trivy `exit-code: 1` blocks CI on HIGH/CRITICAL vulnerabilities.
 
+## SBOM & Attestation
+
+After CD completes, artifacts are available in three places:
+
+| What | Where | How to access |
+|------|-------|---------------|
+| **SBOM JSON** | GitHub Actions artifacts | Open the CD run → **Artifacts** → download `backend-sbom` or `frontend-sbom` (contains `.spdx.json`) |
+| **Build attestation** | GHCR (GitHub Container Registry) | Open the package page → `ghcr.io/alanarzumanjan/smartanimalshelter/backend` or `/frontend` → **Attestations** tab |
+| **Provenance** | GHCR + Sigstore | `cosign verify-attestation ...` or view in GitHub package UI under "Attestations" |
+
+Direct links (replace `OWNER/REPO` with your repo):
+- Packages: `https://github.com/alanarzumanjan/SmartAnimalShelter/pkgs/container/smartanimalshelter%2Fbackend`
+- Attestations: `https://github.com/alanarzumanjan/SmartAnimalShelter/attestations`
+
 <p align="center">
   <img src="../docs/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" />
   <br/>
