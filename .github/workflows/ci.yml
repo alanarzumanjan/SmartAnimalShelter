@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, master, dev, dev2]
+    branches: [master]
   push:
-    branches: [main, master, dev, dev2]
+    branches: [master]
   workflow_dispatch:
     inputs:
       run_integration_tests:

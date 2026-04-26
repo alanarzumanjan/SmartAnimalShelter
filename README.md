@@ -120,8 +120,6 @@ The project follows a **Modular Monolith** architecture with **Polyglot Persiste
 | **Redis** | In-Memory DB | Caching, session storage, rate limiting, real-time state |
 | **MongoDB** | Document DB | IoT telemetry logs (time-series data), Images |
 | **PostgreSQL** | Relational DB | Users, animals, orders, adoption requests (ACID compliance) |
-| **Prometheus** | Monitoring | Collects metrics from all services |
-| **Grafana** | Visualization | Dashboards and alerts for system health |
 | **GitHub** | Version Control | Source code repository |
 | **CI/CD Pipeline** | GitHub Actions | Automated build, test, and deployment |
 | **Docker** | Containerization | Package and deploy all services |
@@ -131,7 +129,7 @@ The project follows a **Modular Monolith** architecture with **Polyglot Persiste
 | Zone | Components | Access |
 |------|------------|--------|
 | **Public Zone** | Users, Cloudflare, Device IoT | Open internet access |
-| **Protected Zone** | Backend, All Databases, Prometheus, Grafana  | Internal network only, accessed via Nginx |
+| **Protected Zone** | Backend, All Databases | Internal network only, accessed via Nginx |
 
 ---
 

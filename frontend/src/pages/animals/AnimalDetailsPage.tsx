@@ -3,9 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   MessageSquare,
-  MapPin,
   PawPrint,
-  ShieldCheck,
   Pencil,
   Trash2,
 } from "lucide-react";
@@ -311,19 +309,7 @@ const AnimalDetailsPage: React.FC = () => {
               </div>
             </div>
 
-            <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
-                Care highlights
-              </h3>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-300">
-                {(animal.careHighlights ?? []).map((item) => (
-                  <li key={item} className="flex items-start gap-2">
-                    <ShieldCheck className="w-4 h-4 mt-1 text-primary-600" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+
           </div>
         </div>
 
@@ -427,20 +413,6 @@ const AnimalDetailsPage: React.FC = () => {
               </p>
             </section>
           )}
-
-          <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
-            <div className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-primary-600 mt-1" />
-              <div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">
-                  Location
-                </h3>
-                <p className="text-slate-600 dark:text-slate-300">
-                  {animal.location ?? animal.shelterName ?? "Shelter network"}
-                </p>
-              </div>
-            </div>
-          </section>
         </div>
       </section>
     </div>

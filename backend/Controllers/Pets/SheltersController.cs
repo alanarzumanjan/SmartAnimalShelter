@@ -12,6 +12,7 @@ namespace Controllers;
 
 [ApiController]
 [Route("shelters")]
+[Produces("application/json")]
 public class SheltersController : ControllerBase
 {
     private readonly AppDbContext db;
@@ -205,7 +206,7 @@ public class SheltersController : ControllerBase
             return Forbid();
 
         ShelterValidator validator = new ShelterValidator();
-        Dictionary<string, string> errors = validator.Validate(dto, isPatch: true);
+        Dictionary<string, string> errors = validator.ValidatePatch(dto);
 
         if (errors.Count > 0)
             return BadRequest(new { errors });

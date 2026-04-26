@@ -286,7 +286,6 @@ export default function AnimalsPage() {
               age={animal.age}
               status={animal.status}
               imageUrl={animal.imageUrl}
-              location={animal.location}
               description={animal.description}
               tags={animal.tags}
               shelterName={animal.shelterName}
