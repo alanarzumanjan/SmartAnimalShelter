@@ -1,5 +1,5 @@
-using StackExchange.Redis;
 using System.Text.Json;
+using StackExchange.Redis;
 
 namespace Services.Redis;
 
@@ -21,7 +21,8 @@ public class RedisService
     public async Task<T?> GetAsync<T>(string key)
     {
         var value = await _db.StringGetAsync(key);
-        if (value.IsNullOrEmpty) return default;
+        if (value.IsNullOrEmpty)
+            return default;
         return JsonSerializer.Deserialize<T>(value!);
     }
 

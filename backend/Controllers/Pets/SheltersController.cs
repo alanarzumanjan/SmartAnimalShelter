@@ -1,17 +1,18 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Validation;
-using Services;
-using Models;
-using Dtos;
 using Data;
+using Dtos;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Models;
+using Services;
+using Validation;
 
 namespace Controllers;
 
 [ApiController]
 [Route("shelters")]
+[Produces("application/json")]
 public class SheltersController : ControllerBase
 {
     private readonly AppDbContext db;
@@ -130,7 +131,9 @@ public class SheltersController : ControllerBase
             return NotFound("Shelter not found.");
 
         string? ownerPhone = null;
-        try { if (!string.IsNullOrWhiteSpace(shelter.Owner?.Phone)) ownerPhone = EncryptionService.Decrypt(shelter.Owner.Phone); } catch { }
+        try
+        { if (!string.IsNullOrWhiteSpace(shelter.Owner?.Phone)) ownerPhone = EncryptionService.Decrypt(shelter.Owner.Phone); }
+        catch { }
 
         string? ownerAddress = shelter.Owner?.Address;
 
@@ -205,7 +208,7 @@ public class SheltersController : ControllerBase
             return Forbid();
 
         ShelterValidator validator = new ShelterValidator();
-        Dictionary<string, string> errors = validator.Validate(dto, isPatch: true);
+        Dictionary<string, string> errors = validator.ValidatePatch(dto);
 
         if (errors.Count > 0)
             return BadRequest(new { errors });

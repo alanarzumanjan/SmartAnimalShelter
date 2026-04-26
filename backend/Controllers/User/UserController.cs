@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Services;
-using Dtos;
 using Data;
+using Dtos;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Services;
 
 namespace Controllers;
 
@@ -27,6 +27,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? role,
         [FromQuery] string? name,
@@ -52,13 +53,15 @@ public class UsersController : ControllerBase
         {
             if (!string.IsNullOrWhiteSpace(user.Email))
             {
-                try { user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email; }
+                try
+                { user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email; }
                 catch { }
             }
 
             if (!string.IsNullOrWhiteSpace(user.Phone))
             {
-                try { user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone; }
+                try
+                { user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone; }
                 catch { }
             }
         }
@@ -74,8 +77,16 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id}")]
+    [Authorize]
     public async Task<IActionResult> Patch(Guid id, [FromBody] UserUpdateDto dto)
     {
+        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
+            return Unauthorized();
+
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
+
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null)
             return NotFound("User not found.");
@@ -114,8 +125,16 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<IActionResult> GetById(Guid id)
     {
+        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
+            return Unauthorized();
+
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
+
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null)
             return NotFound("User not found.");
@@ -161,6 +180,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("all")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> DeleteAll()
     {
         using var transaction = await db.Database.BeginTransactionAsync();
@@ -185,10 +205,15 @@ public class UsersController : ControllerBase
             return Unauthorized();
 
         var user = await db.Users.FindAsync(userId);
-        if (user == null) return NotFound();
+        if (user == null)
+            return NotFound();
 
-        try { if (!string.IsNullOrWhiteSpace(user.Email)) user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email; } catch { }
-        try { if (!string.IsNullOrWhiteSpace(user.Phone)) user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone; } catch { }
+        try
+        { if (!string.IsNullOrWhiteSpace(user.Email)) user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email; }
+        catch { }
+        try
+        { if (!string.IsNullOrWhiteSpace(user.Phone)) user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone; }
+        catch { }
 
         return Ok(user);
     }
@@ -198,7 +223,8 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdatePassword(Guid id, [FromBody] PasswordUpdateDto dto)
     {
         var user = await db.Users.FindAsync(id);
-        if (user == null) return NotFound();
+        if (user == null)
+            return NotFound();
 
         var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))

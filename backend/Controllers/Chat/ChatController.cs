@@ -1,8 +1,8 @@
+using System.Security.Claims;
+using Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
-using Data;
 
 namespace Controllers;
 
@@ -28,14 +28,16 @@ public class ChatController : ControllerBase
     public async Task<IActionResult> GetRooms()
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var roomIds = await _db.ChatRoomMembers
             .Where(m => m.UserId == userId)
             .Select(m => m.RoomId)
             .ToListAsync();
 
-        if (roomIds.Count == 0) return Ok(new List<object>());
+        if (roomIds.Count == 0)
+            return Ok(new List<object>());
 
         var allMembers = await _db.ChatRoomMembers
             .Where(m => roomIds.Contains(m.RoomId) && m.UserId != userId)
@@ -117,7 +119,8 @@ public class ChatController : ControllerBase
     public async Task<IActionResult> JoinRoom(string roomId, [FromBody] JoinRoomDto? dto)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         // Add current user as member
         await EnsureMember(roomId, userId.Value);

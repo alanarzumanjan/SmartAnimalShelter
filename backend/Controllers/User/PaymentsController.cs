@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Cors;
 using Dtos;
 using Dtos.Payments;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Mvc;
 using Services.Payments;
 using Stripe;
 using Stripe.Checkout;
@@ -259,7 +259,8 @@ public class PaymentsController : ControllerBase
     private async Task HandleCheckoutSessionExpiredAsync(Event stripeEvent, CancellationToken cancellationToken)
     {
         var session = stripeEvent.Data.Object as Session;
-        if (session == null) return;
+        if (session == null)
+            return;
 
         Console.WriteLine($"⏰ Checkout session expired: {session.Id}");
 
@@ -274,7 +275,8 @@ public class PaymentsController : ControllerBase
     private async Task HandleCheckoutSessionPaymentFailedAsync(Event stripeEvent, CancellationToken cancellationToken)
     {
         var session = stripeEvent.Data.Object as Session;
-        if (session == null) return;
+        if (session == null)
+            return;
 
         Console.WriteLine($"❌ Checkout session payment failed: {session.Id}");
 

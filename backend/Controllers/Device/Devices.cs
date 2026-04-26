@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
-using Models;
-using Dtos;
 using Data;
+using Dtos;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace Controllers;
 
@@ -19,15 +19,27 @@ public class DevicesController : ControllerBase
     private static string NormalizeMac(string mac)
     {
         var hex = new string(mac.Where(c => Uri.IsHexDigit(c)).ToArray()).ToUpperInvariant();
-        if (hex.Length != 12) return mac.Trim();
+        if (hex.Length != 12)
+            return mac.Trim();
         return string.Create(17, hex, (span, src) =>
         {
-            span[0] = src[0]; span[1] = src[1]; span[2] = ':';
-            span[3] = src[2]; span[4] = src[3]; span[5] = ':';
-            span[6] = src[4]; span[7] = src[5]; span[8] = ':';
-            span[9] = src[6]; span[10] = src[7]; span[11] = ':';
-            span[12] = src[8]; span[13] = src[9]; span[14] = ':';
-            span[15] = src[10]; span[16] = src[11];
+            span[0] = src[0];
+            span[1] = src[1];
+            span[2] = ':';
+            span[3] = src[2];
+            span[4] = src[3];
+            span[5] = ':';
+            span[6] = src[4];
+            span[7] = src[5];
+            span[8] = ':';
+            span[9] = src[6];
+            span[10] = src[7];
+            span[11] = ':';
+            span[12] = src[8];
+            span[13] = src[9];
+            span[14] = ':';
+            span[15] = src[10];
+            span[16] = src[11];
         });
     }
 
@@ -37,12 +49,16 @@ public class DevicesController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] DeviceRegisterDTO request)
     {
-        if (request is null) return BadRequest(new { error = "Body is required." });
-        if (request.UserId == Guid.Empty) return BadRequest(new { error = "UserId is required." });
-        if (string.IsNullOrWhiteSpace(request.Id)) return BadRequest(new { error = "Device ID (MAC) is required." });
+        if (request is null)
+            return BadRequest(new { error = "Body is required." });
+        if (request.UserId == Guid.Empty)
+            return BadRequest(new { error = "UserId is required." });
+        if (string.IsNullOrWhiteSpace(request.Id))
+            return BadRequest(new { error = "Device ID (MAC) is required." });
 
         var mac = NormalizeMac(request.Id);
-        if (!IsValidMac(mac)) return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
+        if (!IsValidMac(mac))
+            return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
 
         var name = (request.Name ?? "Unnamed Device").Trim();
         var location = (request.Location ?? "Unknown").Trim();
@@ -162,8 +178,10 @@ public class DevicesController : ControllerBase
         if (device is null)
             return NotFound(new { error = "Device not found." });
 
-        if (dto.Name != null) device.Name = dto.Name.Trim();
-        if (dto.Location != null) device.Location = dto.Location.Trim();
+        if (dto.Name != null)
+            device.Name = dto.Name.Trim();
+        if (dto.Location != null)
+            device.Location = dto.Location.Trim();
 
         try
         {

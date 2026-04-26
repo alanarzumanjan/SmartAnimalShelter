@@ -10,7 +10,8 @@ public static class PriceResolver
         try
         {
             var match = Regex.Match(description, @"(\d[\d\s]*[\.,]?\d*)\s*€");
-            if (!match.Success) return null;
+            if (!match.Success)
+                return null;
 
             var raw = match.Groups[1].Value.Replace(" ", "").Replace(",", ".");
             return raw;

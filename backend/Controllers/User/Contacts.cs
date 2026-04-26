@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
+using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Mvc;
 using MimeKit;
-using MailKit.Net.Smtp;
 
 [ApiController]
 [Route("[controller]")]

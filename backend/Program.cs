@@ -1,17 +1,17 @@
-using System.Text;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Data;
-using Services;
-using Services.Redis;
-using ImageFetchers;
+using System.Text;
 using Config;
-using MongoDB.Driver;
+using Data;
 using DotNetEnv;
-using Services.Payments;
 using Hubs;
+using ImageFetchers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
+using Services;
+using Services.Payments;
+using Services.Redis;
 using StackExchange.Redis;
 
 Console.OutputEncoding = Encoding.UTF8;
@@ -61,7 +61,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = builder.Environment.IsProduction();
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = ctx =>
@@ -118,14 +118,16 @@ builder.Services.AddCors(options =>
     options.AddPolicy("FrontendOnly", policy =>
     {
         policy.WithOrigins(frontendOrigin)
-              .AllowAnyMethod()
+              .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
               .AllowAnyHeader()
               .AllowCredentials();
     });
 });
 
-// Logging off
-builder.Logging.ClearProviders();
+// Structured logging
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 var app = builder.Build();
 

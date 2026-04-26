@@ -1,3 +1,4 @@
+# Production Docker Compose — no external DB ports, stricter security
 services:
   postgres:
     image: postgres:16
@@ -10,26 +11,26 @@ services:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${DATABASE}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
       - shelter_network
-    restart: unless-stopped
+    # NO external ports in production
 
   mongodb:
-    image: mongo:6.0
+    image: mongo:7
     container_name: shelter_mongodb
     volumes:
       - mongodata:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
       - shelter_network
-    restart: unless-stopped
+    # NO external ports in production
 
   redis:
     image: redis:7-alpine
@@ -39,25 +40,31 @@ services:
     command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 10
     networks:
       - shelter_network
-    restart: unless-stopped
+    # NO external ports in production
 
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-your-org/your-repo}/backend:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: shelter_backend
     env_file:
-      - .env
+      - ./backend/.env
     environment:
       TZ: Europe/Riga
       ASPNETCORE_URLS: http://+:5000
       ASPNETCORE_ENVIRONMENT: Production
-      POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=${DATABASE};Username=${POSTGRES_USER};Password=${PASSWORD};"
+      POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=${DATABASE};Username=${POSTGRES_USER};Password=${PASSWORD};Include Error Detail=true;"
       MONGODB_CONNECTION_STRING: "mongodb://mongodb:27017"
       REDIS_CONNECTION_STRING: "redis:6379"
+      ALLOWED_FRONTEND_URL: ${ALLOWED_FRONTEND_PORT}
+      EMAIL_ADDRESS: ${EMAIL_ADDRESS}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_NAME: ${EMAIL_NAME}
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,34 +73,55 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "5000:5000"
+      - "${PORT:-5000}:5000"
+    restart: unless-stopped
     networks:
       - shelter_network
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"]
       interval: 30s
-      timeout: 5s
-      start_period: 60s
+      timeout: 3s
+      start_period: 40s
       retries: 3
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+      - 1.0.0.1
 
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY:-your-org/your-repo}/frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: ./docker/Dockerfile
     container_name: shelter_frontend
     depends_on:
       - backend
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+    restart: unless-stopped
     networks:
       - shelter_network
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/index.html"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
       interval: 30s
       timeout: 3s
       start_period: 10s
       retries: 3
+
+  cloudflared:
+    build:
+      context: .
+      dockerfile: cloudflared.Dockerfile
+    container_name: shelter_cloudflared
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    network_mode: host
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    cap_add:
+      - NET_ADMIN
 
 volumes:
   pgdata:
@@ -103,4 +131,3 @@ volumes:
 networks:
   shelter_network:
     driver: bridge
-

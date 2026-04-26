@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Models;
 using Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace Controllers;
 
@@ -27,8 +27,10 @@ public class PetsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] Guid? shelterId, [FromQuery] int? speciesId, [FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        if (page <= 0) page = 1;
-        if (pageSize <= 0 || pageSize > 100) pageSize = 10;
+        if (page <= 0)
+            page = 1;
+        if (pageSize <= 0 || pageSize > 100)
+            pageSize = 10;
 
         var query = _db.Pets
             .Include(p => p.Species)
@@ -251,32 +253,58 @@ public class PetsController : ControllerBase
         if (shelter == null || shelter.OwnerId != userId)
             return StatusCode(403, "You do not own this shelter.");
 
-        if (patch.Name != null) pet.Name = patch.Name;
-        if (patch.Description != null) pet.Description = patch.Description;
-        if (patch.MedicalNotes != null) pet.MedicalNotes = patch.MedicalNotes;
-        if (patch.IdealHome != null) pet.IdealHome = patch.IdealHome;
-        if (patch.SpecialNeeds != null) pet.SpecialNeeds = patch.SpecialNeeds;
-        if (patch.CurrentMedications != null) pet.CurrentMedications = patch.CurrentMedications;
-        if (patch.IntakeReason != null) pet.IntakeReason = patch.IntakeReason;
-        if (patch.IntakeDate != null) pet.IntakeDate = patch.IntakeDate;
-        if (patch.Color != null) pet.Color = patch.Color;
-        if (patch.Age != null) pet.Age = patch.Age;
-        if (patch.Weight != null) pet.Weight = patch.Weight;
-        if (patch.Size != null) pet.Size = patch.Size;
-        if (patch.EnergyLevel != null) pet.EnergyLevel = patch.EnergyLevel;
-        if (patch.ExperienceLevel != null) pet.ExperienceLevel = patch.ExperienceLevel;
-        if (patch.HousingRequirement != null) pet.HousingRequirement = patch.HousingRequirement;
-        if (patch.GenderId != null) pet.GenderId = patch.GenderId;
-        if (patch.SpeciesId != null) pet.SpeciesId = patch.SpeciesId.Value;
-        if (patch.StatusId != null) pet.StatusId = patch.StatusId.Value;
-        if (patch.IsNeutered != null) pet.IsNeutered = patch.IsNeutered;
-        if (patch.IsChipped != null) pet.IsChipped = patch.IsChipped;
-        if (patch.ChipNumber != null) pet.ChipNumber = patch.ChipNumber;
-        if (patch.IsHouseTrained != null) pet.IsHouseTrained = patch.IsHouseTrained;
-        if (patch.GoodWithKids != null) pet.GoodWithKids = patch.GoodWithKids;
-        if (patch.GoodWithDogs != null) pet.GoodWithDogs = patch.GoodWithDogs;
-        if (patch.GoodWithCats != null) pet.GoodWithCats = patch.GoodWithCats;
-        if (patch.AdoptionFee != null) pet.AdoptionFee = patch.AdoptionFee;
+        if (patch.Name != null)
+            pet.Name = patch.Name;
+        if (patch.Description != null)
+            pet.Description = patch.Description;
+        if (patch.MedicalNotes != null)
+            pet.MedicalNotes = patch.MedicalNotes;
+        if (patch.IdealHome != null)
+            pet.IdealHome = patch.IdealHome;
+        if (patch.SpecialNeeds != null)
+            pet.SpecialNeeds = patch.SpecialNeeds;
+        if (patch.CurrentMedications != null)
+            pet.CurrentMedications = patch.CurrentMedications;
+        if (patch.IntakeReason != null)
+            pet.IntakeReason = patch.IntakeReason;
+        if (patch.IntakeDate != null)
+            pet.IntakeDate = patch.IntakeDate;
+        if (patch.Color != null)
+            pet.Color = patch.Color;
+        if (patch.Age != null)
+            pet.Age = patch.Age;
+        if (patch.Weight != null)
+            pet.Weight = patch.Weight;
+        if (patch.Size != null)
+            pet.Size = patch.Size;
+        if (patch.EnergyLevel != null)
+            pet.EnergyLevel = patch.EnergyLevel;
+        if (patch.ExperienceLevel != null)
+            pet.ExperienceLevel = patch.ExperienceLevel;
+        if (patch.HousingRequirement != null)
+            pet.HousingRequirement = patch.HousingRequirement;
+        if (patch.GenderId != null)
+            pet.GenderId = patch.GenderId;
+        if (patch.SpeciesId != null)
+            pet.SpeciesId = patch.SpeciesId.Value;
+        if (patch.StatusId != null)
+            pet.StatusId = patch.StatusId.Value;
+        if (patch.IsNeutered != null)
+            pet.IsNeutered = patch.IsNeutered;
+        if (patch.IsChipped != null)
+            pet.IsChipped = patch.IsChipped;
+        if (patch.ChipNumber != null)
+            pet.ChipNumber = patch.ChipNumber;
+        if (patch.IsHouseTrained != null)
+            pet.IsHouseTrained = patch.IsHouseTrained;
+        if (patch.GoodWithKids != null)
+            pet.GoodWithKids = patch.GoodWithKids;
+        if (patch.GoodWithDogs != null)
+            pet.GoodWithDogs = patch.GoodWithDogs;
+        if (patch.GoodWithCats != null)
+            pet.GoodWithCats = patch.GoodWithCats;
+        if (patch.AdoptionFee != null)
+            pet.AdoptionFee = patch.AdoptionFee;
 
         await _db.SaveChangesAsync();
 
