@@ -169,7 +169,7 @@ Security is implemented using a **Defense-in-Depth** strategy:
 ### CI/CD Piplines diagram
 
 <p align="center">
-  <img src="../docs/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" />
+  <img src="docs/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" />
   <br/>
   <em> CI/CD Piplines diagram</em>
 </p>
