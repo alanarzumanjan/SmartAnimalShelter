@@ -27,6 +27,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? role,
         [FromQuery] string? name,
@@ -74,8 +75,16 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id}")]
+    [Authorize]
     public async Task<IActionResult> Patch(Guid id, [FromBody] UserUpdateDto dto)
     {
+        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
+            return Unauthorized();
+
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
+
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null)
             return NotFound("User not found.");
@@ -114,8 +123,16 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
+    [Authorize]
     public async Task<IActionResult> GetById(Guid id)
     {
+        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
+            return Unauthorized();
+
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
+
         var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
         if (user == null)
             return NotFound("User not found.");
@@ -161,6 +178,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("all")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> DeleteAll()
     {
         using var transaction = await db.Database.BeginTransactionAsync();
