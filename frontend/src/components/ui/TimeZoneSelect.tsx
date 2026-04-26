@@ -1,14 +1,20 @@
-import React from 'react';
-import { Check, ChevronDown, Clock3, Search } from 'lucide-react';
-import { getTimeZoneOption, timeZoneOptions } from '@/services/timezone.service';
+import React from "react";
+import { Check, ChevronDown, Clock3, Search } from "lucide-react";
+import {
+  getTimeZoneOption,
+  timeZoneOptions,
+} from "@/services/timezone.service";
 
 interface TimeZoneSelectProps {
   timeZone: string;
   onChange: (timeZone: string) => void;
 }
 
-const TimeZoneSelect: React.FC<TimeZoneSelectProps> = ({ timeZone, onChange }) => {
-  const [query, setQuery] = React.useState('');
+const TimeZoneSelect: React.FC<TimeZoneSelectProps> = ({
+  timeZone,
+  onChange,
+}) => {
+  const [query, setQuery] = React.useState("");
   const [isOpen, setIsOpen] = React.useState(false);
   const deferredQuery = React.useDeferredValue(query.trim().toLowerCase());
   const rootRef = React.useRef<HTMLDivElement | null>(null);
@@ -16,12 +22,18 @@ const TimeZoneSelect: React.FC<TimeZoneSelectProps> = ({ timeZone, onChange }) =
 
   const selectedOption = getTimeZoneOption(timeZone);
   const filteredOptions = React.useMemo(
-    () => timeZoneOptions.filter((option) => (deferredQuery ? option.searchText.includes(deferredQuery) : true)),
-    [deferredQuery]
+    () =>
+      timeZoneOptions.filter((option) =>
+        deferredQuery ? option.searchText.includes(deferredQuery) : true,
+      ),
+    [deferredQuery],
   );
 
   const optionsToRender =
-    selectedOption && !filteredOptions.some((option) => option.timeZone === selectedOption.timeZone)
+    selectedOption &&
+    !filteredOptions.some(
+      (option) => option.timeZone === selectedOption.timeZone,
+    )
       ? [selectedOption, ...filteredOptions]
       : filteredOptions;
 
@@ -37,17 +49,17 @@ const TimeZoneSelect: React.FC<TimeZoneSelectProps> = ({ timeZone, onChange }) =
     };
 
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handlePointerDown);
-    document.addEventListener('keydown', handleEscape);
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleEscape);
 
     return () => {
-      document.removeEventListener('mousedown', handlePointerDown);
-      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleEscape);
     };
   }, [isOpen]);
 
@@ -55,7 +67,7 @@ const TimeZoneSelect: React.FC<TimeZoneSelectProps> = ({ timeZone, onChange }) =
     if (isOpen) {
       window.setTimeout(() => inputRef.current?.focus(), 0);
     } else if (query) {
-      setQuery('');
+      setQuery("");
     }
   }, [isOpen, query]);
 
@@ -79,14 +91,15 @@ const TimeZoneSelect: React.FC<TimeZoneSelectProps> = ({ timeZone, onChange }) =
             Time zone
           </div>
           <div className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-            {selectedOption?.offsetLabel ?? timeZone} • {selectedOption?.label ?? timeZone}
+            {selectedOption?.offsetLabel ?? timeZone} •{" "}
+            {selectedOption?.label ?? timeZone}
           </div>
         </div>
         <ChevronDown
           className={[
-            'h-4 w-4 shrink-0 text-slate-400 transition-transform',
-            isOpen ? 'rotate-180' : '',
-          ].join(' ')}
+            "h-4 w-4 shrink-0 text-slate-400 transition-transform",
+            isOpen ? "rotate-180" : "",
+          ].join(" ")}
         />
       </button>
 
@@ -124,15 +137,17 @@ const TimeZoneSelect: React.FC<TimeZoneSelectProps> = ({ timeZone, onChange }) =
                     type="button"
                     onClick={() => handleSelect(option.timeZone)}
                     className={[
-                      'flex w-full items-start gap-3 rounded-xl px-3 py-2 text-left transition-colors',
+                      "flex w-full items-start gap-3 rounded-xl px-3 py-2 text-left transition-colors",
                       isSelected
-                        ? 'bg-primary-50 text-primary-900 dark:bg-indigo-500/15 dark:text-white'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800/80',
-                    ].join(' ')}
+                        ? "bg-primary-50 text-primary-900 dark:bg-indigo-500/15 dark:text-white"
+                        : "hover:bg-slate-50 dark:hover:bg-slate-800/80",
+                    ].join(" ")}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold">{option.label}</span>
+                        <span className="text-sm font-semibold">
+                          {option.label}
+                        </span>
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                           {option.offsetLabel}
                         </span>
@@ -141,7 +156,9 @@ const TimeZoneSelect: React.FC<TimeZoneSelectProps> = ({ timeZone, onChange }) =
                         {option.timeZone} · Local time: {option.localTimeLabel}
                       </div>
                     </div>
-                    {isSelected && <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary-600 dark:text-indigo-300" />}
+                    {isSelected && (
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary-600 dark:text-indigo-300" />
+                    )}
                   </button>
                 );
               })

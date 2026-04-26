@@ -1,6 +1,6 @@
-import React from 'react';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import React from "react";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -25,11 +25,11 @@ export function Input({ label, error, icon, className, ...props }: InputProps) {
         <input
           className={twMerge(
             clsx(
-              'w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white',
-              icon && 'pl-10',
-              error && 'border-red-500 focus:ring-red-500',
-              className
-            )
+              "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition-all focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white",
+              icon && "pl-10",
+              error && "border-red-500 focus:ring-red-500",
+              className,
+            ),
           )}
           {...props}
         />
@@ -39,4 +39,4 @@ export function Input({ label, error, icon, className, ...props }: InputProps) {
       )}
     </div>
   );
-};
+}

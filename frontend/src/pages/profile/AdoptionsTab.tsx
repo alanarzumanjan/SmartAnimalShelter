@@ -1,7 +1,7 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Heart, PawPrint, Calendar } from 'lucide-react';
-import { AdoptionRecord, formatDate, getStatusColor } from './types';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Heart, PawPrint, Calendar } from "lucide-react";
+import { AdoptionRecord, formatDate, getStatusColor } from "./types";
 
 interface Props {
   adoptions: AdoptionRecord[];
@@ -11,16 +11,22 @@ interface Props {
 export default function AdoptionsTab({ adoptions, isLoading }: Props) {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">My Adoption Requests</h2>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+        My Adoption Requests
+      </h2>
 
       {isLoading && (
-        <p className="text-center text-gray-500 dark:text-slate-400 py-8">Loading adoptions...</p>
+        <p className="text-center text-gray-500 dark:text-slate-400 py-8">
+          Loading adoptions...
+        </p>
       )}
 
       {!isLoading && adoptions.length === 0 && (
         <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-12 text-center">
           <Heart className="w-12 h-12 mx-auto text-gray-300 dark:text-slate-600 mb-4" />
-          <p className="text-lg font-semibold text-gray-900 dark:text-white">No requests yet</p>
+          <p className="text-lg font-semibold text-gray-900 dark:text-white">
+            No requests yet
+          </p>
           <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
             Find an animal you'd like to adopt and submit a request.
           </p>
@@ -56,7 +62,9 @@ export default function AdoptionsTab({ adoptions, isLoading }: Props) {
                     </p>
                   </div>
                 </div>
-                <span className={`self-start sm:self-auto px-3 py-1 rounded-full text-xs font-semibold capitalize ${getStatusColor(adoption.status)}`}>
+                <span
+                  className={`self-start sm:self-auto px-3 py-1 rounded-full text-xs font-semibold capitalize ${getStatusColor(adoption.status)}`}
+                >
                   {adoption.status}
                 </span>
               </div>

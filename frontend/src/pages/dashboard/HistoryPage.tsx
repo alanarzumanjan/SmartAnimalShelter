@@ -1,46 +1,79 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Filter } from 'lucide-react';
-import toast from 'react-hot-toast';
+import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Filter } from "lucide-react";
+import toast from "react-hot-toast";
 import {
   type MeasurementRecord,
   getStoredUser,
   getUserMeasurements,
   getUserDevices,
   type DeviceRecord,
-} from '@/services/device.service';
+} from "@/services/device.service";
 
 const PAGE_SIZE = 30;
 
 // ===== CO2 quality =====
 function co2Quality(co2: number): { title: string; badgeClass: string } {
-  if (co2 <= 400) return { title: 'Ideal', badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' };
-  if (co2 <= 600) return { title: 'Excellent', badgeClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' };
-  if (co2 <= 700) return { title: 'Normal', badgeClass: 'bg-lime-100 text-lime-700 dark:bg-lime-500/15 dark:text-lime-300' };
-  if (co2 <= 1000) return { title: 'Not good', badgeClass: 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300' };
-  if (co2 <= 1200) return { title: 'Bad', badgeClass: 'bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300' };
-  if (co2 <= 1400) return { title: 'Very bad', badgeClass: 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300' };
-  return { title: 'Terrible', badgeClass: 'bg-red-200 text-red-800 dark:bg-red-500/15 dark:text-red-300' };
+  if (co2 <= 400)
+    return {
+      title: "Ideal",
+      badgeClass:
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    };
+  if (co2 <= 600)
+    return {
+      title: "Excellent",
+      badgeClass:
+        "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+    };
+  if (co2 <= 700)
+    return {
+      title: "Normal",
+      badgeClass:
+        "bg-lime-100 text-lime-700 dark:bg-lime-500/15 dark:text-lime-300",
+    };
+  if (co2 <= 1000)
+    return {
+      title: "Not good",
+      badgeClass:
+        "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300",
+    };
+  if (co2 <= 1200)
+    return {
+      title: "Bad",
+      badgeClass:
+        "bg-orange-100 text-orange-800 dark:bg-orange-500/15 dark:text-orange-300",
+    };
+  if (co2 <= 1400)
+    return {
+      title: "Very bad",
+      badgeClass:
+        "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300",
+    };
+  return {
+    title: "Terrible",
+    badgeClass: "bg-red-200 text-red-800 dark:bg-red-500/15 dark:text-red-300",
+  };
 }
 
 function formatDateTime(value: string) {
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? '—' : parsed.toLocaleString();
+  return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString();
 }
 
 // datetime-local input value
 function toDateTimeLocalValue(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
+  const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-type PresetKey = '1h' | '24h' | '7d' | '30d' | 'custom' | 'all';
+type PresetKey = "1h" | "24h" | "7d" | "30d" | "custom" | "all";
 
 function presetMs(p: PresetKey): number | null {
-  if (p === '1h') return 1 * 60 * 60 * 1000;
-  if (p === '24h') return 24 * 60 * 60 * 1000;
-  if (p === '7d') return 7 * 24 * 60 * 60 * 1000;
-  if (p === '30d') return 30 * 24 * 60 * 60 * 1000;
+  if (p === "1h") return 1 * 60 * 60 * 1000;
+  if (p === "24h") return 24 * 60 * 60 * 1000;
+  if (p === "7d") return 7 * 24 * 60 * 60 * 1000;
+  if (p === "30d") return 30 * 24 * 60 * 60 * 1000;
   return null;
 }
 
@@ -54,19 +87,23 @@ const HistoryPage: React.FC = () => {
   const [offset, setOffset] = useState(0);
 
   // time filter
-  const [preset, setPreset] = useState<PresetKey>('all');
+  const [preset, setPreset] = useState<PresetKey>("all");
   const now = new Date();
   const dayAgo = new Date(now.getTime() - 24 * 60 * 60_000);
-  const [fromValue, setFromValue] = useState<string>(toDateTimeLocalValue(dayAgo));
+  const [fromValue, setFromValue] = useState<string>(
+    toDateTimeLocalValue(dayAgo),
+  );
   const [toValue, setToValue] = useState<string>(toDateTimeLocalValue(now));
 
   // device filter
-  const [deviceFilter, setDeviceFilter] = useState<string>('');
+  const [deviceFilter, setDeviceFilter] = useState<string>("");
 
   // Load devices for filter dropdown
   useEffect(() => {
     if (!currentUser?.id) return;
-    getUserDevices(currentUser.id).then(setDevices).catch(() => {});
+    getUserDevices(currentUser.id)
+      .then(setDevices)
+      .catch(() => {});
   }, [currentUser?.id]);
 
   // Fetch measurements
@@ -77,10 +114,10 @@ const HistoryPage: React.FC = () => {
     let from: string | undefined;
     let to: string | undefined;
 
-    if (preset === 'all') {
+    if (preset === "all") {
       from = undefined;
       to = undefined;
-    } else if (preset === 'custom') {
+    } else if (preset === "custom") {
       from = fromValue;
       to = toValue;
     } else if (dur) {
@@ -100,7 +137,9 @@ const HistoryPage: React.FC = () => {
         setTotal(res.total);
       })
       .catch((err) => {
-        toast.error(err?.response?.data?.error ?? 'Failed to load measurements.');
+        toast.error(
+          err?.response?.data?.error ?? "Failed to load measurements.",
+        );
       })
       .finally(() => setLoading(false));
   }, [currentUser?.id, preset, fromValue, toValue, offset, deviceFilter]);
@@ -110,10 +149,10 @@ const HistoryPage: React.FC = () => {
     setLoading(true);
     setOffset(0);
 
-    if (p === 'all') {
-      setPreset('all');
-    } else if (p === 'custom') {
-      setPreset('custom');
+    if (p === "all") {
+      setPreset("all");
+    } else if (p === "custom") {
+      setPreset("custom");
     } else {
       const dur = presetMs(p);
       if (dur) {
@@ -128,7 +167,7 @@ const HistoryPage: React.FC = () => {
 
   const deviceNames = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const d of devices) map[d.deviceId] = d.name || 'Unnamed';
+    for (const d of devices) map[d.deviceId] = d.name || "Unnamed";
     return map;
   }, [devices]);
 
@@ -139,7 +178,10 @@ const HistoryPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
             <ArrowLeft className="w-4 h-4" />
             Dashboard
           </Link>
@@ -161,24 +203,26 @@ const HistoryPage: React.FC = () => {
 
         {/* Presets */}
         <div className="flex flex-wrap gap-2 mb-3">
-          {([
-            ['all', 'All time'],
-            ['1h', '1 hour'],
-            ['24h', '1 day'],
-            ['7d', '1 week'],
-            ['30d', '1 month'],
-            ['custom', 'Custom'],
-          ] as [PresetKey, string][]).map(([key, label]) => (
+          {(
+            [
+              ["all", "All time"],
+              ["1h", "1 hour"],
+              ["24h", "1 day"],
+              ["7d", "1 week"],
+              ["30d", "1 month"],
+              ["custom", "Custom"],
+            ] as [PresetKey, string][]
+          ).map(([key, label]) => (
             <button
               key={key}
               type="button"
               onClick={() => handlePresetChange(key)}
               className={[
-                'px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors',
+                "px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors",
                 preset === key
-                  ? 'bg-indigo-600 text-white border-indigo-600'
-                  : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900',
-              ].join(' ')}
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900",
+              ].join(" ")}
             >
               {label}
             </button>
@@ -187,10 +231,12 @@ const HistoryPage: React.FC = () => {
 
         {/* Custom range + device filter */}
         <div className="flex flex-wrap items-end gap-3">
-          {preset === 'custom' && (
+          {preset === "custom" && (
             <>
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-500">From</label>
+                <label className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-500">
+                  From
+                </label>
                 <input
                   type="datetime-local"
                   value={fromValue}
@@ -203,7 +249,9 @@ const HistoryPage: React.FC = () => {
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-500">To</label>
+                <label className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-500">
+                  To
+                </label>
                 <input
                   type="datetime-local"
                   value={toValue}
@@ -220,7 +268,9 @@ const HistoryPage: React.FC = () => {
 
           {devices.length > 0 && (
             <div className="flex flex-col gap-1">
-              <label className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-500">Device</label>
+              <label className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-500">
+                Device
+              </label>
               <select
                 value={deviceFilter}
                 onChange={(e) => {
@@ -232,7 +282,9 @@ const HistoryPage: React.FC = () => {
               >
                 <option value="">All devices</option>
                 {devices.map((d) => (
-                  <option key={d.deviceId} value={d.deviceId}>{d.name || d.deviceId}</option>
+                  <option key={d.deviceId} value={d.deviceId}>
+                    {d.name || d.deviceId}
+                  </option>
                 ))}
               </select>
             </div>
@@ -254,7 +306,9 @@ const HistoryPage: React.FC = () => {
         {loading ? (
           <div className="p-12 text-center text-slate-400">Loading...</div>
         ) : measurements.length === 0 ? (
-          <div className="p-12 text-center text-slate-400">No measurements found.</div>
+          <div className="p-12 text-center text-slate-400">
+            No measurements found.
+          </div>
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -274,8 +328,13 @@ const HistoryPage: React.FC = () => {
                     const q = co2Quality(m.co2);
                     const name = deviceNames[m.deviceId] || m.deviceId;
                     return (
-                      <tr key={m.id} className="border-t border-slate-200 dark:border-slate-800">
-                        <td className="px-3 py-2 text-slate-400">{offset + idx + 1}</td>
+                      <tr
+                        key={m.id}
+                        className="border-t border-slate-200 dark:border-slate-800"
+                      >
+                        <td className="px-3 py-2 text-slate-400">
+                          {offset + idx + 1}
+                        </td>
                         <td className="px-3 py-2">
                           <Link
                             to={`/dashboard/devices/${encodeURIComponent(m.deviceId)}`}
@@ -283,17 +342,29 @@ const HistoryPage: React.FC = () => {
                           >
                             {name}
                           </Link>
-                          <div className="text-[10px] text-slate-400 font-mono">{m.deviceId}</div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            {m.deviceId}
+                          </div>
                         </td>
-                        <td className="px-3 py-2 text-slate-500 dark:text-slate-400">{formatDateTime(m.timestamp)}</td>
+                        <td className="px-3 py-2 text-slate-500 dark:text-slate-400">
+                          {formatDateTime(m.timestamp)}
+                        </td>
                         <td className="px-3 py-2 text-right">
-                          <span className="font-semibold text-slate-900 dark:text-white">{m.co2.toFixed(0)}</span>
-                          <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold ${q.badgeClass}`}>
+                          <span className="font-semibold text-slate-900 dark:text-white">
+                            {m.co2.toFixed(0)}
+                          </span>
+                          <span
+                            className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-semibold ${q.badgeClass}`}
+                          >
                             {q.title}
                           </span>
                         </td>
-                        <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400">{m.temperature.toFixed(1)}</td>
-                        <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400">{m.humidity.toFixed(1)}</td>
+                        <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400">
+                          {m.temperature.toFixed(1)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-slate-500 dark:text-slate-400">
+                          {m.humidity.toFixed(1)}
+                        </td>
                       </tr>
                     );
                   })}
@@ -304,7 +375,9 @@ const HistoryPage: React.FC = () => {
             {/* Pagination */}
             <div className="flex flex-wrap gap-2 items-center justify-between px-4 py-3 border-t border-slate-200 dark:border-slate-800">
               <div className="text-xs text-slate-500 dark:text-slate-400">
-                {total > PAGE_SIZE ? `Page ${Math.floor(offset / PAGE_SIZE) + 1}` : 'All rows shown'}
+                {total > PAGE_SIZE
+                  ? `Page ${Math.floor(offset / PAGE_SIZE) + 1}`
+                  : "All rows shown"}
               </div>
 
               <div className="flex gap-2">
@@ -328,11 +401,11 @@ const HistoryPage: React.FC = () => {
                     setOffset((o) => o + PAGE_SIZE);
                   }}
                   className={[
-                    'px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors',
+                    "px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors",
                     hasMore
-                      ? 'bg-indigo-600 hover:bg-indigo-500 text-white'
-                      : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed',
-                  ].join(' ')}
+                      ? "bg-indigo-600 hover:bg-indigo-500 text-white"
+                      : "bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-500 cursor-not-allowed",
+                  ].join(" ")}
                 >
                   Next →
                 </button>

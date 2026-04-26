@@ -28,9 +28,21 @@
     @apply min-h-screen antialiased;
     background-color: var(--app-bg);
     background-image:
-      radial-gradient(circle at top left, var(--app-bg-accent), transparent 28rem),
-      radial-gradient(circle at top right, var(--app-bg-accent-secondary), transparent 24rem),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0) 26%),
+      radial-gradient(
+        circle at top left,
+        var(--app-bg-accent),
+        transparent 28rem
+      ),
+      radial-gradient(
+        circle at top right,
+        var(--app-bg-accent-secondary),
+        transparent 24rem
+      ),
+      linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.58) 0%,
+        rgba(255, 255, 255, 0) 26%
+      ),
       linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg) 100%);
     background-attachment: fixed;
     color: var(--app-text);
@@ -38,9 +50,21 @@
 
   :root.dark body {
     background-image:
-      radial-gradient(circle at top left, var(--app-bg-accent), transparent 30rem),
-      radial-gradient(circle at top right, var(--app-bg-accent-secondary), transparent 26rem),
-      linear-gradient(180deg, rgba(15, 23, 42, 0.72) 0%, rgba(2, 6, 23, 0.2) 24%),
+      radial-gradient(
+        circle at top left,
+        var(--app-bg-accent),
+        transparent 30rem
+      ),
+      radial-gradient(
+        circle at top right,
+        var(--app-bg-accent-secondary),
+        transparent 26rem
+      ),
+      linear-gradient(
+        180deg,
+        rgba(15, 23, 42, 0.72) 0%,
+        rgba(2, 6, 23, 0.2) 24%
+      ),
       linear-gradient(180deg, var(--app-bg) 0%, var(--app-bg) 100%);
   }
 
@@ -65,7 +89,9 @@
   }
 }
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   transition-property: background-color, border-color, color, fill, stroke;
   transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

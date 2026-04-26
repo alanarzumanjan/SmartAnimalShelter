@@ -1,12 +1,12 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { Building2, Pencil, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { isAxiosError } from 'axios';
+import React from "react";
+import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Building2, Pencil, Trash2 } from "lucide-react";
+import toast from "react-hot-toast";
+import { isAxiosError } from "axios";
 
-import api from '@/services/api';
-import type { RootState } from '@/store/store';
+import api from "@/services/api";
+import type { RootState } from "@/store/store";
 
 interface AnimalCardProps {
   id: string;
@@ -14,7 +14,7 @@ interface AnimalCardProps {
   species: string;
   breed?: string;
   age?: string;
-  status: 'Available' | 'Adopted';
+  status: "Available" | "Adopted";
   imageUrl?: string;
   location?: string;
   description?: string;
@@ -25,8 +25,9 @@ interface AnimalCardProps {
 }
 
 const statusColors = {
-  Available: 'bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300',
-  Adopted: 'bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300',
+  Available:
+    "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-300",
+  Adopted: "bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300",
 };
 
 export default function AnimalCard({
@@ -44,21 +45,25 @@ export default function AnimalCard({
   shelterId,
   shelterOwnerId,
 }: AnimalCardProps) {
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const canEdit = isAuthenticated && user?.role === 'shelter' && user?.id === shelterOwnerId;
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth,
+  );
+  const canEdit =
+    isAuthenticated && user?.role === "shelter" && user?.id === shelterOwnerId;
   const showLocation = Boolean(location && location !== shelterName);
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!window.confirm(`Delete ${name}'s profile? This cannot be undone.`)) return;
+    if (!window.confirm(`Delete ${name}'s profile? This cannot be undone.`))
+      return;
     try {
       await api.delete(`/pets/${id}`);
       toast.success(`${name} removed`);
       window.location.reload();
     } catch (err: unknown) {
       const msg = isAxiosError(err) ? err.response?.data : undefined;
-      toast.error(typeof msg === 'string' ? msg : 'Failed to delete');
+      toast.error(typeof msg === "string" ? msg : "Failed to delete");
     }
   }
 
@@ -66,9 +71,15 @@ export default function AnimalCard({
     <article className="flex h-full flex-col rounded-[1.75rem] border border-white/70 bg-white/80 p-4 shadow-[0_18px_60px_-30px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75 dark:shadow-[0_26px_80px_-40px_rgba(2,6,23,0.82)]">
       <div className="relative mb-4 flex h-52 w-full items-center justify-center overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800/80">
         {imageUrl ? (
-          <img src={imageUrl} alt={name} className="object-cover w-full h-full" />
+          <img
+            src={imageUrl}
+            alt={name}
+            className="object-cover w-full h-full"
+          />
         ) : (
-          <span className="text-6xl text-slate-300 dark:text-slate-600">🐾</span>
+          <span className="text-6xl text-slate-300 dark:text-slate-600">
+            🐾
+          </span>
         )}
         {canEdit && (
           <div className="absolute top-2 right-2 flex gap-1">
@@ -92,10 +103,17 @@ export default function AnimalCard({
 
       <div className="flex items-start justify-between gap-3 mb-3">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">{name}</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{species}{breed ? ` · ${breed}` : ''}</p>
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+            {name}
+          </h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {species}
+            {breed ? ` · ${breed}` : ""}
+          </p>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusColors[status]}`}>
+        <span
+          className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${statusColors[status]}`}
+        >
           {status}
         </span>
       </div>
@@ -103,7 +121,11 @@ export default function AnimalCard({
       <div className="mb-4 space-y-1 text-sm text-slate-500 dark:text-slate-400">
         {age && <p>Age: {age}</p>}
         {showLocation && <p>Location: {location}</p>}
-        {description && <p className="line-clamp-2 leading-6 text-slate-600 dark:text-slate-300">{description}</p>}
+        {description && (
+          <p className="line-clamp-2 leading-6 text-slate-600 dark:text-slate-300">
+            {description}
+          </p>
+        )}
       </div>
 
       {shelterId && shelterName && (
@@ -119,7 +141,10 @@ export default function AnimalCard({
       {tags.length > 0 && (
         <div className="mt-auto flex flex-wrap gap-2 mb-4">
           {tags.map((tag) => (
-            <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <span
+              key={tag}
+              className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            >
               {tag}
             </span>
           ))}

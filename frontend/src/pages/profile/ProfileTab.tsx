@@ -1,6 +1,15 @@
-import React from 'react';
-import { User, Mail, Phone, MapPin, Shield, Edit2, Save, X } from 'lucide-react';
-import { UserProfile, getRoleBadge } from './types';
+import React from "react";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Shield,
+  Edit2,
+  Save,
+  X,
+} from "lucide-react";
+import { UserProfile, getRoleBadge } from "./types";
 
 interface EditForm {
   name: string;
@@ -19,15 +28,28 @@ interface Props {
   onFormChange: (field: keyof EditForm, value: string) => void;
 }
 
-const inputClass = 'w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent';
-const readonlyClass = 'rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-gray-900 dark:text-white';
-const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2';
+const inputClass =
+  "w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent";
+const readonlyClass =
+  "rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-4 py-2.5 text-gray-900 dark:text-white";
+const labelClass =
+  "block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2";
 
-export default function ProfileTab({ profile, isEditing, editForm, onEditToggle, onCancel, onSave, onFormChange }: Props) {
+export default function ProfileTab({
+  profile,
+  isEditing,
+  editForm,
+  onEditToggle,
+  onCancel,
+  onSave,
+  onFormChange,
+}: Props) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Personal Information</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          Personal Information
+        </h2>
 
         {isEditing ? (
           <div className="flex items-center gap-2">
@@ -67,7 +89,7 @@ export default function ProfileTab({ profile, isEditing, editForm, onEditToggle,
             <input
               type="text"
               value={editForm.name}
-              onChange={(e) => onFormChange('name', e.target.value)}
+              onChange={(e) => onFormChange("name", e.target.value)}
               className={inputClass}
             />
           ) : (
@@ -84,7 +106,7 @@ export default function ProfileTab({ profile, isEditing, editForm, onEditToggle,
             <input
               type="email"
               value={editForm.email}
-              onChange={(e) => onFormChange('email', e.target.value)}
+              onChange={(e) => onFormChange("email", e.target.value)}
               className={inputClass}
             />
           ) : (
@@ -101,12 +123,12 @@ export default function ProfileTab({ profile, isEditing, editForm, onEditToggle,
             <input
               type="tel"
               value={editForm.phone}
-              onChange={(e) => onFormChange('phone', e.target.value)}
+              onChange={(e) => onFormChange("phone", e.target.value)}
               placeholder="+371 ..."
               className={inputClass}
             />
           ) : (
-            <div className={readonlyClass}>{profile.phone || 'Not set'}</div>
+            <div className={readonlyClass}>{profile.phone || "Not set"}</div>
           )}
         </div>
 
@@ -119,12 +141,12 @@ export default function ProfileTab({ profile, isEditing, editForm, onEditToggle,
             <input
               type="text"
               value={editForm.address}
-              onChange={(e) => onFormChange('address', e.target.value)}
+              onChange={(e) => onFormChange("address", e.target.value)}
               placeholder="Your address"
               className={inputClass}
             />
           ) : (
-            <div className={readonlyClass}>{profile.address || 'Not set'}</div>
+            <div className={readonlyClass}>{profile.address || "Not set"}</div>
           )}
         </div>
       </div>
@@ -135,7 +157,9 @@ export default function ProfileTab({ profile, isEditing, editForm, onEditToggle,
           Role
         </label>
         <div className={readonlyClass}>
-          <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getRoleBadge(profile.role)}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getRoleBadge(profile.role)}`}
+          >
             {profile.role}
           </span>
         </div>

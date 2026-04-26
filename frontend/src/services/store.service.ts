@@ -1,4 +1,4 @@
-import api from '@/services/api';
+import api from "@/services/api";
 
 export interface StoreProduct {
   name: string;
@@ -37,16 +37,22 @@ interface CreateCheckoutInput {
 }
 
 export async function getStoreProduct(): Promise<StoreProduct> {
-  const { data } = await api.get('/payments/store-product');
+  const { data } = await api.get("/payments/store-product");
   return data?.data ?? data;
 }
 
-export async function createCheckoutSession(input: CreateCheckoutInput): Promise<CheckoutSession> {
-  const { data } = await api.post('/payments/checkout-session', input);
+export async function createCheckoutSession(
+  input: CreateCheckoutInput,
+): Promise<CheckoutSession> {
+  const { data } = await api.post("/payments/checkout-session", input);
   return data?.data ?? data;
 }
 
-export async function getCheckoutSessionStatus(sessionId: string): Promise<CheckoutSessionStatus> {
-  const { data } = await api.get(`/payments/checkout-session/${encodeURIComponent(sessionId)}`);
+export async function getCheckoutSessionStatus(
+  sessionId: string,
+): Promise<CheckoutSessionStatus> {
+  const { data } = await api.get(
+    `/payments/checkout-session/${encodeURIComponent(sessionId)}`,
+  );
   return data?.data ?? data;
 }

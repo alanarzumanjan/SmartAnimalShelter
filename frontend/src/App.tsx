@@ -1,40 +1,46 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider, useSelector } from 'react-redux';
-import { store } from '@/store/store';
-import type { RootState } from '@/store/store';
-import { Toaster } from 'react-hot-toast';
-import { ThemeProvider, useTheme } from '@/components/layout/ThemeContext';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Provider, useSelector } from "react-redux";
+import { store } from "@/store/store";
+import type { RootState } from "@/store/store";
+import { Toaster } from "react-hot-toast";
+import { ThemeProvider, useTheme } from "@/components/layout/ThemeContext";
 
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import HomePage from '@/pages/home/HomePage';
-import LoginPage from '@/pages/auth/LoginPage';
-import RegisterPage from '@/pages/auth/RegisterPage';
-import DashboardPage from '@/pages/dashboard/DashboardPage';
-import DeviceDetailPage from '@/pages/dashboard/DeviceDetailPage';
-import HistoryPage from '@/pages/dashboard/HistoryPage';
-import AdminPage from '@/pages/admin/AdminPage';
-import AnimalsPage from '@/pages/animals/AnimalsPage';
-import AnimalDetailsPage from '@/pages/animals/AnimalDetailsPage';
-import CreateAnimalPage from '@/pages/animals/CreateAnimalPage';
-import EditAnimalPage from '@/pages/animals/EditAnimalPage';
-import AdoptionFormPage from '@/pages/animals/AdoptionFormPage';
-import ShelterPage from '@/pages/animals/ShelterPage';
-import ChatPage from '@/pages/chat/ChatPage';
-import StorePage from '@/pages/store/StorePage';
-import ProfilePage from '@/pages/profile/ProfilePage';
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import HomePage from "@/pages/home/HomePage";
+import LoginPage from "@/pages/auth/LoginPage";
+import RegisterPage from "@/pages/auth/RegisterPage";
+import DashboardPage from "@/pages/dashboard/DashboardPage";
+import DeviceDetailPage from "@/pages/dashboard/DeviceDetailPage";
+import HistoryPage from "@/pages/dashboard/HistoryPage";
+import AdminPage from "@/pages/admin/AdminPage";
+import AnimalsPage from "@/pages/animals/AnimalsPage";
+import AnimalDetailsPage from "@/pages/animals/AnimalDetailsPage";
+import CreateAnimalPage from "@/pages/animals/CreateAnimalPage";
+import EditAnimalPage from "@/pages/animals/EditAnimalPage";
+import AdoptionFormPage from "@/pages/animals/AdoptionFormPage";
+import ShelterPage from "@/pages/animals/ShelterPage";
+import ChatPage from "@/pages/chat/ChatPage";
+import StorePage from "@/pages/store/StorePage";
+import ProfilePage from "@/pages/profile/ProfilePage";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
 }
 
-function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+function ProtectedRoute({
+  children,
+  requireAdmin = false,
+}: ProtectedRouteProps) {
+  const { isAuthenticated, user } = useSelector(
+    (state: RootState) => state.auth,
+  );
 
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (requireAdmin && user?.role !== 'admin') return <Navigate to="/dashboard" replace />;
+  if (requireAdmin && user?.role !== "admin")
+    return <Navigate to="/dashboard" replace />;
 
   return <>{children}</>;
 }
@@ -104,7 +110,10 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
-          <Route path="/dashboard/chat" element={<Navigate to="/dashboard/chats" replace />} />
+          <Route
+            path="/dashboard/chat"
+            element={<Navigate to="/dashboard/chats" replace />}
+          />
           <Route
             path="/admin"
             element={
@@ -131,21 +140,28 @@ function AppRoutes() {
         toastOptions={{
           duration: 4000,
           style: {
-            borderRadius: '18px',
-            padding: '14px 16px',
-            border: theme === 'dark' ? '1px solid rgba(148, 163, 184, 0.18)' : '1px solid rgba(148, 163, 184, 0.22)',
-            background: theme === 'dark' ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.94)',
-            color: theme === 'dark' ? '#e2e8f0' : '#0f172a',
-            boxShadow: theme === 'dark'
-              ? '0 24px 60px -28px rgba(2, 6, 23, 0.8)'
-              : '0 24px 50px -28px rgba(15, 23, 42, 0.3)',
-            backdropFilter: 'blur(18px)',
+            borderRadius: "18px",
+            padding: "14px 16px",
+            border:
+              theme === "dark"
+                ? "1px solid rgba(148, 163, 184, 0.18)"
+                : "1px solid rgba(148, 163, 184, 0.22)",
+            background:
+              theme === "dark"
+                ? "rgba(15, 23, 42, 0.92)"
+                : "rgba(255, 255, 255, 0.94)",
+            color: theme === "dark" ? "#e2e8f0" : "#0f172a",
+            boxShadow:
+              theme === "dark"
+                ? "0 24px 60px -28px rgba(2, 6, 23, 0.8)"
+                : "0 24px 50px -28px rgba(15, 23, 42, 0.3)",
+            backdropFilter: "blur(18px)",
           },
         }}
       />
     </div>
   );
-};
+}
 
 export default function App() {
   return (

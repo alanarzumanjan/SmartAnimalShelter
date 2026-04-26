@@ -1,26 +1,39 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { LogOut, User, Home, MessageSquare, PawPrint, ShoppingBag, Menu, X } from 'lucide-react';
+import React, { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  LogOut,
+  User,
+  Home,
+  MessageSquare,
+  PawPrint,
+  ShoppingBag,
+  Menu,
+  X,
+} from "lucide-react";
 
-import type { RootState, AppDispatch } from '@/store/store';
-import { logout } from '@/store/slices/authSlice';
-import { ThemeToggle } from './ThemeToggle';
+import type { RootState, AppDispatch } from "@/store/store";
+import { logout } from "@/store/slices/authSlice";
+import { ThemeToggle } from "./ThemeToggle";
 
-const navLink = 'text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors';
-const mobileLink = 'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors';
+const navLink =
+  "text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors";
+const mobileLink =
+  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 transition-colors";
 
 export default function Header() {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user } = useSelector(
+    (state: RootState) => state.auth,
+  );
   const [menuOpen, setMenuOpen] = useState(false);
 
   function handleLogout() {
     dispatch(logout());
     setMenuOpen(false);
-    navigate('/login');
+    navigate("/login");
   }
 
   function closeMenu() {
@@ -40,7 +53,9 @@ export default function Header() {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600">
               <span className="text-white text-lg">🐾</span>
             </div>
-            <span className="text-lg font-semibold text-slate-900 dark:text-white">Smart Shelter</span>
+            <span className="text-lg font-semibold text-slate-900 dark:text-white">
+              Smart Shelter
+            </span>
           </Link>
 
           {/* Desktop nav */}
@@ -59,13 +74,18 @@ export default function Header() {
             </Link>
             {isAuthenticated && (
               <>
-                <Link to="/dashboard" className={navLink}>Dashboard</Link>
+                <Link to="/dashboard" className={navLink}>
+                  Dashboard
+                </Link>
                 <Link to="/dashboard/chats" className={navLink}>
                   <MessageSquare className="w-4 h-4 inline mr-1" />
                   Chats
                 </Link>
-                {user?.role === 'admin' && (
-                  <Link to="/admin" className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition-colors">
+                {user?.role === "admin" && (
+                  <Link
+                    to="/admin"
+                    className="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition-colors"
+                  >
                     Admin
                   </Link>
                 )}
@@ -120,7 +140,11 @@ export default function Header() {
               className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white transition-colors"
               aria-label="Toggle menu"
             >
-              {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {menuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
             </button>
           </div>
         </div>
@@ -144,11 +168,19 @@ export default function Header() {
               <Link to="/dashboard" className={mobileLink} onClick={closeMenu}>
                 Dashboard
               </Link>
-              <Link to="/dashboard/chats" className={mobileLink} onClick={closeMenu}>
+              <Link
+                to="/dashboard/chats"
+                className={mobileLink}
+                onClick={closeMenu}
+              >
                 <MessageSquare className="w-4 h-4" /> Chats
               </Link>
-              {user?.role === 'admin' && (
-                <Link to="/admin" className={`${mobileLink} text-indigo-600 dark:text-indigo-400`} onClick={closeMenu}>
+              {user?.role === "admin" && (
+                <Link
+                  to="/admin"
+                  className={`${mobileLink} text-indigo-600 dark:text-indigo-400`}
+                  onClick={closeMenu}
+                >
                   Admin
                 </Link>
               )}
@@ -161,7 +193,10 @@ export default function Header() {
                 <Link to="/profile" className={mobileLink} onClick={closeMenu}>
                   <User className="w-4 h-4" /> {user?.name}
                 </Link>
-                <button onClick={handleLogout} className={`w-full text-left ${mobileLink} text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10`}>
+                <button
+                  onClick={handleLogout}
+                  className={`w-full text-left ${mobileLink} text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10`}
+                >
                   <LogOut className="w-4 h-4" /> Log out
                 </button>
               </>

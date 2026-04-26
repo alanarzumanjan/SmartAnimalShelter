@@ -1,4 +1,4 @@
-import api from '@/services/api';
+import api from "@/services/api";
 
 interface ShelterSummary {
   id?: string;
@@ -37,7 +37,9 @@ function getShelterCreatedAt(shelter: ShelterSummary) {
 }
 
 function getPetShelterId(pet: PetSummary) {
-  return pet.shelter?.id ?? pet.shelter?.Id ?? pet.shelterId ?? pet.ShelterId ?? null;
+  return (
+    pet.shelter?.id ?? pet.shelter?.Id ?? pet.shelterId ?? pet.ShelterId ?? null
+  );
 }
 
 function getPetShelterOwnerId(pet: PetSummary) {
@@ -48,11 +50,16 @@ function getPetCreatedAt(pet: PetSummary) {
   return pet.createdAt ?? pet.CreatedAt ?? null;
 }
 
-export async function resolveOwnedShelterId(ownerId: string): Promise<string | null> {
-  const { data } = await api.get('/shelters?page=1&pageSize=100');
-  const ownedShelters = (Array.isArray(data?.shelters) ? data.shelters : []).filter((shelter: ShelterSummary) => (
-    getShelterOwnerId(shelter) === ownerId && Boolean(getShelterId(shelter))
-  ));
+export async function resolveOwnedShelterId(
+  ownerId: string,
+): Promise<string | null> {
+  const { data } = await api.get("/shelters?page=1&pageSize=100");
+  const ownedShelters = (
+    Array.isArray(data?.shelters) ? data.shelters : []
+  ).filter(
+    (shelter: ShelterSummary) =>
+      getShelterOwnerId(shelter) === ownerId && Boolean(getShelterId(shelter)),
+  );
 
   if (ownedShelters.length === 0) {
     return null;
@@ -65,13 +72,18 @@ export async function resolveOwnedShelterId(ownerId: string): Promise<string | n
   const ownedShelterIds = new Set(
     ownedShelters
       .map(getShelterId)
-      .filter((value: string | null): value is string => Boolean(value))
+      .filter((value: string | null): value is string => Boolean(value)),
   );
 
   try {
-    const petsResponse = await api.get('/pets?page=1&pageSize=100');
-    const pets = Array.isArray(petsResponse.data?.pets) ? petsResponse.data.pets : [];
-    const petShelterStats = new Map<string, { count: number; latestCreatedAt: number }>();
+    const petsResponse = await api.get("/pets?page=1&pageSize=100");
+    const pets = Array.isArray(petsResponse.data?.pets)
+      ? petsResponse.data.pets
+      : [];
+    const petShelterStats = new Map<
+      string,
+      { count: number; latestCreatedAt: number }
+    >();
 
     for (const pet of pets as PetSummary[]) {
       if (getPetShelterOwnerId(pet) !== ownerId) continue;
@@ -84,7 +96,10 @@ export async function resolveOwnedShelterId(ownerId: string): Promise<string | n
       const current = petShelterStats.get(shelterId);
 
       if (!current) {
-        petShelterStats.set(shelterId, { count: 1, latestCreatedAt: createdAt });
+        petShelterStats.set(shelterId, {
+          count: 1,
+          latestCreatedAt: createdAt,
+        });
         continue;
       }
 
@@ -92,14 +107,15 @@ export async function resolveOwnedShelterId(ownerId: string): Promise<string | n
       current.latestCreatedAt = Math.max(current.latestCreatedAt, createdAt);
     }
 
-    const canonicalShelterId = [...petShelterStats.entries()]
-      .sort((left, right) => {
+    const canonicalShelterId = [...petShelterStats.entries()].sort(
+      (left, right) => {
         if (right[1].count !== left[1].count) {
           return right[1].count - left[1].count;
         }
 
         return right[1].latestCreatedAt - left[1].latestCreatedAt;
-      })[0]?.[0];
+      },
+    )[0]?.[0];
 
     if (canonicalShelterId) {
       return canonicalShelterId;
@@ -108,12 +124,17 @@ export async function resolveOwnedShelterId(ownerId: string): Promise<string | n
     // Fall back to shelter metadata if pets cannot be loaded.
   }
 
-  return [...ownedShelters]
-    .sort((left, right) => {
-      const leftCreatedAt = getShelterCreatedAt(left);
-      const rightCreatedAt = getShelterCreatedAt(right);
-      return new Date(rightCreatedAt ?? 0).getTime() - new Date(leftCreatedAt ?? 0).getTime();
-    })
-    .map(getShelterId)
-    .find((value: string | null): value is string => Boolean(value)) ?? null;
+  return (
+    [...ownedShelters]
+      .sort((left, right) => {
+        const leftCreatedAt = getShelterCreatedAt(left);
+        const rightCreatedAt = getShelterCreatedAt(right);
+        return (
+          new Date(rightCreatedAt ?? 0).getTime() -
+          new Date(leftCreatedAt ?? 0).getTime()
+        );
+      })
+      .map(getShelterId)
+      .find((value: string | null): value is string => Boolean(value)) ?? null
+  );
 }

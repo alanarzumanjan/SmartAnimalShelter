@@ -1,4 +1,4 @@
-export type AnimalStatus = 'Available' | 'Adopted';
+export type AnimalStatus = "Available" | "Adopted";
 
 export interface AnimalItem {
   id: string;
@@ -123,139 +123,166 @@ interface BackendAnimal {
 
 const getEntityName = (value?: BackendNamedEntity | string | null) => {
   if (!value) return undefined;
-  if (typeof value === 'string') return value;
+  if (typeof value === "string") return value;
   return value.name ?? value.Name;
 };
 
-const getEntityId = (value?: BackendNamedEntity | null) => value?.id ?? value?.Id;
-const getEntityOwnerId = (value?: BackendNamedEntity | null) => value?.ownerId ?? value?.OwnerId;
-const getEntityAddress = (value?: BackendNamedEntity | null) => value?.address ?? value?.Address;
+const getEntityId = (value?: BackendNamedEntity | null) =>
+  value?.id ?? value?.Id;
+const getEntityOwnerId = (value?: BackendNamedEntity | null) =>
+  value?.ownerId ?? value?.OwnerId;
+const getEntityAddress = (value?: BackendNamedEntity | null) =>
+  value?.address ?? value?.Address;
 
 export const previewShelters: PreviewShelter[] = [
   {
-    id: 'preview-shelter-riga-central',
-    name: 'Riga Central Shelter',
-    description: 'A calm city shelter focused on cat and small animal adoptions, with gentle introductions for new families.',
-    address: 'Riga city center',
-    email: 'riga-central@example.com',
-    phone: '+371 2000 0101',
-    createdAt: '2025-01-10T09:00:00.000Z',
+    id: "preview-shelter-riga-central",
+    name: "Riga Central Shelter",
+    description:
+      "A calm city shelter focused on cat and small animal adoptions, with gentle introductions for new families.",
+    address: "Riga city center",
+    email: "riga-central@example.com",
+    phone: "+371 2000 0101",
+    createdAt: "2025-01-10T09:00:00.000Z",
   },
   {
-    id: 'preview-shelter-jurmala-partner',
-    name: 'Jurmala Partner Shelter',
-    description: 'A coastal adoption partner known for active dogs, outdoor routines, and adopter onboarding support.',
-    address: 'Jurmala coast',
-    email: 'jurmala-partner@example.com',
-    phone: '+371 2000 0102',
-    createdAt: '2025-02-14T09:00:00.000Z',
+    id: "preview-shelter-jurmala-partner",
+    name: "Jurmala Partner Shelter",
+    description:
+      "A coastal adoption partner known for active dogs, outdoor routines, and adopter onboarding support.",
+    address: "Jurmala coast",
+    email: "jurmala-partner@example.com",
+    phone: "+371 2000 0102",
+    createdAt: "2025-02-14T09:00:00.000Z",
   },
   {
-    id: 'preview-shelter-northern-rescue',
-    name: 'Northern Rescue Unit',
-    description: 'A rescue-first intake team that highlights observation, stabilization, and careful recovery planning.',
-    address: 'Northern intake network',
-    email: 'northern-rescue@example.com',
-    phone: '+371 2000 0103',
-    createdAt: '2025-03-01T09:00:00.000Z',
+    id: "preview-shelter-northern-rescue",
+    name: "Northern Rescue Unit",
+    description:
+      "A rescue-first intake team that highlights observation, stabilization, and careful recovery planning.",
+    address: "Northern intake network",
+    email: "northern-rescue@example.com",
+    phone: "+371 2000 0103",
+    createdAt: "2025-03-01T09:00:00.000Z",
   },
   {
-    id: 'preview-shelter-coastal-network',
-    name: 'Coastal Shelter Network',
-    description: 'A collaborative shelter network sharing adoption stories, archived profiles, and successful placements.',
-    address: 'Baltic coastal region',
-    email: 'coastal-network@example.com',
-    phone: '+371 2000 0104',
-    createdAt: '2025-03-20T09:00:00.000Z',
+    id: "preview-shelter-coastal-network",
+    name: "Coastal Shelter Network",
+    description:
+      "A collaborative shelter network sharing adoption stories, archived profiles, and successful placements.",
+    address: "Baltic coastal region",
+    email: "coastal-network@example.com",
+    phone: "+371 2000 0104",
+    createdAt: "2025-03-20T09:00:00.000Z",
   },
 ];
 
 export const previewAnimals: AnimalItem[] = [
   {
-    id: 'preview-luna',
-    name: 'Luna',
-    species: 'Cat',
-    breed: 'British Shorthair mix',
-    age: '2 years',
-    status: 'Available',
-    imageUrl: 'https://images.unsplash.com/photo-1511044568932-338cba0ad803?auto=format&fit=crop&w=1200&q=80',
-    location: 'Riga Central Shelter',
-    shelterName: 'Riga Central Shelter',
-    shelterId: 'preview-shelter-riga-central',
-    contactName: 'Marta Ozola',
-    description: 'Calm indoor cat with a playful streak. Comfortable with apartments and gentle children.',
-    story: 'Luna arrived after being found near an apartment complex and quickly became one of the calmest cats in the socialization room. She enjoys quiet mornings, window watching, and slow introductions.',
-    personality: ['Affectionate', 'Indoor-ready', 'Gentle with visitors'],
-    careHighlights: ['Vaccinated', 'Litter trained', 'Comfortable with low-noise homes'],
-    medicalNotes: 'Healthy, vaccinated, and ready for adoption.',
-    idealHome: 'Best suited for a calm home that can offer soft spaces, toys, and a gradual introduction to other pets.',
-    tags: ['Vaccinated', 'Indoor', 'Family-friendly'],
+    id: "preview-luna",
+    name: "Luna",
+    species: "Cat",
+    breed: "British Shorthair mix",
+    age: "2 years",
+    status: "Available",
+    imageUrl:
+      "https://images.unsplash.com/photo-1511044568932-338cba0ad803?auto=format&fit=crop&w=1200&q=80",
+    location: "Riga Central Shelter",
+    shelterName: "Riga Central Shelter",
+    shelterId: "preview-shelter-riga-central",
+    contactName: "Marta Ozola",
+    description:
+      "Calm indoor cat with a playful streak. Comfortable with apartments and gentle children.",
+    story:
+      "Luna arrived after being found near an apartment complex and quickly became one of the calmest cats in the socialization room. She enjoys quiet mornings, window watching, and slow introductions.",
+    personality: ["Affectionate", "Indoor-ready", "Gentle with visitors"],
+    careHighlights: [
+      "Vaccinated",
+      "Litter trained",
+      "Comfortable with low-noise homes",
+    ],
+    medicalNotes: "Healthy, vaccinated, and ready for adoption.",
+    idealHome:
+      "Best suited for a calm home that can offer soft spaces, toys, and a gradual introduction to other pets.",
+    tags: ["Vaccinated", "Indoor", "Family-friendly"],
   },
   {
-    id: 'preview-archie',
-    name: 'Archie',
-    species: 'Dog',
-    breed: 'Golden Retriever',
-    age: '4 years',
-    status: 'Available',
-    imageUrl: 'https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=1200&q=80',
-    location: 'Jurmala Partner Shelter',
-    shelterName: 'Jurmala Partner Shelter',
-    shelterId: 'preview-shelter-jurmala-partner',
-    contactName: 'Edgars Briedis',
-    description: 'Friendly, social, and trained for leash walks. Great candidate for an active household.',
-    story: 'Archie was surrendered when his family relocated. He is energetic outdoors, settles well indoors, and already knows several basic commands.',
-    personality: ['Confident', 'Social', 'Enjoys activity'],
-    careHighlights: ['Neutered', 'Leash trained', 'Good with dogs'],
-    medicalNotes: 'In good condition and fully assessed by the shelter team.',
-    idealHome: 'A household that enjoys walks, play, and consistent daily routines.',
-    tags: ['Neutered', 'Active', 'Good with dogs'],
+    id: "preview-archie",
+    name: "Archie",
+    species: "Dog",
+    breed: "Golden Retriever",
+    age: "4 years",
+    status: "Available",
+    imageUrl:
+      "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=1200&q=80",
+    location: "Jurmala Partner Shelter",
+    shelterName: "Jurmala Partner Shelter",
+    shelterId: "preview-shelter-jurmala-partner",
+    contactName: "Edgars Briedis",
+    description:
+      "Friendly, social, and trained for leash walks. Great candidate for an active household.",
+    story:
+      "Archie was surrendered when his family relocated. He is energetic outdoors, settles well indoors, and already knows several basic commands.",
+    personality: ["Confident", "Social", "Enjoys activity"],
+    careHighlights: ["Neutered", "Leash trained", "Good with dogs"],
+    medicalNotes: "In good condition and fully assessed by the shelter team.",
+    idealHome:
+      "A household that enjoys walks, play, and consistent daily routines.",
+    tags: ["Neutered", "Active", "Good with dogs"],
   },
   {
-    id: 'preview-poppy',
-    name: 'Poppy',
-    species: 'Rabbit',
-    breed: 'Mini Lop',
-    age: '1 year',
-    status: 'Available',
-    imageUrl: 'https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?auto=format&fit=crop&w=1200&q=80',
-    location: 'Medical observation unit',
-    shelterName: 'Northern Rescue Unit',
-    shelterId: 'preview-shelter-northern-rescue',
-    contactName: 'Ilze Krumina',
-    description: 'Currently under observation after intake. Profile layout prepared for medical status and release notes.',
-    story: 'Poppy is still in the intake process, so this page demonstrates how we can show in-progress profiles with observation notes before public release.',
-    personality: ['Quiet', 'Curious', 'Sensitive to noise'],
-    careHighlights: ['Observation', 'Small pet enclosure', 'Gentle handling'],
-    medicalNotes: 'Under temporary quarantine while the team completes intake checks.',
-    idealHome: 'To be confirmed after medical clearance and behavior assessment.',
-    tags: ['Observation', 'Gentle', 'Small pet'],
+    id: "preview-poppy",
+    name: "Poppy",
+    species: "Rabbit",
+    breed: "Mini Lop",
+    age: "1 year",
+    status: "Available",
+    imageUrl:
+      "https://images.unsplash.com/photo-1585110396000-c9ffd4e4b308?auto=format&fit=crop&w=1200&q=80",
+    location: "Medical observation unit",
+    shelterName: "Northern Rescue Unit",
+    shelterId: "preview-shelter-northern-rescue",
+    contactName: "Ilze Krumina",
+    description:
+      "Currently under observation after intake. Profile layout prepared for medical status and release notes.",
+    story:
+      "Poppy is still in the intake process, so this page demonstrates how we can show in-progress profiles with observation notes before public release.",
+    personality: ["Quiet", "Curious", "Sensitive to noise"],
+    careHighlights: ["Observation", "Small pet enclosure", "Gentle handling"],
+    medicalNotes:
+      "Under temporary quarantine while the team completes intake checks.",
+    idealHome:
+      "To be confirmed after medical clearance and behavior assessment.",
+    tags: ["Observation", "Gentle", "Small pet"],
   },
   {
-    id: 'preview-max',
-    name: 'Max',
-    species: 'Dog',
-    breed: 'Mixed breed',
-    age: '6 years',
-    status: 'Adopted',
-    imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=1200&q=80',
-    location: 'Recently matched',
-    shelterName: 'Coastal Shelter Network',
-    shelterId: 'preview-shelter-coastal-network',
-    contactName: 'Laura Berzina',
-    description: 'Included as a preview of how adopted animals can still appear in the catalog history.',
-    story: 'Max recently found a home. His page stays visible as a reference for how adopted animals can remain part of the public shelter story.',
-    personality: ['Steady', 'People-oriented', 'Experienced'],
-    careHighlights: ['Matched', 'Archive-ready', 'History preserved'],
-    medicalNotes: 'Final adoption paperwork completed.',
-    idealHome: 'Already matched with an adopter.',
-    tags: ['Matched', 'Archive-ready'],
+    id: "preview-max",
+    name: "Max",
+    species: "Dog",
+    breed: "Mixed breed",
+    age: "6 years",
+    status: "Adopted",
+    imageUrl:
+      "https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=1200&q=80",
+    location: "Recently matched",
+    shelterName: "Coastal Shelter Network",
+    shelterId: "preview-shelter-coastal-network",
+    contactName: "Laura Berzina",
+    description:
+      "Included as a preview of how adopted animals can still appear in the catalog history.",
+    story:
+      "Max recently found a home. His page stays visible as a reference for how adopted animals can remain part of the public shelter story.",
+    personality: ["Steady", "People-oriented", "Experienced"],
+    careHighlights: ["Matched", "Archive-ready", "History preserved"],
+    medicalNotes: "Final adoption paperwork completed.",
+    idealHome: "Already matched with an adopter.",
+    tags: ["Matched", "Archive-ready"],
   },
 ];
 
 export const normalizeStatus = (value: unknown): AnimalStatus => {
-  if (value === 'Adopted') return 'Adopted';
-  return 'Available';
+  if (value === "Adopted") return "Adopted";
+  return "Available";
 };
 
 export const mapAnimal = (animal: BackendAnimal, index = 0): AnimalItem => {
@@ -265,18 +292,18 @@ export const mapAnimal = (animal: BackendAnimal, index = 0): AnimalItem => {
     const ageNum = parseFloat(String(animal.age));
     if (ageNum < 1) {
       const months = Math.round(ageNum * 12);
-      ageDisplay = months <= 1 ? '1 month' : `${months} months`;
+      ageDisplay = months <= 1 ? "1 month" : `${months} months`;
     } else {
-      ageDisplay = ageNum === 1 ? '1 year' : `${ageNum} years`;
+      ageDisplay = ageNum === 1 ? "1 year" : `${ageNum} years`;
     }
   }
 
   // Resolve image URL: prepend API base URL for relative paths
   let resolvedImageUrl: string | undefined = undefined;
   if (animal.imageUrl) {
-    resolvedImageUrl = animal.imageUrl.startsWith('http')
+    resolvedImageUrl = animal.imageUrl.startsWith("http")
       ? animal.imageUrl
-      : `${import.meta.env.VITE_API_URL || 'https://api.alantech.id.lv'}${animal.imageUrl}`;
+      : `${import.meta.env.VITE_API_URL || "https://api.alantech.id.lv"}${animal.imageUrl}`;
   }
 
   const shelterName = getEntityName(animal.shelter);
@@ -284,19 +311,28 @@ export const mapAnimal = (animal: BackendAnimal, index = 0): AnimalItem => {
 
   return {
     id: animal.id ?? animal.Id ?? `animal-${index}`,
-    name: animal.name ?? animal.Name ?? 'Unnamed pet',
-    species: getEntityName(animal.species) ?? 'Pet',
+    name: animal.name ?? animal.Name ?? "Unnamed pet",
+    species: getEntityName(animal.species) ?? "Pet",
     breed: getEntityName(animal.breed) ?? undefined,
     age: ageDisplay,
     status: normalizeStatus(getEntityName(animal.status)),
     imageUrl: resolvedImageUrl,
-    location: shelterAddress ?? animal.location ?? shelterName ?? 'Shelter network',
-    shelterName: shelterName ?? 'Shelter network',
-    contactName: shelterName ?? 'Shelter team',
-    shelterId: getEntityId(animal.shelter) ?? animal.shelterId ?? animal.ShelterId ?? undefined,
+    location:
+      shelterAddress ?? animal.location ?? shelterName ?? "Shelter network",
+    shelterName: shelterName ?? "Shelter network",
+    contactName: shelterName ?? "Shelter team",
+    shelterId:
+      getEntityId(animal.shelter) ??
+      animal.shelterId ??
+      animal.ShelterId ??
+      undefined,
     shelterOwnerId: getEntityOwnerId(animal.shelter) ?? undefined,
-    description: animal.description ?? 'Profile details will appear here once backend content is connected.',
-    story: animal.description ?? 'This profile is ready for a fuller story once rescue intake notes and adoption context are connected.',
+    description:
+      animal.description ??
+      "Profile details will appear here once backend content is connected.",
+    story:
+      animal.description ??
+      "This profile is ready for a fuller story once rescue intake notes and adoption context are connected.",
     personality: [
       getEntityName(animal.gender),
       animal.category,
@@ -304,7 +340,7 @@ export const mapAnimal = (animal: BackendAnimal, index = 0): AnimalItem => {
     ].filter((value): value is string => Boolean(value)),
     careHighlights: [
       animal.price ? `Fee: ${animal.price}` : undefined,
-      animal.externalUrl ? 'External listing available' : undefined,
+      animal.externalUrl ? "External listing available" : undefined,
       getEntityName(animal.status),
     ].filter((value): value is string => Boolean(value)),
     medicalNotes: animal.medicalNotes ?? animal.MedicalNotes ?? undefined,
@@ -312,8 +348,10 @@ export const mapAnimal = (animal: BackendAnimal, index = 0): AnimalItem => {
     weight: animal.weight ?? animal.Weight ?? undefined,
     size: animal.size ?? animal.Size ?? undefined,
     energyLevel: animal.energyLevel ?? animal.EnergyLevel ?? undefined,
-    experienceLevel: animal.experienceLevel ?? animal.ExperienceLevel ?? undefined,
-    housingRequirement: animal.housingRequirement ?? animal.HousingRequirement ?? undefined,
+    experienceLevel:
+      animal.experienceLevel ?? animal.ExperienceLevel ?? undefined,
+    housingRequirement:
+      animal.housingRequirement ?? animal.HousingRequirement ?? undefined,
     isNeutered: animal.isNeutered ?? animal.IsNeutered ?? null,
     isChipped: animal.isChipped ?? animal.IsChipped ?? null,
     chipNumber: animal.chipNumber ?? animal.ChipNumber ?? undefined,
@@ -323,7 +361,8 @@ export const mapAnimal = (animal: BackendAnimal, index = 0): AnimalItem => {
     goodWithCats: animal.goodWithCats ?? animal.GoodWithCats ?? null,
     adoptionFee: animal.adoptionFee ?? animal.AdoptionFee ?? undefined,
     specialNeeds: animal.specialNeeds ?? animal.SpecialNeeds ?? undefined,
-    currentMedications: animal.currentMedications ?? animal.CurrentMedications ?? undefined,
+    currentMedications:
+      animal.currentMedications ?? animal.CurrentMedications ?? undefined,
     intakeReason: animal.intakeReason ?? animal.IntakeReason ?? undefined,
     intakeDate: animal.intakeDate ?? animal.IntakeDate ?? undefined,
     tags: [

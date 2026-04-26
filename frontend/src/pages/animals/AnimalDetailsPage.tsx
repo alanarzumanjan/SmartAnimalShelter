@@ -1,17 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { MessageSquare, MapPin, PawPrint, ShieldCheck, Pencil, Trash2 } from 'lucide-react';
-import type { RootState } from '@/store/store';
-import api from '@/services/api';
-import { Button } from '@/components/ui/Button';
-import { mapAnimal, type AnimalItem } from './animalCatalog';
-import toast from 'react-hot-toast';
+import React, { useEffect, useState } from "react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import {
+  MessageSquare,
+  MapPin,
+  PawPrint,
+  ShieldCheck,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import type { RootState } from "@/store/store";
+import api from "@/services/api";
+import { Button } from "@/components/ui/Button";
+import { mapAnimal, type AnimalItem } from "./animalCatalog";
+import toast from "react-hot-toast";
 
 const AnimalDetailsPage: React.FC = () => {
   const { animalId } = useParams<{ animalId: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { isAuthenticated, user } = useSelector(
+    (state: RootState) => state.auth,
+  );
   const [animal, setAnimal] = useState<AnimalItem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,42 +58,76 @@ const AnimalDetailsPage: React.FC = () => {
   }, [animalId]);
 
   const handleDelete = async () => {
-    if (!animalId || !window.confirm(`Delete ${animal?.name}'s profile? This cannot be undone.`)) return;
+    if (
+      !animalId ||
+      !window.confirm(
+        `Delete ${animal?.name}'s profile? This cannot be undone.`,
+      )
+    )
+      return;
     try {
       await api.delete(`/pets/${animalId}`);
       toast.success(`${animal?.name}'s profile deleted`);
-      navigate('/animals');
+      navigate("/animals");
     } catch {
-      toast.error('Failed to delete');
+      toast.error("Failed to delete");
     }
   };
 
   // Veterinarians and shelter users can manage all pets
   // Users can manage their own pets (backend enforces ownership)
-  const isAuthorized = isAuthenticated && user?.role === 'shelter' && user?.id === animal?.shelterOwnerId;
+  const isAuthorized =
+    isAuthenticated &&
+    user?.role === "shelter" &&
+    user?.id === animal?.shelterOwnerId;
 
   if (isLoading) {
-    return <div className="py-16 text-center text-slate-400 dark:text-slate-500">Loading pet profile...</div>;
+    return (
+      <div className="py-16 text-center text-slate-400 dark:text-slate-500">
+        Loading pet profile...
+      </div>
+    );
   }
 
   if (!animal) {
     return (
       <div className="py-16 text-center">
-        <h1 className="mb-3 text-3xl font-bold text-slate-900 dark:text-white">Pet not found</h1>
-        <p className="mb-6 text-slate-500 dark:text-slate-400">This profile is unavailable right now.</p>
-        <Link to="/animals" className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300">
+        <h1 className="mb-3 text-3xl font-bold text-slate-900 dark:text-white">
+          Pet not found
+        </h1>
+        <p className="mb-6 text-slate-500 dark:text-slate-400">
+          This profile is unavailable right now.
+        </p>
+        <Link
+          to="/animals"
+          className="font-medium text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+        >
           Back to animals
         </Link>
       </div>
     );
   }
 
-  const chatLink = `/dashboard/chats?recipientId=${animal.shelterOwnerId ?? ''}&recipientName=${encodeURIComponent(animal.shelterName ?? 'Shelter')}&message=${encodeURIComponent(`Hi! I'm interested in adopting ${animal.name} (${animal.species}). Could you tell me more?`)}`;
+  const chatLink = `/dashboard/chats?recipientId=${animal.shelterOwnerId ?? ""}&recipientName=${encodeURIComponent(animal.shelterName ?? "Shelter")}&message=${encodeURIComponent(`Hi! I'm interested in adopting ${animal.name} (${animal.species}). Could you tell me more?`)}`;
 
   function boolBadge(val: boolean | null | undefined) {
-    if (val === true)  return <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">Yes</span>;
-    if (val === false) return <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">No</span>;
-    return <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">Unknown</span>;
+    if (val === true)
+      return (
+        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+          Yes
+        </span>
+      );
+    if (val === false)
+      return (
+        <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-700 dark:bg-rose-500/15 dark:text-rose-300">
+          No
+        </span>
+      );
+    return (
+      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+        Unknown
+      </span>
+    );
   }
 
   return (
@@ -92,7 +135,10 @@ const AnimalDetailsPage: React.FC = () => {
       {/* Admin action buttons */}
       {isAuthorized && (
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => navigate(`/animals/${animalId}/edit`)}>
+          <Button
+            variant="outline"
+            onClick={() => navigate(`/animals/${animalId}/edit`)}
+          >
             <Pencil className="w-4 h-4 mr-2" />
             Edit Profile
           </Button>
@@ -107,9 +153,15 @@ const AnimalDetailsPage: React.FC = () => {
         <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
           <div className="flex min-h-[360px] max-h-[480px] items-center justify-center overflow-hidden bg-slate-100 dark:bg-slate-800/80">
             {animal.imageUrl ? (
-              <img src={animal.imageUrl} alt={animal.name} className="w-full h-full object-cover" />
+              <img
+                src={animal.imageUrl}
+                alt={animal.name}
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <span className="text-8xl text-slate-300 dark:text-slate-600">🐾</span>
+              <span className="text-8xl text-slate-300 dark:text-slate-600">
+                🐾
+              </span>
             )}
           </div>
           <div className="p-8 md:p-10 overflow-y-auto max-h-[480px] min-w-0">
@@ -117,60 +169,95 @@ const AnimalDetailsPage: React.FC = () => {
               <PawPrint className="w-4 h-4" />
               More Information
             </div>
-            <h1 className="mb-2 text-4xl font-bold text-slate-900 dark:text-white">{animal.name}</h1>
+            <h1 className="mb-2 text-4xl font-bold text-slate-900 dark:text-white">
+              {animal.name}
+            </h1>
             <p className="mb-6 text-lg text-slate-500 dark:text-slate-400">
-              {animal.species}{animal.breed ? ` • ${animal.breed}` : ''}
+              {animal.species}
+              {animal.breed ? ` • ${animal.breed}` : ""}
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4 mb-8">
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                <div className="text-sm text-slate-500 dark:text-slate-400">Status</div>
-                <div className="font-semibold text-slate-900 dark:text-white">{animal.status}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">
+                  Status
+                </div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  {animal.status}
+                </div>
               </div>
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                <div className="text-sm text-slate-500 dark:text-slate-400">Age</div>
-                <div className="font-semibold text-slate-900 dark:text-white">{animal.age ?? 'To be confirmed'}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">
+                  Age
+                </div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  {animal.age ?? "To be confirmed"}
+                </div>
               </div>
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                <div className="text-sm text-slate-500 dark:text-slate-400">Shelter</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">
+                  Shelter
+                </div>
                 {animal.shelterId ? (
                   <Link
                     to={`/shelters/${animal.shelterId}`}
                     className="font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors"
                   >
-                    {animal.shelterName ?? 'Shelter team'}
+                    {animal.shelterName ?? "Shelter team"}
                   </Link>
                 ) : (
-                  <div className="font-semibold text-slate-900 dark:text-white">{animal.shelterName ?? 'Shelter team'}</div>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    {animal.shelterName ?? "Shelter team"}
+                  </div>
                 )}
               </div>
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                <div className="text-sm text-slate-500 dark:text-slate-400">Contact</div>
-                <div className="font-semibold text-slate-900 dark:text-white">{animal.contactName ?? 'Shelter team'}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">
+                  Contact
+                </div>
+                <div className="font-semibold text-slate-900 dark:text-white">
+                  {animal.contactName ?? "Shelter team"}
+                </div>
               </div>
               {animal.size && (
                 <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Size</div>
-                  <div className="font-semibold text-slate-900 dark:text-white">{animal.size}</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Size
+                  </div>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    {animal.size}
+                  </div>
                 </div>
               )}
               {animal.weight != null && (
                 <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Weight</div>
-                  <div className="font-semibold text-slate-900 dark:text-white">{animal.weight} kg</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Weight
+                  </div>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    {animal.weight} kg
+                  </div>
                 </div>
               )}
               {animal.energyLevel && (
                 <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Energy</div>
-                  <div className="font-semibold text-slate-900 dark:text-white">{animal.energyLevel}</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Energy
+                  </div>
+                  <div className="font-semibold text-slate-900 dark:text-white">
+                    {animal.energyLevel}
+                  </div>
                 </div>
               )}
               {animal.adoptionFee != null && (
                 <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Adoption fee</div>
+                  <div className="text-sm text-slate-500 dark:text-slate-400">
+                    Adoption fee
+                  </div>
                   <div className="font-semibold text-slate-900 dark:text-white">
-                    {animal.adoptionFee === 0 ? 'Free' : `€${animal.adoptionFee}`}
+                    {animal.adoptionFee === 0
+                      ? "Free"
+                      : `€${animal.adoptionFee}`}
                   </div>
                 </div>
               )}
@@ -190,7 +277,8 @@ const AnimalDetailsPage: React.FC = () => {
 
             {!isAuthenticated && (
               <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-                You can view pet details without signing in. Starting a chat will ask you to log in first.
+                You can view pet details without signing in. Starting a chat
+                will ask you to log in first.
               </p>
             )}
           </div>
@@ -199,15 +287,24 @@ const AnimalDetailsPage: React.FC = () => {
 
       <section className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8">
         <div className="min-w-0 overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-8 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.8)]">
-          <h2 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">Full description</h2>
-          <p className="mb-6 break-words leading-7 text-slate-600 dark:text-slate-300 overflow-wrap-anywhere">{animal.story ?? animal.description}</p>
+          <h2 className="mb-4 text-2xl font-bold text-slate-900 dark:text-white">
+            Full description
+          </h2>
+          <p className="mb-6 break-words leading-7 text-slate-600 dark:text-slate-300 overflow-wrap-anywhere">
+            {animal.story ?? animal.description}
+          </p>
 
           <div className="space-y-6">
             <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Personality</h3>
+              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
+                Personality
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {(animal.personality ?? []).map((item) => (
-                  <span key={item} className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                  <span
+                    key={item}
+                    className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                  >
                     {item}
                   </span>
                 ))}
@@ -215,7 +312,9 @@ const AnimalDetailsPage: React.FC = () => {
             </div>
 
             <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Care highlights</h3>
+              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
+                Care highlights
+              </h3>
               <ul className="space-y-2 text-slate-600 dark:text-slate-300">
                 {(animal.careHighlights ?? []).map((item) => (
                   <li key={item} className="flex items-start gap-2">
@@ -230,35 +329,102 @@ const AnimalDetailsPage: React.FC = () => {
 
         <div className="space-y-6">
           <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
-            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Medical</h3>
+            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
+              Medical
+            </h3>
             <div className="space-y-3">
               <div className="flex flex-wrap gap-4 text-sm">
-                <span className="flex items-center gap-2 text-slate-500">Neutered: {boolBadge(animal.isNeutered)}</span>
-                <span className="flex items-center gap-2 text-slate-500">Chipped: {boolBadge(animal.isChipped)}</span>
+                <span className="flex items-center gap-2 text-slate-500">
+                  Neutered: {boolBadge(animal.isNeutered)}
+                </span>
+                <span className="flex items-center gap-2 text-slate-500">
+                  Chipped: {boolBadge(animal.isChipped)}
+                </span>
               </div>
-              {animal.chipNumber && <p className="text-sm text-slate-500">Chip: <span className="font-mono text-slate-700 dark:text-slate-300">{animal.chipNumber}</span></p>}
-              {animal.medicalNotes && <p className="leading-7 text-slate-600 dark:text-slate-300">{animal.medicalNotes}</p>}
-              {animal.specialNeeds && <div><p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Special needs</p><p className="text-sm text-slate-600 dark:text-slate-300">{animal.specialNeeds}</p></div>}
-              {animal.currentMedications && <div><p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Medications</p><p className="text-sm text-slate-600 dark:text-slate-300">{animal.currentMedications}</p></div>}
+              {animal.chipNumber && (
+                <p className="text-sm text-slate-500">
+                  Chip:{" "}
+                  <span className="font-mono text-slate-700 dark:text-slate-300">
+                    {animal.chipNumber}
+                  </span>
+                </p>
+              )}
+              {animal.medicalNotes && (
+                <p className="leading-7 text-slate-600 dark:text-slate-300">
+                  {animal.medicalNotes}
+                </p>
+              )}
+              {animal.specialNeeds && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Special needs
+                  </p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    {animal.specialNeeds}
+                  </p>
+                </div>
+              )}
+              {animal.currentMedications && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                    Medications
+                  </p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300">
+                    {animal.currentMedications}
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
           <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
-            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Compatibility</h3>
+            <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
+              Compatibility
+            </h3>
             <div className="space-y-2 text-sm">
-              <div className="flex items-center justify-between"><span className="text-slate-500">House trained</span>{boolBadge(animal.isHouseTrained)}</div>
-              <div className="flex items-center justify-between"><span className="text-slate-500">Good with kids</span>{boolBadge(animal.goodWithKids)}</div>
-              <div className="flex items-center justify-between"><span className="text-slate-500">Good with dogs</span>{boolBadge(animal.goodWithDogs)}</div>
-              <div className="flex items-center justify-between"><span className="text-slate-500">Good with cats</span>{boolBadge(animal.goodWithCats)}</div>
-              {animal.experienceLevel && <div className="flex items-center justify-between"><span className="text-slate-500">Owner experience</span><span className="font-medium text-slate-700 dark:text-slate-300">{animal.experienceLevel}</span></div>}
-              {animal.housingRequirement && <div className="flex items-center justify-between"><span className="text-slate-500">Housing</span><span className="font-medium text-slate-700 dark:text-slate-300">{animal.housingRequirement}</span></div>}
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">House trained</span>
+                {boolBadge(animal.isHouseTrained)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Good with kids</span>
+                {boolBadge(animal.goodWithKids)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Good with dogs</span>
+                {boolBadge(animal.goodWithDogs)}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Good with cats</span>
+                {boolBadge(animal.goodWithCats)}
+              </div>
+              {animal.experienceLevel && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Owner experience</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {animal.experienceLevel}
+                  </span>
+                </div>
+              )}
+              {animal.housingRequirement && (
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Housing</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {animal.housingRequirement}
+                  </span>
+                </div>
+              )}
             </div>
           </section>
 
           {animal.idealHome && (
             <section className="rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-[0_22px_70px_-34px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70">
-              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">Ideal home</h3>
-              <p className="leading-7 text-slate-600 dark:text-slate-300">{animal.idealHome}</p>
+              <h3 className="mb-3 text-lg font-semibold text-slate-900 dark:text-white">
+                Ideal home
+              </h3>
+              <p className="leading-7 text-slate-600 dark:text-slate-300">
+                {animal.idealHome}
+              </p>
             </section>
           )}
 
@@ -266,8 +432,12 @@ const AnimalDetailsPage: React.FC = () => {
             <div className="flex items-start gap-3">
               <MapPin className="w-5 h-5 text-primary-600 mt-1" />
               <div>
-                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">Location</h3>
-                <p className="text-slate-600 dark:text-slate-300">{animal.location ?? animal.shelterName ?? 'Shelter network'}</p>
+                <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">
+                  Location
+                </h3>
+                <p className="text-slate-600 dark:text-slate-300">
+                  {animal.location ?? animal.shelterName ?? "Shelter network"}
+                </p>
               </div>
             </div>
           </section>

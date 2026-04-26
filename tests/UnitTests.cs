@@ -71,7 +71,9 @@ public class UnitTests
     [Fact]
     public void JwtSettings_FromConfiguration_ThrowsWhenKeyMissing()
     {
-        var config = new ConfigurationBuilder().Build();
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>())
+            .Build();
 
         var ex = Record.Exception(() => JwtSettings.FromConfiguration(config));
         Assert.IsType<InvalidOperationException>(ex);

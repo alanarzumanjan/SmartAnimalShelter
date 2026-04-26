@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 
 export interface Message {
   id: string;
@@ -25,7 +25,7 @@ const initialState: ChatState = {
 };
 
 export const chatSlice = createSlice({
-  name: 'chat',
+  name: "chat",
   initialState,
   reducers: {
     addMessage: (state, action: PayloadAction<Message>) => {
@@ -46,5 +46,11 @@ export const chatSlice = createSlice({
   },
 });
 
-export const { addMessage, setActiveChat, setTyping, setConnected, clearMessages } = chatSlice.actions;
+export const {
+  addMessage,
+  setActiveChat,
+  setTyping,
+  setConnected,
+  clearMessages,
+} = chatSlice.actions;
 export default chatSlice.reducer;

@@ -1,5 +1,5 @@
-import * as signalR from '@microsoft/signalr';
-import { config } from '../config';
+import * as signalR from "@microsoft/signalr";
+import { config } from "../config";
 
 let connection: signalR.HubConnection | null = null;
 let connectingPromise: Promise<void> | null = null;
@@ -7,7 +7,7 @@ let connectingPromise: Promise<void> | null = null;
 function buildConnection(): signalR.HubConnection {
   return new signalR.HubConnectionBuilder()
     .withUrl(`${config.api.baseUrl}/chatHub`, {
-      accessTokenFactory: () => localStorage.getItem('token') ?? '',
+      accessTokenFactory: () => localStorage.getItem("token") ?? "",
       withCredentials: false,
     })
     .withAutomaticReconnect([0, 2000, 5000, 10000])
@@ -41,11 +41,11 @@ export async function disconnect(): Promise<void> {
   if (connection) {
     const conn = connection;
     connection = null;
-    conn.off('ReceiveMessage');
+    conn.off("ReceiveMessage");
     try {
       await conn.stop();
     } catch {
-  // ignore
+      // ignore
     }
   }
 }
@@ -57,17 +57,17 @@ async function safeInvoke(method: string, ...args: unknown[]): Promise<void> {
 }
 
 export async function joinRoom(roomId: string): Promise<void> {
-  await safeInvoke('JoinRoom', roomId);
+  await safeInvoke("JoinRoom", roomId);
 }
 
 export async function leaveRoom(roomId: string): Promise<void> {
-  await safeInvoke('LeaveRoom', roomId);
+  await safeInvoke("LeaveRoom", roomId);
 }
 
 export async function sendMessage(roomId: string, text: string): Promise<void> {
   const conn = getConnection();
   if (conn.state !== signalR.HubConnectionState.Connected) {
-    throw new Error('Not connected');
+    throw new Error("Not connected");
   }
-  await conn.invoke('SendMessage', roomId, text);
+  await conn.invoke("SendMessage", roomId, text);
 }

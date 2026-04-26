@@ -1,18 +1,18 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { HeartHandshake, Plus, ChevronDown } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { HeartHandshake, Plus, ChevronDown } from "lucide-react";
 
-import AnimalCard from './AnimalCard';
-import api from '@/services/api';
-import { type AnimalItem, type AnimalStatus, mapAnimal } from './animalCatalog';
-import { Button } from '@/components/ui/Button';
-import type { RootState } from '@/store/store';
+import AnimalCard from "./AnimalCard";
+import api from "@/services/api";
+import { type AnimalItem, type AnimalStatus, mapAnimal } from "./animalCatalog";
+import { Button } from "@/components/ui/Button";
+import type { RootState } from "@/store/store";
 
-const statusOptions: { value: '' | AnimalStatus; label: string }[] = [
-  { value: '',           label: 'All' },
-  { value: 'Available',  label: 'Available' },
-  { value: 'Adopted',    label: 'Adopted' },
+const statusOptions: { value: "" | AnimalStatus; label: string }[] = [
+  { value: "", label: "All" },
+  { value: "Available", label: "Available" },
+  { value: "Adopted", label: "Adopted" },
 ];
 
 function Dropdown({
@@ -33,8 +33,8 @@ function Dropdown({
     function handler(e: MouseEvent) {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
     }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const active = Boolean(value);
@@ -46,23 +46,28 @@ function Dropdown({
         onClick={() => setOpen((v) => !v)}
         className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-sm font-medium transition-all ${
           active
-            ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white'
-            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700 dark:hover:border-slate-500'
+            ? "bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white"
+            : "bg-white text-slate-600 border-slate-200 hover:border-slate-400 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-700 dark:hover:border-slate-500"
         }`}
       >
         {value || placeholder}
-        <ChevronDown className={`w-3.5 h-3.5 opacity-50 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-3.5 h-3.5 opacity-50 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       {open && (
         <div className="absolute left-0 top-full mt-1.5 z-50 min-w-[160px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           <button
             type="button"
-            onClick={() => { onChange(''); setOpen(false); }}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
             className={`w-full text-left px-3.5 py-2 text-sm transition-colors ${
               !value
-                ? 'text-slate-900 font-medium dark:text-white'
-                : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                ? "text-slate-900 font-medium dark:text-white"
+                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
             {placeholder}
@@ -71,11 +76,14 @@ function Dropdown({
             <button
               key={opt}
               type="button"
-              onClick={() => { onChange(opt); setOpen(false); }}
+              onClick={() => {
+                onChange(opt);
+                setOpen(false);
+              }}
               className={`w-full text-left px-3.5 py-2 text-sm transition-colors ${
                 value === opt
-                  ? 'text-slate-900 font-medium dark:text-white'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  ? "text-slate-900 font-medium dark:text-white"
+                  : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
               }`}
             >
               {opt}
@@ -89,21 +97,27 @@ function Dropdown({
 
 export default function AnimalsPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated } = useSelector(
+    (state: RootState) => state.auth,
+  );
 
   const [animals, setAnimals] = useState<AnimalItem[]>([]);
-  const [status, setStatus] = useState<'' | AnimalStatus>('');
-  const [species, setSpecies] = useState('');
-  const [shelter, setShelter] = useState('');
+  const [status, setStatus] = useState<"" | AnimalStatus>("");
+  const [species, setSpecies] = useState("");
+  const [shelter, setShelter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  const canCreate = isAuthenticated && (user?.role === 'veterinarian' || user?.role === 'shelter');
+  const canCreate =
+    isAuthenticated &&
+    (user?.role === "veterinarian" || user?.role === "shelter");
 
   useEffect(() => {
     async function load() {
       try {
-        const { data } = await api.get('/pets?page=1&pageSize=50');
-        const items: AnimalItem[] = Array.isArray(data?.pets) ? data.pets.map(mapAnimal) : [];
+        const { data } = await api.get("/pets?page=1&pageSize=50");
+        const items: AnimalItem[] = Array.isArray(data?.pets)
+          ? data.pets.map(mapAnimal)
+          : [];
         setAnimals(items);
       } catch {
         setAnimals([]);
@@ -120,16 +134,21 @@ export default function AnimalsPage() {
   );
 
   const shelterOptions = useMemo(
-    () => [...new Set(animals.map((a) => a.shelterName).filter(Boolean))].sort() as string[],
+    () =>
+      [
+        ...new Set(animals.map((a) => a.shelterName).filter(Boolean)),
+      ].sort() as string[],
     [animals],
   );
 
   const filtered = useMemo(
-    () => animals.filter((a) =>
-      (!status  || a.status === status) &&
-      (!species || a.species === species) &&
-      (!shelter || a.shelterName === shelter)
-    ),
+    () =>
+      animals.filter(
+        (a) =>
+          (!status || a.status === status) &&
+          (!species || a.species === species) &&
+          (!shelter || a.shelterName === shelter),
+      ),
     [animals, status, species, shelter],
   );
 
@@ -145,7 +164,9 @@ export default function AnimalsPage() {
               <HeartHandshake className="w-4 h-4" />
               Adoption catalog
             </div>
-            <h1 className="mb-3 text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">Animals</h1>
+            <h1 className="mb-3 text-3xl font-bold text-slate-900 dark:text-white md:text-4xl">
+              Animals
+            </h1>
             <p className="text-lg leading-7 text-slate-600 dark:text-slate-300">
               Browse animals available for adoption.
             </p>
@@ -153,15 +174,19 @@ export default function AnimalsPage() {
 
           <div className="flex flex-col items-end gap-3">
             {canCreate && (
-              <Button onClick={() => navigate('/animals/create')}>
+              <Button onClick={() => navigate("/animals/create")}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Animal
               </Button>
             )}
             <div className="grid grid-cols-1 gap-3 min-w-[100px]">
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Showing</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{filtered.length}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Showing
+                </p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {filtered.length}
+                </p>
               </div>
             </div>
           </div>
@@ -175,13 +200,13 @@ export default function AnimalsPage() {
           <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-1.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
             {statusOptions.map((opt) => (
               <button
-                key={opt.value || 'all'}
+                key={opt.value || "all"}
                 type="button"
                 onClick={() => setStatus(opt.value)}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
                   status === opt.value
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                 }`}
               >
                 {opt.label}
@@ -217,7 +242,11 @@ export default function AnimalsPage() {
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
               <button
                 type="button"
-                onClick={() => { setStatus(''); setSpecies(''); setShelter(''); }}
+                onClick={() => {
+                  setStatus("");
+                  setSpecies("");
+                  setShelter("");
+                }}
                 className="text-sm text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
               >
                 Reset
@@ -229,11 +258,17 @@ export default function AnimalsPage() {
 
       {/* Grid */}
       {isLoading ? (
-        <p className="py-12 text-center text-slate-400 dark:text-slate-500">Loading animals...</p>
+        <p className="py-12 text-center text-slate-400 dark:text-slate-500">
+          Loading animals...
+        </p>
       ) : animals.length === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-12 text-center dark:border-slate-700 dark:bg-slate-900/60">
-          <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No animals listed yet</p>
-          <p className="text-slate-500 dark:text-slate-400">Shelters haven't added any animals yet.</p>
+          <p className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+            No animals listed yet
+          </p>
+          <p className="text-slate-500 dark:text-slate-400">
+            Shelters haven't added any animals yet.
+          </p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-500">
