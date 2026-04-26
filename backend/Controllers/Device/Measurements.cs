@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Models;
 using Dtos;
 using Data;
@@ -19,12 +21,21 @@ public class MeasurementsController : ControllerBase
     // SCD41 hardware minimum interval is ~5 seconds per measurement
     private static readonly TimeSpan IotRateWindow = TimeSpan.FromSeconds(10);
     private const int IotRateLimit = 2;
+    private const int HardCap = 5000;
 
     public MeasurementsController(AppDbContext db, RedisService redis)
     {
         _db = db;
         _redis = redis;
     }
+
+    private Guid? GetCurrentUserId(ClaimsPrincipal user)
+    {
+        var val = user.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(val, out var id) ? id : null;
+    }
+
+    private bool IsAdmin(ClaimsPrincipal user) => user.IsInRole("admin");
 
     private static string NormalizeMac(string mac)
     {
@@ -150,6 +161,7 @@ public class MeasurementsController : ControllerBase
     }
 
     [HttpGet("measurements/{deviceId}")]
+    [Authorize]
     public async Task<IActionResult> GetByDevice(
     string deviceId,
     [FromQuery] DateTime? from = null,
@@ -159,14 +171,24 @@ public class MeasurementsController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId(User);
+            if (currentUserId == null) return Unauthorized();
+
             offset = Math.Max(0, offset);
 
             // safety cap: "no limit" is still capped
-            const int HARD_CAP = 1000000;
-            if (limit <= 0) limit = HARD_CAP;
-            limit = Math.Clamp(limit, 1, HARD_CAP);
+            if (limit <= 0) limit = HardCap;
+            limit = Math.Clamp(limit, 1, HardCap);
 
             var mac = NormalizeMac(deviceId);
+
+            // Verify device ownership
+            if (!IsAdmin(User))
+            {
+                var device = await _db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.DeviceId == mac);
+                if (device == null) return NotFound(new { error = "Device not found." });
+                if (device.UserId != currentUserId) return Forbid();
+            }
 
             var query = _db.Measurements
                 .AsNoTracking()
@@ -208,6 +230,7 @@ public class MeasurementsController : ControllerBase
 
 
     [HttpGet("measurements/by-link/{deviceUsersId:guid}")]
+    [Authorize]
     public async Task<IActionResult> GetByLink(Guid deviceUsersId, [FromQuery] int limit = 50, [FromQuery] int offset = 0)
     {
         if (deviceUsersId == Guid.Empty)
@@ -215,6 +238,17 @@ public class MeasurementsController : ControllerBase
 
         try
         {
+            var currentUserId = GetCurrentUserId(User);
+            if (currentUserId == null) return Unauthorized();
+
+            // Verify link ownership
+            if (!IsAdmin(User))
+            {
+                var link = await _db.DeviceUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == deviceUsersId);
+                if (link == null) return NotFound(new { error = "Link not found." });
+                if (link.UserId != currentUserId) return Forbid();
+            }
+
             limit = Math.Clamp(limit, 1, 1000);
             offset = Math.Max(0, offset);
 
@@ -242,6 +276,7 @@ public class MeasurementsController : ControllerBase
     }
 
     [HttpGet("measurements/recent")]
+    [Authorize(Roles = "admin")]
     public async Task<IActionResult> GetRecent([FromQuery] int limit = 50, [FromQuery] int offset = 0)
     {
         try
@@ -272,11 +307,23 @@ public class MeasurementsController : ControllerBase
     }
 
     [HttpGet("measurements/{deviceId}/latest")]
+    [Authorize]
     public async Task<IActionResult> GetLatestByDevice(string deviceId)
     {
         try
         {
+            var currentUserId = GetCurrentUserId(User);
+            if (currentUserId == null) return Unauthorized();
+
             var mac = NormalizeMac(deviceId);
+
+            // Verify device ownership
+            if (!IsAdmin(User))
+            {
+                var device = await _db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.DeviceId == mac);
+                if (device == null) return NotFound(new { error = "Device not found." });
+                if (device.UserId != currentUserId) return Forbid();
+            }
 
             // Check Redis first — the dashboard polls this endpoint frequently
             var cached = await _redis.GetAsync<MeasurementOutDTO>($"device:latest:{mac}");
@@ -305,6 +352,7 @@ public class MeasurementsController : ControllerBase
     }
 
     [HttpGet("measurements/user/{userId:guid}")]
+    [Authorize]
     public async Task<IActionResult> GetByUser(
         Guid userId,
         [FromQuery] DateTime? from = null,
@@ -314,10 +362,15 @@ public class MeasurementsController : ControllerBase
     {
         try
         {
+            var currentUserId = GetCurrentUserId(User);
+            if (currentUserId == null) return Unauthorized();
+
+            if (currentUserId != userId && !IsAdmin(User))
+                return Forbid();
+
             offset = Math.Max(0, offset);
-            const int HARD_CAP = 1000000;
-            if (limit <= 0) limit = HARD_CAP;
-            limit = Math.Clamp(limit, 1, HARD_CAP);
+            if (limit <= 0) limit = HardCap;
+            limit = Math.Clamp(limit, 1, HardCap);
 
             var query = _db.Measurements
                 .AsNoTracking()
