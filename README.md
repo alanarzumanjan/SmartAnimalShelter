@@ -163,6 +163,7 @@ Security is implemented using a **Defense-in-Depth** strategy:
     <br><em>System API documentation with Swagger implementation</em>
   </tr>
 </table>
+
 ---
 
 ### CI/CD Piplines diagram
@@ -172,6 +173,7 @@ Security is implemented using a **Defense-in-Depth** strategy:
   <br/>
   <em> CI/CD Piplines diagram</em>
 </p>
+
 ---
 
 ## Authors
