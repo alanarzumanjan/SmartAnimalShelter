@@ -71,12 +71,31 @@ public class UnitTests
     [Fact]
     public void JwtSettings_FromConfiguration_ThrowsWhenKeyMissing()
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>())
-            .Build();
+        // Temporarily clear JWT_KEY from environment to test missing key behavior
+        var originalKey = Environment.GetEnvironmentVariable("JWT_KEY");
+        var originalIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+        var originalAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+        
+        try
+        {
+            Environment.SetEnvironmentVariable("JWT_KEY", null);
+            Environment.SetEnvironmentVariable("JWT_ISSUER", null);
+            Environment.SetEnvironmentVariable("JWT_AUDIENCE", null);
+            
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>())
+                .Build();
 
-        var ex = Record.Exception(() => JwtSettings.FromConfiguration(config));
-        Assert.IsType<InvalidOperationException>(ex);
+            var ex = Record.Exception(() => JwtSettings.FromConfiguration(config));
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+        finally
+        {
+            // Restore original values
+            Environment.SetEnvironmentVariable("JWT_KEY", originalKey);
+            Environment.SetEnvironmentVariable("JWT_ISSUER", originalIssuer);
+            Environment.SetEnvironmentVariable("JWT_AUDIENCE", originalAudience);
+        }
     }
 
     [Fact]
