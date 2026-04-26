@@ -88,12 +88,17 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
 
 ```mermaid
 %%{init: {
-  'theme': 'dark',
+  'theme': 'base',
   'themeVariables': {
-    'background': 'transparent',
-    'primaryBorderColor': '#9f08fdb2',
-    'lineColor': '#9f08fdb2',
-    'tertiaryColor': '#1e1e1e'
+    'primaryColor': '#1a1a1a',
+    'primaryBorderColor': '#9f08fd',
+    'primaryTextColor': '#fff',
+    'lineColor': '#9f08fd',
+    'secondaryColor': '#2a2a2a',
+    'tertiaryColor': '#1e1e1e',
+    'noteBkgColor': '#2a2a2a',
+    'noteTextColor': '#fff',
+    'fontFamily': 'monospace'
   }
 }}%%
 flowchart LR
