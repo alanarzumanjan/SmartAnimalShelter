@@ -16,7 +16,6 @@ interface AnimalCardProps {
   age?: string;
   status: "Available" | "Adopted";
   imageUrl?: string;
-  location?: string;
   description?: string;
   tags?: string[];
   shelterName?: string;
@@ -38,7 +37,6 @@ export default function AnimalCard({
   age,
   status,
   imageUrl,
-  location,
   description,
   tags = [],
   shelterName,
@@ -50,7 +48,6 @@ export default function AnimalCard({
   );
   const canEdit =
     isAuthenticated && user?.role === "shelter" && user?.id === shelterOwnerId;
-  const showLocation = Boolean(location && location !== shelterName);
 
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
@@ -120,7 +117,6 @@ export default function AnimalCard({
 
       <div className="mb-4 space-y-1 text-sm text-slate-500 dark:text-slate-400">
         {age && <p>Age: {age}</p>}
-        {showLocation && <p>Location: {location}</p>}
         {description && (
           <p className="line-clamp-2 leading-6 text-slate-600 dark:text-slate-300">
             {description}
