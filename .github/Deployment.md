@@ -87,7 +87,15 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
 - Trivy `exit-code: 1` blocks CI on HIGH/CRITICAL vulnerabilities.
 
 ```mermaid
-%%{init: {'theme': 'dark'}}%%
+%%{init: {
+  'theme': 'dark',
+  'themeVariables': {
+    'background': 'transparent',
+    'primaryBorderColor': '#9f08fdb2',
+    'lineColor': '#d1d5db',
+    'tertiaryColor': '#1e1e1e'
+  }
+}}%%
 flowchart LR
     A[Push/PR<br/>main, dev] --> B{CI}
     B --> C[Backend<br/>build, format, test]
