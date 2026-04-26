@@ -85,3 +85,19 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
 - CD pushes images to GHCR but **does not deploy** to the server automatically (no SSH/compose step).
 - `docker-image.yml` should be removed to avoid duplication.
 - Trivy `exit-code: 1` blocks CI on HIGH/CRITICAL vulnerabilities.
+
+```mermaid
+flowchart LR
+    A[Push/PR<br/>main, dev] --> B{CI}
+    B --> C[Backend<br/>build, format, test]
+    B --> D[Frontend<br/>lint, typecheck, test]
+    B --> E[Security<br/>Trivy scan]
+    C & D & E --> F{CD}
+    F --> G[Build & Push<br/>backend image]
+    F --> H[Build & Push<br/>frontend image]
+    G & H --> I[Cleanup old<br/>GHCR tags]
+    G & H --> J[Deploy<br/>docker compose up]
+    J --> K{Health?}
+    K -->|ok| L[Done]
+    K -->|fail| M[Rollback.sh]
+```
