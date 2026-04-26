@@ -86,31 +86,8 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
 - `docker-image.yml` should be removed to avoid duplication.
 - Trivy `exit-code: 1` blocks CI on HIGH/CRITICAL vulnerabilities.
 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'canvasBackground': 'transparent',
-    'background': 'transparent',
-    'primaryColor': '#151515',
-    'primaryBorderColor': '#9f08fd',
-    'primaryTextColor': '#ffffff',
-    'lineColor': '#9f08fd',
-    'tertiaryColor': '#151515',
-    'fontSize': '16px'
-  }
-}}%%
-flowchart LR
-    A[Push/PR<br/>main, dev] --> B{CI}
-    B --> C[Backend<br/>build, format, test]
-    B --> D[Frontend<br/>lint, typecheck, test]
-    B --> E[Security<br/>Trivy scan]
-    C & D & E --> F{CD}
-    F --> G[Build & Push<br/>backend image]
-    F --> H[Build & Push<br/>frontend image]
-    G & H --> I[Cleanup old<br/>GHCR tags]
-    G & H --> J[Deploy<br/>docker compose up]
-    J --> K{Health?}
-    K -->|ok| L[Done]
-    K -->|fail| M[Rollback.sh]
-```
+<p align="center">
+  <img src="docs/deployment.png" alt=" CI/CD Piplines diagram" width="700" />
+  <br/>
+  <em> CI/CD Piplines diagram</em>
+</p>
