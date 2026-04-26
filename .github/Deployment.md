@@ -87,7 +87,7 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
 - Trivy `exit-code: 1` blocks CI on HIGH/CRITICAL vulnerabilities.
 
 <p align="center">
-  <img src="docs/deployment.png" alt=" CI/CD Piplines diagram" width="700" />
+  <img src="docs/deployment.png" alt=" CI/CD Piplines diagram" width="400" />
   <br/>
   <em> CI/CD Piplines diagram</em>
 </p>
