@@ -90,15 +90,14 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
 %%{init: {
   'theme': 'base',
   'themeVariables': {
-    'primaryColor': '#1a1a1a',
+    'canvasBackground': 'transparent',
+    'background': 'transparent',
+    'primaryColor': '#151515',
     'primaryBorderColor': '#9f08fd',
-    'primaryTextColor': '#fff',
+    'primaryTextColor': '#ffffff',
     'lineColor': '#9f08fd',
-    'secondaryColor': '#2a2a2a',
-    'tertiaryColor': '#1e1e1e',
-    'noteBkgColor': '#2a2a2a',
-    'noteTextColor': '#fff',
-    'fontFamily': 'monospace'
+    'tertiaryColor': '#151515',
+    'fontSize': '16px'
   }
 }}%%
 flowchart LR
