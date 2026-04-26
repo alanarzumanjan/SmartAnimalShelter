@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
-using System.Text.RegularExpressions;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
-using Models;
+using System.Text.RegularExpressions;
 using Data;
 using Dtos;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Models;
 using Services;
 
 namespace Controllers;
@@ -26,7 +26,8 @@ public class DeviceUsersController : ControllerBase
     private static string NormalizeMac(string mac)
     {
         var hex = new string((mac ?? "").Where(c => Uri.IsHexDigit(c)).ToArray()).ToUpperInvariant();
-        if (hex.Length != 12) return (mac ?? "").Trim();
+        if (hex.Length != 12)
+            return (mac ?? "").Trim();
         return string.Join(":", Enumerable.Range(0, 6).Select(i => hex.Substring(i * 2, 2)));
     }
 
@@ -38,10 +39,12 @@ public class DeviceUsersController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] DeviceLoginRequest req)
     {
-        if (req is null) return BadRequest(new { error = "Body is required." });
+        if (req is null)
+            return BadRequest(new { error = "Body is required." });
 
         var mac = NormalizeMac(req.Mac);
-        if (!IsValidMac(mac)) return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
+        if (!IsValidMac(mac))
+            return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
 
         var email = (req.Email ?? "").Trim().ToLower();
         var password = req.Password ?? "";
@@ -128,12 +131,16 @@ public class DeviceUsersController : ControllerBase
     [HttpPost("enroll")]
     public async Task<IActionResult> Enroll([FromBody] DeviceUsersEnrollRequest req)
     {
-        if (req is null) return BadRequest(new { error = "Body is required." });
-        if (req.UserId == Guid.Empty) return BadRequest(new { error = "UserId is required." });
-        if (string.IsNullOrWhiteSpace(req.DeviceId)) return BadRequest(new { error = "DeviceId is required." });
+        if (req is null)
+            return BadRequest(new { error = "Body is required." });
+        if (req.UserId == Guid.Empty)
+            return BadRequest(new { error = "UserId is required." });
+        if (string.IsNullOrWhiteSpace(req.DeviceId))
+            return BadRequest(new { error = "DeviceId is required." });
 
         var mac = NormalizeMac(req.DeviceId);
-        if (!IsValidMac(mac)) return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
+        if (!IsValidMac(mac))
+            return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
 
         var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac);
         if (device == null)
@@ -152,7 +159,8 @@ public class DeviceUsersController : ControllerBase
         }
 
         var existing = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac && x.UserId == req.UserId);
-        if (existing != null) return Conflict(new { error = "Already enrolled for this user." });
+        if (existing != null)
+            return Conflict(new { error = "Already enrolled for this user." });
 
         var rawKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
         var hash = BCrypt.Net.BCrypt.HashPassword(rawKey);

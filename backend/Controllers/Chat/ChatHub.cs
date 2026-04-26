@@ -1,9 +1,9 @@
+using System.Security.Claims;
+using Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 using Models;
-using Data;
 
 namespace Hubs;
 
@@ -25,7 +25,8 @@ public class ChatHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
 
         var userId = GetUserId();
-        if (userId == null) return;
+        if (userId == null)
+            return;
 
         // Register as member if not already
         var exists = await _db.ChatRoomMembers
@@ -50,10 +51,12 @@ public class ChatHub : Hub
     public async Task SendMessage(string roomId, string text)
     {
         var userId = GetUserId();
-        if (userId == null || string.IsNullOrWhiteSpace(text)) return;
+        if (userId == null || string.IsNullOrWhiteSpace(text))
+            return;
 
         var user = await _db.Users.FindAsync(userId);
-        if (user == null) return;
+        if (user == null)
+            return;
 
         var message = new ChatMessage
         {

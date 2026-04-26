@@ -1,11 +1,11 @@
-using System.Text.RegularExpressions;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Models;
-using Dtos;
+using System.Text.RegularExpressions;
 using Data;
+using Dtos;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Models;
 using Services.Redis;
 
 namespace Controllers;
@@ -39,9 +39,11 @@ public class MeasurementsController : ControllerBase
 
     private static string NormalizeMac(string mac)
     {
-        if (string.IsNullOrWhiteSpace(mac)) return mac ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(mac))
+            return mac ?? string.Empty;
         var hex = new string(mac.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
-        if (hex.Length != 12) return mac.Trim();
+        if (hex.Length != 12)
+            return mac.Trim();
         return string.Join(":", Enumerable.Range(0, 6).Select(i => hex.Substring(i * 2, 2)));
     }
 
@@ -64,9 +66,12 @@ public class MeasurementsController : ControllerBase
 
         // validate body
         var errors = new Dictionary<string, string>();
-        if (string.IsNullOrWhiteSpace(request.DeviceId)) errors["deviceId"] = "DeviceId (MAC) is required.";
-        if (request.CO2 <= 0 || request.CO2 > 10_000) errors["co2"] = "CO2 value is invalid.";
-        if (errors.Count > 0) return BadRequest(new { errors });
+        if (string.IsNullOrWhiteSpace(request.DeviceId))
+            errors["deviceId"] = "DeviceId (MAC) is required.";
+        if (request.CO2 <= 0 || request.CO2 > 10_000)
+            errors["co2"] = "CO2 value is invalid.";
+        if (errors.Count > 0)
+            return BadRequest(new { errors });
 
         // validate header key
         if (!Request.Headers.TryGetValue("X-Api-Key", out var rawKey) || string.IsNullOrWhiteSpace(rawKey))
@@ -172,12 +177,14 @@ public class MeasurementsController : ControllerBase
         try
         {
             var currentUserId = GetCurrentUserId(User);
-            if (currentUserId == null) return Unauthorized();
+            if (currentUserId == null)
+                return Unauthorized();
 
             offset = Math.Max(0, offset);
 
             // safety cap: "no limit" is still capped
-            if (limit <= 0) limit = HardCap;
+            if (limit <= 0)
+                limit = HardCap;
             limit = Math.Clamp(limit, 1, HardCap);
 
             var mac = NormalizeMac(deviceId);
@@ -186,8 +193,10 @@ public class MeasurementsController : ControllerBase
             if (!IsAdmin(User))
             {
                 var device = await _db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.DeviceId == mac);
-                if (device == null) return NotFound(new { error = "Device not found." });
-                if (device.UserId != currentUserId) return Forbid();
+                if (device == null)
+                    return NotFound(new { error = "Device not found." });
+                if (device.UserId != currentUserId)
+                    return Forbid();
             }
 
             var query = _db.Measurements
@@ -239,14 +248,17 @@ public class MeasurementsController : ControllerBase
         try
         {
             var currentUserId = GetCurrentUserId(User);
-            if (currentUserId == null) return Unauthorized();
+            if (currentUserId == null)
+                return Unauthorized();
 
             // Verify link ownership
             if (!IsAdmin(User))
             {
                 var link = await _db.DeviceUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == deviceUsersId);
-                if (link == null) return NotFound(new { error = "Link not found." });
-                if (link.UserId != currentUserId) return Forbid();
+                if (link == null)
+                    return NotFound(new { error = "Link not found." });
+                if (link.UserId != currentUserId)
+                    return Forbid();
             }
 
             limit = Math.Clamp(limit, 1, 1000);
@@ -313,7 +325,8 @@ public class MeasurementsController : ControllerBase
         try
         {
             var currentUserId = GetCurrentUserId(User);
-            if (currentUserId == null) return Unauthorized();
+            if (currentUserId == null)
+                return Unauthorized();
 
             var mac = NormalizeMac(deviceId);
 
@@ -321,8 +334,10 @@ public class MeasurementsController : ControllerBase
             if (!IsAdmin(User))
             {
                 var device = await _db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.DeviceId == mac);
-                if (device == null) return NotFound(new { error = "Device not found." });
-                if (device.UserId != currentUserId) return Forbid();
+                if (device == null)
+                    return NotFound(new { error = "Device not found." });
+                if (device.UserId != currentUserId)
+                    return Forbid();
             }
 
             // Check Redis first — the dashboard polls this endpoint frequently
@@ -363,13 +378,15 @@ public class MeasurementsController : ControllerBase
         try
         {
             var currentUserId = GetCurrentUserId(User);
-            if (currentUserId == null) return Unauthorized();
+            if (currentUserId == null)
+                return Unauthorized();
 
             if (currentUserId != userId && !IsAdmin(User))
                 return Forbid();
 
             offset = Math.Max(0, offset);
-            if (limit <= 0) limit = HardCap;
+            if (limit <= 0)
+                limit = HardCap;
             limit = Math.Clamp(limit, 1, HardCap);
 
             var query = _db.Measurements

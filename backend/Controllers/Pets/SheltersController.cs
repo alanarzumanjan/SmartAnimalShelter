@@ -1,12 +1,12 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Validation;
-using Services;
-using Models;
-using Dtos;
 using Data;
+using Dtos;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Models;
+using Services;
+using Validation;
 
 namespace Controllers;
 
@@ -131,7 +131,9 @@ public class SheltersController : ControllerBase
             return NotFound("Shelter not found.");
 
         string? ownerPhone = null;
-        try { if (!string.IsNullOrWhiteSpace(shelter.Owner?.Phone)) ownerPhone = EncryptionService.Decrypt(shelter.Owner.Phone); } catch { }
+        try
+        { if (!string.IsNullOrWhiteSpace(shelter.Owner?.Phone)) ownerPhone = EncryptionService.Decrypt(shelter.Owner.Phone); }
+        catch { }
 
         string? ownerAddress = shelter.Owner?.Address;
 

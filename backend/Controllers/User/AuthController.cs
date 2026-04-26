@@ -1,12 +1,12 @@
-using Microsoft.EntityFrameworkCore;
+using Config;
+using Data;
+using Dtos;
 using Microsoft.AspNetCore.Mvc;
-using Validation;
+using Microsoft.EntityFrameworkCore;
+using Models;
 using Services;
 using Services.Redis;
-using Config;
-using Models;
-using Dtos;
-using Data;
+using Validation;
 
 namespace Controllers;
 

@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
-using Models;
 using Data;
+using Microsoft.EntityFrameworkCore;
+using Models;
 
 public static class DbInitializer
 {
@@ -112,7 +112,8 @@ public static class DbInitializer
                 foreach (var breedName in breedsArray.EnumerateArray())
                 {
                     var name = breedName.GetString();
-                    if (string.IsNullOrWhiteSpace(name)) continue;
+                    if (string.IsNullOrWhiteSpace(name))
+                        continue;
 
                     var exists = await db.Breeds.AnyAsync(b =>
                         b.Name.ToLower() == name.ToLower() &&

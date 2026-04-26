@@ -12,7 +12,8 @@ public class DbConnectionService
         var envPath = Path.Combine(Directory.GetCurrentDirectory(), ".env");
         if (File.Exists(envPath))
         {
-            try { Env.Load(envPath); }
+            try
+            { Env.Load(envPath); }
             catch { Console.WriteLine("⚠️ Failed to load .env"); }
         }
 

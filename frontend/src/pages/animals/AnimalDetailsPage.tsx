@@ -1,12 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import {
-  MessageSquare,
-  PawPrint,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { MessageSquare, PawPrint, Pencil, Trash2 } from "lucide-react";
 import type { RootState } from "@/store/store";
 import api from "@/services/api";
 import { Button } from "@/components/ui/Button";
@@ -308,8 +303,6 @@ const AnimalDetailsPage: React.FC = () => {
                 ))}
               </div>
             </div>
-
-
           </div>
         </div>
 

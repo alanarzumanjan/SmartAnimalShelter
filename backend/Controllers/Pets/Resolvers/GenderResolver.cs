@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
-using Models;
 using Data;
+using Microsoft.EntityFrameworkCore;
+using Models;
 
 public class GenderResolver
 {

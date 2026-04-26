@@ -1,17 +1,17 @@
-using System.Text;
 using System.Security.Claims;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using Data;
-using Services;
-using Services.Redis;
-using ImageFetchers;
+using System.Text;
 using Config;
-using MongoDB.Driver;
+using Data;
 using DotNetEnv;
-using Services.Payments;
 using Hubs;
+using ImageFetchers;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using MongoDB.Driver;
+using Services;
+using Services.Payments;
+using Services.Redis;
 using StackExchange.Redis;
 
 Console.OutputEncoding = Encoding.UTF8;

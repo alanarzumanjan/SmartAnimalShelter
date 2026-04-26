@@ -60,7 +60,8 @@ public static class EncryptionService
     public static bool EmailMatchesEncryptedValue(string? encryptedEmail, string? plainTextEmail)
     {
         var normalized = NormalizeEmail(plainTextEmail);
-        if (normalized == null) return false;
+        if (normalized == null)
+            return false;
 
         try
         {

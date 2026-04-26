@@ -1,5 +1,5 @@
-using Microsoft.EntityFrameworkCore;
 using Data;
+using Microsoft.EntityFrameworkCore;
 using Models;
 
 namespace Services;
