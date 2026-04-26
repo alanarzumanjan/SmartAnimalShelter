@@ -77,6 +77,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Lowercase image name
+        run: |
+          echo "BACKEND_IMAGE=${GITHUB_REPOSITORY@L}/backend" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=${GITHUB_REPOSITORY@L}/frontend" >> $GITHUB_ENV
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -147,6 +152,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Lowercase image name
+        run: |
+          echo "BACKEND_IMAGE=${GITHUB_REPOSITORY@L}/backend" >> $GITHUB_ENV
+          echo "FRONTEND_IMAGE=${GITHUB_REPOSITORY@L}/frontend" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
