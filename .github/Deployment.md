@@ -92,7 +92,7 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
   'themeVariables': {
     'background': 'transparent',
     'primaryBorderColor': '#9f08fdb2',
-    'lineColor': '#d1d5db',
+    'lineColor': '#9f08fdb2',
     'tertiaryColor': '#1e1e1e'
   }
 }}%%
