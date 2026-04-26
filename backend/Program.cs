@@ -61,7 +61,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = builder.Environment.IsProduction();
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = ctx =>
@@ -118,14 +118,16 @@ builder.Services.AddCors(options =>
     options.AddPolicy("FrontendOnly", policy =>
     {
         policy.WithOrigins(frontendOrigin)
-              .AllowAnyMethod()
+              .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
               .AllowAnyHeader()
               .AllowCredentials();
     });
 });
 
-// Logging off
-builder.Logging.ClearProviders();
+// Structured logging
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+builder.Logging.SetMinimumLevel(LogLevel.Information);
 
 var app = builder.Build();
 
