@@ -40,8 +40,10 @@ public class UsersController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50)
     {
-        if (page <= 0) page = 1;
-        if (pageSize <= 0 || pageSize > 200) pageSize = 50;
+        if (page <= 0)
+            page = 1;
+        if (pageSize <= 0 || pageSize > 200)
+            pageSize = 50;
 
         var query = db.Users.AsNoTracking().AsQueryable();
 
