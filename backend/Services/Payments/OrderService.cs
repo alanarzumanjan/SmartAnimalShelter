@@ -42,7 +42,7 @@ public sealed class OrderService
             AmountTotal = amountTotal,
             CustomerEmail = customerEmail,
             CustomerName = customerName,
-            Status = "pending"
+            Status = OrderStatus.pending
         };
 
         _dbContext.Orders.Add(order);
@@ -64,7 +64,7 @@ public sealed class OrderService
             throw new InvalidOperationException($"Order with Stripe session {stripeSessionId} not found.");
         }
 
-        order.Status = "paid";
+        order.Status = OrderStatus.paid;
         order.StripePaymentIntentId = paymentIntentId;
         order.PaidAt = DateTime.UtcNow;
         order.UpdatedAt = DateTime.UtcNow;
@@ -84,7 +84,7 @@ public sealed class OrderService
             throw new InvalidOperationException($"Order with Stripe session {stripeSessionId} not found.");
         }
 
-        order.Status = "failed";
+        order.Status = OrderStatus.failed;
         order.UpdatedAt = DateTime.UtcNow;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
