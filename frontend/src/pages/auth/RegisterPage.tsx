@@ -8,7 +8,7 @@ import api from "@/services/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
-type Role = "user" | "veterinarian" | "shelter";
+type Role = "user" | "shelter";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -138,9 +138,6 @@ export default function RegisterPage() {
                 className="w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
                 <option value="user">🐾 User — browse and adopt pets</option>
-                <option value="veterinarian">
-                  🩺 Veterinarian — manage animal health records
-                </option>
                 <option value="shelter">
                   🏠 Shelter — publish profiles and manage animals
                 </option>
