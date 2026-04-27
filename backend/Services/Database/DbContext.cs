@@ -20,10 +20,6 @@ public class AppDbContext : DbContext
     public DbSet<AdoptionStatus> AdoptionStatuses => Set<AdoptionStatus>();
     public DbSet<Pet> Pets => Set<Pet>();
     public DbSet<AdoptionRequest> AdoptionRequests => Set<AdoptionRequest>();
-    public DbSet<Favorite> Favorites => Set<Favorite>();
-    public DbSet<News> News => Set<News>();
-    public DbSet<Review> Reviews => Set<Review>();
-
     // IoT Sensors
     public DbSet<Device> Devices => Set<Device>();
     public DbSet<Measurement> Measurements => Set<Measurement>();
@@ -92,6 +88,19 @@ public class AppDbContext : DbContext
             .HasOne(m => m.User)
             .WithMany(u => u.Measurements)
             .HasForeignKey(m => m.UserId);
+
+        // Enums stored as strings
+        modelBuilder.Entity<User>()
+            .Property(u => u.Role)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<Order>()
+            .Property(o => o.Status)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<AdoptionRequest>()
+            .Property(a => a.Status)
+            .HasConversion<string>();
 
         modelBuilder.Entity<DeviceUser>()
             .HasOne(du => du.Device)
