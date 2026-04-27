@@ -4,6 +4,7 @@ using Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Models;
 using Services;
 
 namespace Controllers;
@@ -15,15 +16,18 @@ public class UsersController : ControllerBase
     private readonly AppDbContext db;
     private readonly PasswordHashingService _passwordHashingService;
     private readonly UserEmailService _userEmailService;
+    private readonly ILogger<UsersController> _logger;
 
     public UsersController(
         AppDbContext context,
         PasswordHashingService passwordHashingService,
-        UserEmailService userEmailService)
+        UserEmailService userEmailService,
+        ILogger<UsersController> logger)
     {
         db = context;
         _passwordHashingService = passwordHashingService;
         _userEmailService = userEmailService;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -32,24 +36,38 @@ public class UsersController : ControllerBase
         [FromQuery] string? role,
         [FromQuery] string? name,
         [FromQuery] string? email,
-        [FromQuery] string? sort = "name")
+        [FromQuery] string? sort = "name",
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
     {
+        if (page <= 0) page = 1;
+        if (pageSize <= 0 || pageSize > 200) pageSize = 50;
+
         var query = db.Users.AsNoTracking().AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(role))
-            query = query.Where(u => u.Role == role);
+        if (!string.IsNullOrWhiteSpace(role) && Enum.TryParse<UserRole>(role, out var roleEnum))
+            query = query.Where(u => u.Role == roleEnum);
 
         if (!string.IsNullOrWhiteSpace(name))
             query = query.Where(u => u.Username != null && u.Username.ToLower().Contains(name.ToLower()));
 
-        var users = await query.ToListAsync();
+        // Note: email filtering on encrypted values must remain client-side or use a hash index.
+        // For exam/demo purposes we materialize after role/name filter to keep it safe,
+        // but we add pagination to prevent OOM on large tables.
+        var totalCount = await query.CountAsync();
+
+        var usersPage = await query
+            .OrderBy(u => u.Username)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         if (!string.IsNullOrWhiteSpace(email))
-            users = users
+            usersPage = usersPage
                 .Where(u => EncryptionService.EmailMatchesEncryptedValue(u.Email, email))
                 .ToList();
 
-        foreach (var user in users)
+        foreach (var user in usersPage)
         {
             if (!string.IsNullOrWhiteSpace(user.Email))
             {
@@ -66,14 +84,24 @@ public class UsersController : ControllerBase
             }
         }
 
-        users = sort switch
+        usersPage = sort switch
         {
-            "created" => users.OrderByDescending(u => u.CreatedAt).ToList(),
-            "email" => users.OrderBy(u => u.Email ?? string.Empty).ToList(),
-            _ => users.OrderBy(u => u.Username).ToList()
+            "created" => usersPage.OrderByDescending(u => u.CreatedAt).ToList(),
+            "email" => usersPage.OrderBy(u => u.Email ?? string.Empty).ToList(),
+            _ => usersPage.OrderBy(u => u.Username).ToList()
         };
 
-        return Ok(users);
+        _logger.LogInformation("> Admin fetched {Count} users (page {Page}, size {PageSize}, total {Total})", usersPage.Count, page, pageSize, totalCount);
+        Console.WriteLine($"> Admin fetched {usersPage.Count} users (page {page}, size {pageSize}, total {totalCount})");
+
+        return Ok(new
+        {
+            currentPage = page,
+            pageSize,
+            totalCount,
+            totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
+            users = usersPage
+        });
     }
 
     [HttpPatch("{id}")]
@@ -114,8 +142,8 @@ public class UsersController : ControllerBase
         if (dto.address != null)
             user.Address = dto.address;
 
-        if (!string.IsNullOrWhiteSpace(dto.role))
-            user.Role = dto.role;
+        if (!string.IsNullOrWhiteSpace(dto.role) && Enum.TryParse<UserRole>(dto.role, out var roleEnum))
+            user.Role = roleEnum;
 
         using var transaction = await db.Database.BeginTransactionAsync();
         await db.SaveChangesAsync();
