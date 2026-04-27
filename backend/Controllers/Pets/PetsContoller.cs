@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using Data;
+using Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models;
+using Services;
 
 namespace Controllers;
 
@@ -12,10 +14,14 @@ namespace Controllers;
 public class PetsController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ShelterService _shelterService;
+    private readonly ILogger<PetsController> _logger;
 
-    public PetsController(AppDbContext db)
+    public PetsController(AppDbContext db, ShelterService shelterService, ILogger<PetsController> logger)
     {
         _db = db;
+        _shelterService = shelterService;
+        _logger = logger;
     }
 
     private Guid? GetUserId()
@@ -64,7 +70,7 @@ public class PetsController : ControllerBase
             p.Description,
             p.ImageUrl,
             p.Category,
-            p.Price,
+
             p.StatusId,
             p.ShelterId,
             p.CreatedAt,
@@ -125,7 +131,7 @@ public class PetsController : ControllerBase
             pet.ImageUrl,
             pet.MongoImageId,
             pet.Category,
-            pet.Price,
+
             pet.ExternalUrl,
             pet.ShelterId,
             pet.EnclosureId,
@@ -144,7 +150,7 @@ public class PetsController : ControllerBase
         });
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "shelter")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePetDto dto)
     {
@@ -152,31 +158,9 @@ public class PetsController : ControllerBase
         if (userId == null)
             return Unauthorized();
 
-        // Find user's shelter, or auto-create one if none exists
-        var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == dto.shelterId && s.OwnerId == userId);
-
-        // If no shelter exists for this user, auto-create one
-        if (shelter == null)
-        {
-            var user = await _db.Users.FindAsync(userId);
-            if (user == null)
-                return Unauthorized();
-
-            shelter = new Shelter
-            {
-                Id = Guid.NewGuid(),
-                Name = $"{user.Username}'s {(user.Role == "veterinarian" ? "Vet Clinic" : "Shelter")}",
-                Address = "Address to be updated",
-                Phone = null,
-                Email = user.Email,
-                Description = null,
-                OwnerId = userId.Value,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _db.Shelters.Add(shelter);
-            await _db.SaveChangesAsync();
-        }
+        var shelter = await _shelterService.EnsureUserShelterAsync(userId.Value, dto.shelterId);
+        _logger.LogInformation("> Ensured shelter {ShelterId} for pet creation by user {UserId}", shelter.Id, userId);
+        Console.WriteLine($"> Ensured shelter {shelter.Id} for pet creation by user {userId}");
 
         // Resolve breed: prefer breedName, fallback to breedId, or create default
         var breedResolver = new BreedResolver(_db);
@@ -237,7 +221,7 @@ public class PetsController : ControllerBase
         return Ok(newPet);
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "shelter")]
     [HttpPatch("{id}")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] PatchPetDto patch)
     {
@@ -311,7 +295,7 @@ public class PetsController : ControllerBase
         return Ok(pet);
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "shelter")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -335,7 +319,7 @@ public class PetsController : ControllerBase
         return Ok("Pet deleted.");
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "shelter")]
     [HttpPatch("{id}/breed")]
     public async Task<IActionResult> UpdateBreed(Guid id, [FromBody] UpdateBreedDto dto)
     {
@@ -368,70 +352,3 @@ public class PetsController : ControllerBase
     }
 }
 
-public class PatchPetDto
-{
-    public string? Name { get; set; }
-    public string? Description { get; set; }
-    public string? MedicalNotes { get; set; }
-    public string? IdealHome { get; set; }
-    public string? SpecialNeeds { get; set; }
-    public string? CurrentMedications { get; set; }
-    public string? IntakeReason { get; set; }
-    public DateTime? IntakeDate { get; set; }
-    public string? Color { get; set; }
-    public float? Age { get; set; }
-    public float? Weight { get; set; }
-    public string? Size { get; set; }
-    public string? EnergyLevel { get; set; }
-    public string? ExperienceLevel { get; set; }
-    public string? HousingRequirement { get; set; }
-    public int? GenderId { get; set; }
-    public int? SpeciesId { get; set; }
-    public int? StatusId { get; set; }
-    public bool? IsNeutered { get; set; }
-    public bool? IsChipped { get; set; }
-    public string? ChipNumber { get; set; }
-    public bool? IsHouseTrained { get; set; }
-    public bool? GoodWithKids { get; set; }
-    public bool? GoodWithDogs { get; set; }
-    public bool? GoodWithCats { get; set; }
-    public decimal? AdoptionFee { get; set; }
-}
-
-public class UpdateBreedDto
-{
-    public string? breedName { get; set; }
-}
-
-public class CreatePetDto
-{
-    public string? name { get; set; }
-    public int speciesId { get; set; }
-    public string? breedName { get; set; }
-    public int? breedId { get; set; }
-    public int? genderId { get; set; }
-    public float? age { get; set; }
-    public float? weight { get; set; }
-    public string? color { get; set; }
-    public string? size { get; set; }
-    public int statusId { get; set; }
-    public string? description { get; set; }
-    public string? medicalNotes { get; set; }
-    public string? idealHome { get; set; }
-    public string? specialNeeds { get; set; }
-    public string? currentMedications { get; set; }
-    public string? intakeReason { get; set; }
-    public DateTime? intakeDate { get; set; }
-    public string? energyLevel { get; set; }
-    public string? experienceLevel { get; set; }
-    public string? housingRequirement { get; set; }
-    public string? chipNumber { get; set; }
-    public decimal? adoptionFee { get; set; }
-    public bool? isNeutered { get; set; }
-    public bool? isChipped { get; set; }
-    public bool? isHouseTrained { get; set; }
-    public bool? goodWithKids { get; set; }
-    public bool? goodWithDogs { get; set; }
-    public bool? goodWithCats { get; set; }
-    public Guid shelterId { get; set; }
-}
