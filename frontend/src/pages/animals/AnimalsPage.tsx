@@ -109,7 +109,7 @@ export default function AnimalsPage() {
 
   const canCreate =
     isAuthenticated &&
-    (user?.role === "veterinarian" || user?.role === "shelter");
+    (user?.role === "shelter");
 
   useEffect(() => {
     async function load() {
