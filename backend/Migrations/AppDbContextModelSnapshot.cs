@@ -40,8 +40,7 @@ namespace SmartShelter.API.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -278,30 +277,6 @@ namespace SmartShelter.API.Migrations
                     b.ToTable("Enclosures");
                 });
 
-            modelBuilder.Entity("Models.Favorite", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("PetId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PetId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Favorites");
-                });
-
             modelBuilder.Entity("Models.Gender", b =>
                 {
                     b.Property<int>("Id")
@@ -340,14 +315,8 @@ namespace SmartShelter.API.Migrations
                     b.Property<Guid?>("DeviceUserId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("EnclosureId")
-                        .HasColumnType("uuid");
-
                     b.Property<double>("Humidity")
                         .HasColumnType("double precision");
-
-                    b.Property<Guid?>("ShelterId")
-                        .HasColumnType("uuid");
 
                     b.Property<double>("Temperature")
                         .HasColumnType("double precision");
@@ -367,45 +336,9 @@ namespace SmartShelter.API.Migrations
 
                     b.HasIndex("DeviceId", "Timestamp");
 
-                    b.HasIndex("EnclosureId", "Timestamp");
-
-                    b.HasIndex("ShelterId", "Timestamp");
-
                     b.HasIndex("UserId", "Timestamp");
 
                     b.ToTable("Measurements");
-                });
-
-            modelBuilder.Entity("Models.News", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("ShelterId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ShelterId");
-
-                    b.ToTable("News");
                 });
 
             modelBuilder.Entity("Models.Order", b =>
@@ -457,8 +390,7 @@ namespace SmartShelter.API.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.Property<string>("StripePaymentIntentId")
                         .HasMaxLength(255)
@@ -593,10 +525,6 @@ namespace SmartShelter.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Price")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<Guid>("ShelterId")
                         .HasColumnType("uuid");
 
@@ -632,37 +560,6 @@ namespace SmartShelter.API.Migrations
                     b.HasIndex("StatusId");
 
                     b.ToTable("Pets");
-                });
-
-            modelBuilder.Entity("Models.Review", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Comment")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Rating")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("ShelterId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ShelterId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("Models.Shelter", b =>
@@ -752,8 +649,7 @@ namespace SmartShelter.API.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasColumnType("text");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -879,25 +775,6 @@ namespace SmartShelter.API.Migrations
                     b.Navigation("Shelter");
                 });
 
-            modelBuilder.Entity("Models.Favorite", b =>
-                {
-                    b.HasOne("Models.Pet", "Pet")
-                        .WithMany("Favorites")
-                        .HasForeignKey("PetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Models.User", "User")
-                        .WithMany("Favorites")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Pet");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Models.Measurement", b =>
                 {
                     b.HasOne("Models.Device", "Device")
@@ -922,17 +799,6 @@ namespace SmartShelter.API.Migrations
                     b.Navigation("DeviceUser");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Models.News", b =>
-                {
-                    b.HasOne("Models.Shelter", "Shelter")
-                        .WithMany("News")
-                        .HasForeignKey("ShelterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Shelter");
                 });
 
             modelBuilder.Entity("Models.Order", b =>
@@ -992,25 +858,6 @@ namespace SmartShelter.API.Migrations
                     b.Navigation("Status");
                 });
 
-            modelBuilder.Entity("Models.Review", b =>
-                {
-                    b.HasOne("Models.Shelter", "Shelter")
-                        .WithMany("Reviews")
-                        .HasForeignKey("ShelterId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Models.User", "User")
-                        .WithMany("Reviews")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Shelter");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Models.Shelter", b =>
                 {
                     b.HasOne("Models.User", "Owner")
@@ -1054,19 +901,13 @@ namespace SmartShelter.API.Migrations
             modelBuilder.Entity("Models.Pet", b =>
                 {
                     b.Navigation("AdoptionRequests");
-
-                    b.Navigation("Favorites");
                 });
 
             modelBuilder.Entity("Models.Shelter", b =>
                 {
                     b.Navigation("Enclosures");
 
-                    b.Navigation("News");
-
                     b.Navigation("Pets");
-
-                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("Models.Species", b =>
@@ -1082,13 +923,9 @@ namespace SmartShelter.API.Migrations
 
                     b.Navigation("Devices");
 
-                    b.Navigation("Favorites");
-
                     b.Navigation("Measurements");
 
                     b.Navigation("OwnedShelters");
-
-                    b.Navigation("Reviews");
                 });
 #pragma warning restore 612, 618
         }
