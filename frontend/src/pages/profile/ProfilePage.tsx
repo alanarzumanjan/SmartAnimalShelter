@@ -6,7 +6,6 @@ import {
   Lock,
   PawPrint,
   Heart,
-  ShoppingBag,
   AlertTriangle,
   ExternalLink,
 } from "lucide-react";
@@ -20,7 +19,6 @@ import { resolveOwnedShelterId } from "@/services/shelter.service";
 import type {
   UserProfile,
   AdoptionRecord,
-  OrderRecord,
   AnimalItem,
   TabKey,
 } from "./types";
@@ -29,7 +27,6 @@ import ProfileTab from "./ProfileTab";
 import PasswordTab from "./PasswordTab";
 import AnimalsTab from "./AnimalsTab";
 import AdoptionsTab from "./AdoptionsTab";
-import OrdersTab from "./OrdersTab";
 import DangerTab from "./DangerTab";
 
 type EditForm = { name: string; email: string; phone: string; address: string };
@@ -50,7 +47,6 @@ export default function ProfilePage() {
 
   const [animals, setAnimals] = useState<AnimalItem[]>([]);
   const [adoptions, setAdoptions] = useState<AdoptionRecord[]>([]);
-  const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [shelterId, setShelterId] = useState<string | null>(null);
@@ -114,20 +110,6 @@ export default function ProfilePage() {
     }
   }, [user?.id]);
 
-  const loadOrders = useCallback(async () => {
-    if (!token) return;
-    setIsLoadingData(true);
-    try {
-      const { data } = await api.get("/payments/my-orders");
-      const items = data?.data ?? [];
-      setOrders(Array.isArray(items) ? items : []);
-    } catch {
-      toast.error("Failed to load orders");
-    } finally {
-      setIsLoadingData(false);
-    }
-  }, [token]);
-
   useEffect(() => {
     void loadProfile();
     void loadShelter();
@@ -143,7 +125,6 @@ export default function ProfilePage() {
       void loadAnimals();
     if (activeTab === "adoptions" && adoptions.length === 0)
       void loadAdoptions();
-    if (activeTab === "orders" && orders.length === 0) void loadOrders();
   }, [
     activeTab,
     animals.length,
@@ -151,8 +132,6 @@ export default function ProfilePage() {
     isShelter,
     loadAdoptions,
     loadAnimals,
-    loadOrders,
-    orders.length,
     shelterId,
   ]);
 
@@ -226,11 +205,6 @@ export default function ProfilePage() {
       key: "adoptions",
       label: "My Adoptions",
       icon: <Heart className="w-4 h-4" />,
-    },
-    {
-      key: "orders",
-      label: "My Orders",
-      icon: <ShoppingBag className="w-4 h-4" />,
     },
     {
       key: "danger",
@@ -336,9 +310,6 @@ export default function ProfilePage() {
           )}
           {activeTab === "adoptions" && (
             <AdoptionsTab adoptions={adoptions} isLoading={isLoadingData} />
-          )}
-          {activeTab === "orders" && (
-            <OrdersTab orders={orders} isLoading={isLoadingData} />
           )}
           {activeTab === "danger" && (
             <DangerTab isDeleting={isDeleting} onDelete={handleDeleteAccount} />
