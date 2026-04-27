@@ -98,7 +98,11 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
 builder.Services.AddSingleton<RedisService>();
 
 // Controllers
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddSignalR()
     .AddStackExchangeRedis(redisConnectionString);
 builder.Services.AddHealthChecks();
@@ -110,6 +114,7 @@ builder.Services.AddSingleton<MongoService>();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<ImageFetcher>();
 builder.Services.AddScoped<UserEmailService>();
+builder.Services.AddScoped<ShelterService>();
 
 // CORS
 var frontendOrigin = Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_PORT") ?? "http://localhost:5173";
