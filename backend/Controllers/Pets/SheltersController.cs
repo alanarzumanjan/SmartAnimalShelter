@@ -148,7 +148,7 @@ public class SheltersController : ControllerBase
         ));
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "shelter")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] ShelterCreateDto dto)
     {
@@ -195,7 +195,7 @@ public class SheltersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "shelter")]
     [HttpPatch("{id}")]
     public async Task<IActionResult> Patch(Guid id, [FromBody] ShelterUpdateDto dto)
     {
@@ -239,7 +239,7 @@ public class SheltersController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "veterinarian,shelter")]
+    [Authorize(Roles = "shelter")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {

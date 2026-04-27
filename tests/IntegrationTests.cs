@@ -1,6 +1,7 @@
 using Config;
 using Data;
 using Microsoft.EntityFrameworkCore;
+using Models;
 using Services;
 using Testcontainers.PostgreSql;
 using System.IdentityModel.Tokens.Jwt;
@@ -114,7 +115,7 @@ public class IntegrationTests : IAsyncLifetime
             Username = "authtest",
             Email = encryptedEmail!,
             PasswordHash = hash,
-            Role = "user"
+            Role = UserRole.user
         };
 
         context.Users.Add(user);
@@ -143,7 +144,7 @@ public class IntegrationTests : IAsyncLifetime
             Username = "logintest",
             Email = encryptedEmail!,
             PasswordHash = passwordService.HashPassword(password),
-            Role = "user"
+            Role = UserRole.user
         };
 
         context.Users.Add(user);
@@ -175,7 +176,7 @@ public class IntegrationTests : IAsyncLifetime
             Username = "wrongpass",
             Email = encryptedEmail!,
             PasswordHash = passwordService.HashPassword(password),
-            Role = "user"
+            Role = UserRole.user
         };
 
         context.Users.Add(user);
@@ -260,4 +261,3 @@ public class IntegrationTests : IAsyncLifetime
         }
     }
 }
-

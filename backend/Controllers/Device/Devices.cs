@@ -13,8 +13,13 @@ namespace Controllers;
 public class DevicesController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<DevicesController> _logger;
 
-    public DevicesController(AppDbContext db) => _db = db;
+    public DevicesController(AppDbContext db, ILogger<DevicesController> logger)
+    {
+        _db = db;
+        _logger = logger;
+    }
 
     private static string NormalizeMac(string mac)
     {
@@ -100,11 +105,13 @@ public class DevicesController : ControllerBase
             await _db.SaveChangesAsync();
 
             var message = $"> Device '{device.DeviceId}' registered for user {device.UserId}";
+            _logger.LogInformation(message);
             Console.WriteLine(message);
             return Ok(new { message, data = DeviceOutDTO.FromEntity(device) });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Failed to register device");
             Console.WriteLine($"❌ Failed to register device: {ex.Message}");
             return StatusCode(500, new { error = "Failed to register device." });
         }
@@ -122,6 +129,7 @@ public class DevicesController : ControllerBase
                 .ToListAsync();
 
             var message = $"> Fetched {devices.Count} devices for user {userId}";
+            _logger.LogInformation(message);
             Console.WriteLine(message);
 
             var data = devices.Select(d => DeviceOutDTO.FromEntity(d)).ToList();
@@ -129,6 +137,7 @@ public class DevicesController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Failed to get devices");
             Console.WriteLine($"❌ Failed to get devices: {ex.Message}");
             return StatusCode(500, new { error = "Failed to get devices." });
         }
@@ -151,11 +160,13 @@ public class DevicesController : ControllerBase
                 return NotFound(new { error = "Device not found." });
 
             var message = $"> Device '{device.DeviceId}' fetched.";
+            _logger.LogInformation(message);
             Console.WriteLine(message);
             return Ok(new { message, data = DeviceOutDTO.FromEntity(device) });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Failed to fetch device");
             Console.WriteLine($"❌ Failed to fetch device: {ex.Message}");
             return StatusCode(500, new { error = "Failed to fetch device." });
         }
@@ -190,11 +201,13 @@ public class DevicesController : ControllerBase
         }
         catch (DbUpdateException ex)
         {
+            _logger.LogError(ex, "❌ Update failed (DB)");
             Console.WriteLine($"❌ Update failed (DB): {ex.InnerException?.Message ?? ex.Message}");
             return Conflict(new { error = "Update failed: duplicate name/location (unique constraint)." });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Update failed");
             Console.WriteLine($"❌ Update failed: {ex.Message}");
             return StatusCode(500, new { error = "Failed to update device." });
         }

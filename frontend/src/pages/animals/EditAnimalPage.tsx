@@ -275,7 +275,7 @@ export default function EditAnimalPage() {
     }
   }
 
-  if (user?.role !== "veterinarian" && user?.role !== "shelter") {
+  if (user?.role !== "shelter") {
     return (
       <div className="py-8 text-center">
         <PawPrint className="mx-auto mb-4 h-16 w-16 text-slate-300" />

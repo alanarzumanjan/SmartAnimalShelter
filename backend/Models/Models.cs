@@ -5,6 +5,28 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Models;
 
+public enum UserRole
+{
+    user,
+    admin,
+    shelter
+}
+
+public enum OrderStatus
+{
+    pending,
+    paid,
+    failed,
+    refunded
+}
+
+public enum AdoptionRequestStatus
+{
+    pending,
+    approved,
+    rejected
+}
+
 [Index(nameof(Email), IsUnique = true)]
 [Index(nameof(Username), IsUnique = true)]
 public class User
@@ -21,8 +43,7 @@ public class User
     [JsonIgnore, Required]
     public string PasswordHash { get; set; } = null!;
 
-    [MaxLength(50)]
-    public string Role { get; set; } = "user"; // admin | veterinarian | shelter | user
+    public UserRole Role { get; set; } = UserRole.user; // admin | shelter | user
 
     [Phone, MaxLength(50)]
     public string? Phone { get; set; }
@@ -45,11 +66,6 @@ public class User
     [JsonIgnore]
     public ICollection<AdoptionRequest> AdoptionRequests { get; init; } = new List<AdoptionRequest>();
 
-    [JsonIgnore]
-    public ICollection<Favorite> Favorites { get; init; } = new List<Favorite>();
-
-    [JsonIgnore]
-    public ICollection<Review> Reviews { get; init; } = new List<Review>();
 }
 
 public class Shelter
@@ -87,11 +103,6 @@ public class Shelter
     [JsonIgnore]
     public ICollection<Pet> Pets { get; init; } = new List<Pet>();
 
-    [JsonIgnore]
-    public ICollection<News> News { get; init; } = new List<News>();
-
-    [JsonIgnore]
-    public ICollection<Review> Reviews { get; init; } = new List<Review>();
 }
 
 public class Enclosure
@@ -261,9 +272,6 @@ public class Pet
     [MaxLength(100)]
     public string? Category { get; set; } // "rodents/ferret"
 
-    [MaxLength(50)]
-    public string? Price { get; set; }
-
     [MaxLength(500)]
     public string? ExternalUrl { get; set; }
 
@@ -302,8 +310,6 @@ public class Pet
     [JsonIgnore]
     public ICollection<AdoptionRequest> AdoptionRequests { get; init; } = new List<AdoptionRequest>();
 
-    [JsonIgnore]
-    public ICollection<Favorite> Favorites { get; init; } = new List<Favorite>();
 }
 
 public class AdoptionRequest
@@ -320,8 +326,7 @@ public class AdoptionRequest
     [MaxLength(1000)]
     public string? Message { get; set; }
 
-    [Required, MaxLength(50)]
-    public string Status { get; set; } = "pending"; // pending | approved | rejected
+    public AdoptionRequestStatus Status { get; set; } = AdoptionRequestStatus.pending; // pending | approved | rejected
 
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 
@@ -331,78 +336,6 @@ public class AdoptionRequest
 
     [ForeignKey(nameof(UserId))]
     public User User { get; set; } = null!;
-}
-
-public class Favorite
-{
-    [Key]
-    public Guid Id { get; init; } = Guid.NewGuid();
-
-    [Required]
-    public Guid UserId { get; set; }
-
-    [Required]
-    public Guid PetId { get; set; }
-
-    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
-
-    // Navigation properties
-    [ForeignKey(nameof(UserId))]
-    public User User { get; set; } = null!;
-
-    [ForeignKey(nameof(PetId))]
-    public Pet Pet { get; set; } = null!;
-}
-
-public class News
-{
-    [Key]
-    public Guid Id { get; init; } = Guid.NewGuid();
-
-    [Required, MaxLength(255)]
-    public string Title { get; set; } = null!;
-
-    [Required]
-    public string Content { get; set; } = null!;
-
-    [MaxLength(500)]
-    public string? ImageUrl { get; set; }
-
-    [Required]
-    public Guid ShelterId { get; set; }
-
-    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
-
-    // Navigation properties
-    [ForeignKey(nameof(ShelterId))]
-    public Shelter Shelter { get; set; } = null!;
-}
-
-public class Review
-{
-    [Key]
-    public Guid Id { get; init; } = Guid.NewGuid();
-
-    [Required]
-    public Guid UserId { get; set; }
-
-    [Required]
-    public Guid ShelterId { get; set; }
-
-    [MaxLength(1000)]
-    public string? Comment { get; set; }
-
-    [Range(1, 5)]
-    public int Rating { get; set; }
-
-    public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
-
-    // Navigation properties
-    [ForeignKey(nameof(UserId))]
-    public User User { get; set; } = null!;
-
-    [ForeignKey(nameof(ShelterId))]
-    public Shelter Shelter { get; set; } = null!;
 }
 
 [Index(nameof(DeviceId), IsUnique = true)]
@@ -458,8 +391,6 @@ public class Device
 
 [Index(nameof(DeviceId), nameof(Timestamp))]
 [Index(nameof(UserId), nameof(Timestamp))]
-[Index(nameof(ShelterId), nameof(Timestamp))]
-[Index(nameof(EnclosureId), nameof(Timestamp))]
 public class Measurement
 {
     [Key]
@@ -493,10 +424,6 @@ public class Measurement
     public Guid UserId { get; set; }
 
     public Guid? DeviceUserId { get; set; }
-
-    public Guid? ShelterId { get; set; }
-
-    public Guid? EnclosureId { get; set; }
 
     // Navigation properties
     [ForeignKey(nameof(DeviceId))]
@@ -562,8 +489,7 @@ public class Order
 
     public long AmountTotal { get; set; }
 
-    [Required, MaxLength(50)]
-    public string Status { get; set; } = "pending"; // pending | paid | failed | refunded
+    public OrderStatus Status { get; set; } = OrderStatus.pending; // pending | paid | failed | refunded
 
     [MaxLength(500)]
     public string? CustomerEmail { get; set; }

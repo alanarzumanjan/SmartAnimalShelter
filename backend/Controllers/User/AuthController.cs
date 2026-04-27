@@ -20,6 +20,8 @@ public class AuthController : ControllerBase
     private readonly PasswordHashingService _passwordHashingService;
     private readonly UserEmailService _userEmailService;
     private readonly RedisService _redis;
+    private readonly ShelterService _shelterService;
+    private readonly ILogger<AuthController> _logger;
 
     private static readonly TimeSpan AuthRateWindow = TimeSpan.FromMinutes(15);
     private static readonly int AuthRateLimit =
@@ -30,13 +32,17 @@ public class AuthController : ControllerBase
         JwtService jwtService,
         PasswordHashingService passwordHashingService,
         UserEmailService userEmailService,
-        RedisService redis)
+        RedisService redis,
+        ShelterService shelterService,
+        ILogger<AuthController> logger)
     {
         this.db = db;
         _jwtService = jwtService;
         _passwordHashingService = passwordHashingService;
         _userEmailService = userEmailService;
         _redis = redis;
+        _shelterService = shelterService;
+        _logger = logger;
     }
 
     [HttpPost("register")]
@@ -78,12 +84,14 @@ public class AuthController : ControllerBase
                 return BadRequest("Email already exists.");
 
             // Validate and default role
-            var allowedRoles = new[] { "user", "veterinarian", "shelter" };
-            string role = "user"; // default
+            var allowedRoles = new[] { nameof(UserRole.user), nameof(UserRole.shelter) };
+            UserRole role = UserRole.user; // default
             if (!string.IsNullOrWhiteSpace(user.role))
             {
                 var requestedRole = user.role.ToLowerInvariant();
-                role = allowedRoles.Contains(requestedRole) ? requestedRole : "user";
+                role = allowedRoles.Contains(requestedRole)
+                    ? Enum.Parse<UserRole>(requestedRole)
+                    : UserRole.user;
             }
 
             var newUser = new User
@@ -102,21 +110,11 @@ public class AuthController : ControllerBase
             await db.SaveChangesAsync();
 
             // Auto-create a Shelter for shelter and veterinarian role users
-            if (role == "shelter" || role == "veterinarian")
+            if (role == UserRole.shelter)
             {
-                var defaultShelter = new Shelter
-                {
-                    Id = Guid.NewGuid(),
-                    Name = role == "shelter" ? $"{newUser.Username}'s Shelter" : $"{newUser.Username}'s Vet Clinic",
-                    Address = "Address to be updated",
-                    Phone = null,
-                    Email = encryptedEmail,
-                    Description = null,
-                    OwnerId = newUser.Id,
-                    CreatedAt = DateTime.UtcNow
-                };
-                await db.Shelters.AddAsync(defaultShelter);
-                await db.SaveChangesAsync();
+                await _shelterService.EnsureUserShelterAsync(newUser.Id, null);
+                _logger.LogInformation("> Auto-created shelter for new user {UserId} with role {Role}", newUser.Id, role);
+                Console.WriteLine($"> Auto-created shelter for new user {newUser.Id} with role {role}");
             }
 
             await transaction.CommitAsync();
@@ -136,6 +134,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "> [Register] Exception");
             Console.WriteLine($"> [Register] Exception: {ex}");
             return Problem("Error: " + ex.Message);
         }
@@ -170,6 +169,7 @@ public class AuthController : ControllerBase
 
             if (user == null)
             {
+                _logger.LogWarning("> ❌ User not found for email {Email}", loginRequest.email);
                 var logMessage = "> ❌ User not found";
                 Console.WriteLine(logMessage);
                 return Unauthorized("Incorrect email or password.");
@@ -179,15 +179,16 @@ public class AuthController : ControllerBase
 
             if (!isPasswordCorrect)
             {
+                _logger.LogWarning("> ❌ Incorrect password for user {UserId}", user.Id);
                 var logMessage = "> ❌ Incorrect password";
                 Console.WriteLine(logMessage);
                 return Unauthorized("Incorrect email or password.");
             }
 
-            string role = user.Role ?? "user";
-            string token = _jwtService.GenerateToken(user.Id, role);
+            string token = _jwtService.GenerateToken(user.Id, user.Role);
 
-            var logMessage2 = $"> ✅ Login success: {user.Username}, Role: {role}";
+            _logger.LogInformation("> ✅ Login success: {Username}, Role: {Role}", user.Username, user.Role);
+            var logMessage2 = $"> ✅ Login success: {user.Username}, Role: {user.Role}";
             Console.WriteLine(logMessage2);
 
             string? decryptedEmail = null;
@@ -218,6 +219,7 @@ public class AuthController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "> ❌ Login error");
             var logMessage3 = $"> ❌ Login error: {ex}";
             Console.WriteLine(logMessage3);
             return Problem("Error: " + ex.Message);

@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Models;
 
 namespace tests;
 
@@ -55,7 +56,7 @@ public class UnitTests
         var jwtService = new JwtService(settings);
         var userId = Guid.NewGuid();
 
-        var token = jwtService.GenerateToken(userId, "user");
+        var token = jwtService.GenerateToken(userId, UserRole.user);
 
         Assert.False(string.IsNullOrWhiteSpace(token));
 
@@ -109,7 +110,7 @@ public class UnitTests
         var jwtService = new JwtService(settings);
         var userId = Guid.NewGuid();
 
-        var token = jwtService.GenerateToken(userId, "admin");
+        var token = jwtService.GenerateToken(userId, UserRole.admin);
 
         Assert.False(string.IsNullOrWhiteSpace(token));
 
@@ -134,7 +135,7 @@ public class UnitTests
         var jwtService = new JwtService(settings);
         var userId = Guid.NewGuid();
 
-        var token = jwtService.GenerateToken(userId, "user");
+        var token = jwtService.GenerateToken(userId, UserRole.user);
 
         var handler = new JwtSecurityTokenHandler();
         var validationParams = new TokenValidationParameters
@@ -176,4 +177,3 @@ public class UnitTests
         Assert.True(settings.ExpireMinutes > 0);
     }
 }
-

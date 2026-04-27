@@ -31,7 +31,7 @@ public sealed class OrderDTO
         Quantity = order.Quantity,
         Currency = order.Currency,
         AmountTotal = order.AmountTotal,
-        Status = order.Status,
+        Status = order.Status.ToString(),
         CustomerEmail = order.CustomerEmail,
         CustomerName = order.CustomerName,
         ShippingAddress = order.ShippingAddress,

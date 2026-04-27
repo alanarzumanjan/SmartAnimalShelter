@@ -7,7 +7,6 @@ import {
   Home,
   MessageSquare,
   PawPrint,
-  ShoppingBag,
   Menu,
   X,
 } from "lucide-react";
@@ -67,10 +66,6 @@ export default function Header() {
             <Link to="/animals" className={navLink}>
               <PawPrint className="w-4 h-4 inline mr-1" />
               Animals
-            </Link>
-            <Link to="/store" className={navLink}>
-              <ShoppingBag className="w-4 h-4 inline mr-1" />
-              Store
             </Link>
             {isAuthenticated && (
               <>
@@ -158,9 +153,6 @@ export default function Header() {
           </Link>
           <Link to="/animals" className={mobileLink} onClick={closeMenu}>
             <PawPrint className="w-4 h-4" /> Animals
-          </Link>
-          <Link to="/store" className={mobileLink} onClick={closeMenu}>
-            <ShoppingBag className="w-4 h-4" /> Store
           </Link>
 
           {isAuthenticated && (
