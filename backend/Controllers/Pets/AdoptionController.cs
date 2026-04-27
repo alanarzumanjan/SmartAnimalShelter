@@ -3,6 +3,7 @@ using Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace Controllers;
 
@@ -54,7 +55,7 @@ public class AdoptionController : ControllerBase
 
         // Check if user already has a pending request for this pet
         var existing = await _db.AdoptionRequests
-            .FirstOrDefaultAsync(a => a.UserId == userId && a.PetId == dto.PetId && a.Status == "pending");
+            .FirstOrDefaultAsync(a => a.UserId == userId && a.PetId == dto.PetId && a.Status == AdoptionRequestStatus.pending);
 
         if (existing != null)
             return BadRequest("You already have a pending request for this pet.");
@@ -64,7 +65,7 @@ public class AdoptionController : ControllerBase
             PetId = dto.PetId,
             UserId = userId,
             Message = dto.Message,
-            Status = "pending"
+            Status = AdoptionRequestStatus.pending
         };
 
         _db.AdoptionRequests.Add(adoption);
@@ -74,14 +75,15 @@ public class AdoptionController : ControllerBase
     }
 
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "veterinarian,shelter,admin")]
+    [Authorize(Roles = "shelter,admin")]
     public async Task<IActionResult> UpdateAdoptionStatus(Guid id, [FromBody] UpdateAdoptionStatusDto dto)
     {
         var adoption = await _db.AdoptionRequests.FindAsync(id);
         if (adoption == null)
             return NotFound("Adoption request not found.");
 
-        adoption.Status = dto.Status;
+        if (Enum.TryParse<AdoptionRequestStatus>(dto.Status, true, out var newStatus))
+            adoption.Status = newStatus;
         await _db.SaveChangesAsync();
 
         return Ok(new { message = "Adoption status updated" });

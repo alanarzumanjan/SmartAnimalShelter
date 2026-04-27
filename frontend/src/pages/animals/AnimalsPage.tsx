@@ -107,9 +107,7 @@ export default function AnimalsPage() {
   const [shelter, setShelter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  const canCreate =
-    isAuthenticated &&
-    (user?.role === "veterinarian" || user?.role === "shelter");
+  const canCreate = isAuthenticated && user?.role === "shelter";
 
   useEffect(() => {
     async function load() {

@@ -3,6 +3,7 @@ using System;
 using Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace SmartShelter.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260427130156_RemoveUnusedTables")]
+    partial class RemoveUnusedTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,7 +43,8 @@ namespace SmartShelter.API.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -315,8 +319,14 @@ namespace SmartShelter.API.Migrations
                     b.Property<Guid?>("DeviceUserId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("EnclosureId")
+                        .HasColumnType("uuid");
+
                     b.Property<double>("Humidity")
                         .HasColumnType("double precision");
+
+                    b.Property<Guid?>("ShelterId")
+                        .HasColumnType("uuid");
 
                     b.Property<double>("Temperature")
                         .HasColumnType("double precision");
@@ -335,6 +345,10 @@ namespace SmartShelter.API.Migrations
                     b.HasIndex("DeviceUserId");
 
                     b.HasIndex("DeviceId", "Timestamp");
+
+                    b.HasIndex("EnclosureId", "Timestamp");
+
+                    b.HasIndex("ShelterId", "Timestamp");
 
                     b.HasIndex("UserId", "Timestamp");
 
@@ -390,7 +404,8 @@ namespace SmartShelter.API.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("StripePaymentIntentId")
                         .HasMaxLength(255)
@@ -525,6 +540,10 @@ namespace SmartShelter.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("Price")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<Guid>("ShelterId")
                         .HasColumnType("uuid");
 
@@ -649,7 +668,8 @@ namespace SmartShelter.API.Migrations
 
                     b.Property<string>("Role")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Username")
                         .IsRequired()

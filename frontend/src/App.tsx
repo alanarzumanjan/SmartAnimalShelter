@@ -22,7 +22,6 @@ import EditAnimalPage from "@/pages/animals/EditAnimalPage";
 import AdoptionFormPage from "@/pages/animals/AdoptionFormPage";
 import ShelterPage from "@/pages/animals/ShelterPage";
 import ChatPage from "@/pages/chat/ChatPage";
-import StorePage from "@/pages/store/StorePage";
 import ProfilePage from "@/pages/profile/ProfilePage";
 
 interface ProtectedRouteProps {
@@ -76,7 +75,6 @@ function AppRoutes() {
           />
           <Route path="/adoption" element={<AdoptionFormPage />} />
           <Route path="/shelters/:shelterId" element={<ShelterPage />} />
-          <Route path="/store" element={<StorePage />} />
 
           <Route
             path="/dashboard"

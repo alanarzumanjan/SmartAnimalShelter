@@ -11,28 +11,44 @@ namespace Hubs;
 public class ChatHub : Hub
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<ChatHub> _logger;
 
-    public ChatHub(AppDbContext db)
+    public ChatHub(AppDbContext db, ILogger<ChatHub> logger)
     {
         _db = db;
+        _logger = logger;
     }
 
     private Guid? GetUserId() =>
         Guid.TryParse(Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var id) ? id : null;
 
+    private bool IsAdmin() =>
+        Context.User?.IsInRole("admin") ?? false;
+
     public async Task JoinRoom(string roomId)
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
-
         var userId = GetUserId();
         if (userId == null)
-            return;
+        {
+            _logger.LogWarning("> JoinRoom rejected: no userId in context");
+            throw new HubException("Authentication required.");
+        }
 
-        // Register as member if not already
-        var exists = await _db.ChatRoomMembers
+        // Verify room membership: user must already be a member OR be an admin
+        var isMember = await _db.ChatRoomMembers
             .AnyAsync(m => m.RoomId == roomId && m.UserId == userId);
 
-        if (!exists)
+        if (!isMember && !IsAdmin())
+        {
+            _logger.LogWarning("> JoinRoom rejected: user {UserId} is not a member of room {RoomId}", userId, roomId);
+            throw new HubException("You are not a member of this chat room.");
+        }
+
+        await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
+        _logger.LogInformation("> User {UserId} joined room {RoomId}", userId, roomId);
+
+        // Register as member if not already (admins joining for support)
+        if (!isMember)
         {
             _db.ChatRoomMembers.Add(new ChatRoomMember
             {
@@ -54,6 +70,15 @@ public class ChatHub : Hub
         if (userId == null || string.IsNullOrWhiteSpace(text))
             return;
 
+        // Verify membership before allowing message send
+        var isMember = await _db.ChatRoomMembers
+            .AnyAsync(m => m.RoomId == roomId && m.UserId == userId);
+        if (!isMember && !IsAdmin())
+        {
+            _logger.LogWarning("> SendMessage rejected: user {UserId} not in room {RoomId}", userId, roomId);
+            throw new HubException("You are not a member of this chat room.");
+        }
+
         var user = await _db.Users.FindAsync(userId);
         if (user == null)
             return;
@@ -69,6 +94,7 @@ public class ChatHub : Hub
 
         _db.ChatMessages.Add(message);
         await _db.SaveChangesAsync();
+        _logger.LogInformation("> Message sent in room {RoomId} by user {UserId}", roomId, userId);
 
         var payload = new
         {

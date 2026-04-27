@@ -45,9 +45,9 @@ public class UserRegisterValidator : IValidator<UserRegisterDto>
         // Role (optional - defaults to "user")
         if (!string.IsNullOrWhiteSpace(user.role))
         {
-            var allowedRoles = new[] { "user", "veterinarian", "shelter" };
+            var allowedRoles = new[] { "user", "shelter" };
             if (!allowedRoles.Contains(user.role.ToLowerInvariant()))
-                errors["role"] = "Role must be one of: user, veterinarian, shelter.";
+                errors["role"] = "Role must be one of: user, shelter.";
         }
 
         return errors;

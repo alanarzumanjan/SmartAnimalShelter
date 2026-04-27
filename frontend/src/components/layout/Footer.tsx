@@ -74,14 +74,6 @@ export default function Footer() {
                   Dashboard
                 </Link>
               </li>
-              <li>
-                <Link
-                  to="/store"
-                  className="hover:text-white transition-colors"
-                >
-                  Store
-                </Link>
-              </li>
             </ul>
           </div>
 
