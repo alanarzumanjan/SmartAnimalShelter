@@ -49,7 +49,7 @@ describe("DashboardPage", () => {
     render(
       <MemoryRouter>
         <DashboardPage />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText("Dashboard")).toBeInTheDocument();
@@ -60,11 +60,12 @@ describe("DashboardPage", () => {
     render(
       <MemoryRouter>
         <DashboardPage />
-      </MemoryRouter>
+      </MemoryRouter>,
     );
 
     expect(await screen.findByText("How to connect")).toBeInTheDocument();
-    expect(await screen.findByText(/Power on your ESP32 sensor/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Power on your ESP32 sensor/),
+    ).toBeInTheDocument();
   });
 });
-
