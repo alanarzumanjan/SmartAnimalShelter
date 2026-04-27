@@ -21,7 +21,7 @@ vi.mock("@/services/api", () => ({
           token: "fake-jwt",
           user: { id: "1", name: "Test", email: "test@test.com", role: "user" },
         },
-      })
+      }),
     ),
   },
 }));
@@ -33,13 +33,17 @@ describe("LoginPage", () => {
         <MemoryRouter>
           <LoginPage />
         </MemoryRouter>
-      </Provider>
+      </Provider>,
     );
 
-    expect(screen.getByRole("heading", { name: "Sign In" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Sign In" }),
+    ).toBeInTheDocument();
     expect(screen.getByPlaceholderText("your@email.com")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Sign In/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Sign In/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Smart Shelter IoT")).toBeInTheDocument();
     expect(screen.getByText("Don't have an account?")).toBeInTheDocument();
   });
@@ -50,7 +54,7 @@ describe("LoginPage", () => {
         <MemoryRouter>
           <LoginPage />
         </MemoryRouter>
-      </Provider>
+      </Provider>,
     );
 
     const signUpLink = screen.getByRole("link", { name: "Sign Up" });
@@ -58,4 +62,3 @@ describe("LoginPage", () => {
     expect(signUpLink).toHaveAttribute("href", "/register");
   });
 });
-

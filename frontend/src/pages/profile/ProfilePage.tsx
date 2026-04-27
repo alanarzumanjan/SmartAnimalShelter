@@ -16,12 +16,7 @@ import { logout } from "@/store/slices/authSlice";
 import api from "@/services/api";
 import { resolveOwnedShelterId } from "@/services/shelter.service";
 
-import type {
-  UserProfile,
-  AdoptionRecord,
-  AnimalItem,
-  TabKey,
-} from "./types";
+import type { UserProfile, AdoptionRecord, AnimalItem, TabKey } from "./types";
 import { formatDate, getRoleBadge } from "./types";
 import ProfileTab from "./ProfileTab";
 import PasswordTab from "./PasswordTab";
