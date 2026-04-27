@@ -17,16 +17,18 @@ public class MeasurementsController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly RedisService _redis;
+    private readonly ILogger<MeasurementsController> _logger;
 
     // SCD41 hardware minimum interval is ~5 seconds per measurement
     private static readonly TimeSpan IotRateWindow = TimeSpan.FromSeconds(10);
     private const int IotRateLimit = 2;
     private const int HardCap = 5000;
 
-    public MeasurementsController(AppDbContext db, RedisService redis)
+    public MeasurementsController(AppDbContext db, RedisService redis, ILogger<MeasurementsController> logger)
     {
         _db = db;
         _redis = redis;
+        _logger = logger;
     }
 
     private Guid? GetCurrentUserId(ClaimsPrincipal user)
@@ -144,6 +146,7 @@ public class MeasurementsController : ControllerBase
             await _db.SaveChangesAsync();
 
             var message = $"> Measurement saved: device={mac}, userId={userId}, link={link.Id}, co2={request.CO2}, ts={ts:o}";
+            _logger.LogInformation(message);
             Console.WriteLine(message);
 
             // Cache the latest reading so the dashboard doesn't hammer the DB
@@ -153,12 +156,14 @@ public class MeasurementsController : ControllerBase
         }
         catch (DbUpdateException dbex)
         {
+            _logger.LogError(dbex, "> ❌ DB error on ingest");
             var logMessage = $"> ❌ DB error on ingest: {dbex.Message}";
             Console.WriteLine(logMessage);
             return StatusCode(500, new { error = "Database error while saving measurement." });
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "> ❌ Failed to ingest measurement");
             var logMessage2 = $"> ❌ Failed to ingest measurement: {ex.Message}";
             Console.WriteLine(logMessage2);
             return StatusCode(500, new { error = "Failed to ingest measurement." });
@@ -232,6 +237,7 @@ public class MeasurementsController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Failed to fetch by device");
             Console.WriteLine($"❌ Failed to fetch by device: {ex.Message}");
             return StatusCode(500, new { error = "Failed to fetch measurements." });
         }
@@ -282,6 +288,7 @@ public class MeasurementsController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Failed to fetch by link");
             Console.WriteLine($"❌ Failed to fetch by link: {ex.Message}");
             return StatusCode(500, new { error = "Failed to fetch measurements." });
         }
@@ -313,6 +320,7 @@ public class MeasurementsController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Failed to fetch recent");
             Console.WriteLine($"❌ Failed to fetch recent: {ex.Message}");
             return StatusCode(500, new { error = "Failed to fetch measurements." });
         }
@@ -361,6 +369,7 @@ public class MeasurementsController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Failed to get latest measurement");
             Console.WriteLine($"❌ Failed to get latest measurement: {ex.Message}");
             return StatusCode(500, new { error = "Failed to get latest measurement." });
         }
@@ -422,6 +431,7 @@ public class MeasurementsController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "❌ Failed to fetch user measurements");
             Console.WriteLine($"❌ Failed to fetch user measurements: {ex.Message}");
             return StatusCode(500, new { error = "Failed to fetch measurements." });
         }
