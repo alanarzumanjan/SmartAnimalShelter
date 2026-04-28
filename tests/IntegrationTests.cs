@@ -12,9 +12,19 @@ namespace tests;
 public class IntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgresContainer;
+    private string? _originalEncryptionKey;
+
+    // "12345678901234567890123456789012" base64-encoded = 32 bytes
+    private const string TestKeyBase64 = "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=";
 
     public async Task InitializeAsync()
     {
+        // Ensure ENCRYPTION_KEY is set and EncryptionService is initialized
+        // before any static access triggers the old static constructor
+        _originalEncryptionKey = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
+        Environment.SetEnvironmentVariable("ENCRYPTION_KEY", TestKeyBase64);
+        EncryptionService.Initialize(TestKeyBase64);
+
         _postgresContainer = new PostgreSqlBuilder()
             .WithDatabase("shelter_test")
             .WithUsername("test")
@@ -30,6 +40,7 @@ public class IntegrationTests : IAsyncLifetime
         {
             await _postgresContainer.DisposeAsync();
         }
+        Environment.SetEnvironmentVariable("ENCRYPTION_KEY", _originalEncryptionKey);
     }
 
     private async Task<AppDbContext> CreateContextAsync()
