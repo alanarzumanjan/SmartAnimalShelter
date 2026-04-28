@@ -177,3 +177,86 @@ public class UnitTests
         Assert.True(settings.ExpireMinutes > 0);
     }
 }
+
+public class EncryptionServiceTests : IDisposable
+{
+    private readonly string? _originalKey;
+
+    public EncryptionServiceTests()
+    {
+        _originalKey = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
+        Environment.SetEnvironmentVariable("ENCRYPTION_KEY", "12345678901234567890123456789012");
+    }
+
+    public void Dispose()
+    {
+        Environment.SetEnvironmentVariable("ENCRYPTION_KEY", _originalKey);
+    }
+
+    [Fact]
+    public void EncryptDecrypt_Roundtrip_ReturnsOriginal()
+    {
+        var original = "test@example.com";
+        var encrypted = EncryptionService.Encrypt(original);
+        Assert.NotNull(encrypted);
+        Assert.NotEqual(original, encrypted);
+
+        var decrypted = EncryptionService.Decrypt(encrypted);
+        Assert.Equal(original, decrypted);
+    }
+
+    [Fact]
+    public void Encrypt_NullOrEmpty_ReturnsNull()
+    {
+        Assert.Null(EncryptionService.Encrypt(null));
+        Assert.Null(EncryptionService.Encrypt(""));
+        Assert.Null(EncryptionService.Encrypt("   "));
+    }
+
+    [Fact]
+    public void Decrypt_NullOrEmpty_ReturnsNull()
+    {
+        Assert.Null(EncryptionService.Decrypt(null));
+        Assert.Null(EncryptionService.Decrypt(""));
+        Assert.Null(EncryptionService.Decrypt("   "));
+    }
+
+    [Fact]
+    public void Hash_SameInput_ReturnsSameHash()
+    {
+        var input = "Test@Example.COM";
+        var hash1 = EncryptionService.Hash(input);
+        var hash2 = EncryptionService.Hash(input);
+
+        Assert.Equal(hash1, hash2);
+    }
+
+    [Fact]
+    public void Hash_DifferentInput_ReturnsDifferentHash()
+    {
+        var hash1 = EncryptionService.Hash("input1");
+        var hash2 = EncryptionService.Hash("input2");
+
+        Assert.NotEqual(hash1, hash2);
+    }
+
+    [Fact]
+    public void EmailMatchesEncryptedValue_ValidEmails_ReturnsTrue()
+    {
+        var email = "User@Example.COM";
+        var encrypted = EncryptionService.Encrypt(email);
+
+        Assert.True(EncryptionService.EmailMatchesEncryptedValue(encrypted, email));
+        Assert.True(EncryptionService.EmailMatchesEncryptedValue(encrypted, "user@example.com"));
+    }
+
+    [Fact]
+    public void EmailMatchesEncryptedValue_InvalidEmails_ReturnsFalse()
+    {
+        var email = "user@example.com";
+        var encrypted = EncryptionService.Encrypt(email);
+
+        Assert.False(EncryptionService.EmailMatchesEncryptedValue(encrypted, "other@example.com"));
+        Assert.False(EncryptionService.EmailMatchesEncryptedValue(encrypted, null));
+    }
+}
