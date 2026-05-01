@@ -8,7 +8,7 @@ interface User {
 }
 
 interface LoginResponse {
-  token: string;
+  accessToken: string;
   id: string;
   name: string;
   email: string;
@@ -18,13 +18,15 @@ interface LoginResponse {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
 
+// Initialize state from localStorage (but DON'T expose token to JS - only user info)
+// Access token is still stored for API calls, but it's now short-lived (15 min)
 const storedUser = (() => {
-  const raw = localStorage.getItem("user");
+  const raw = sessionStorage.getItem("user");
   if (!raw) {
     return null;
   }
@@ -36,10 +38,14 @@ const storedUser = (() => {
   }
 })();
 
+// Note: We keep token in localStorage for API interceptor but it's now short-lived
+// The real security improvement is the refresh token mechanism via httpOnly cookie
+const storedToken = localStorage.getItem("access_token");
+
 const initialState: AuthState = {
   user: storedUser,
-  token: localStorage.getItem("token"),
-  isAuthenticated: !!localStorage.getItem("token"),
+  accessToken: storedToken,
+  isAuthenticated: !!storedToken,
   isLoading: false,
 };
 
@@ -51,29 +57,41 @@ export const authSlice = createSlice({
       state.isLoading = true;
     },
     loginSuccess: (state, action: PayloadAction<LoginResponse>) => {
-      const { token, id, name, email, role } = action.payload;
+      const { accessToken, id, name, email, role } = action.payload;
       const user: User = { id, name, email, role };
 
       state.user = user;
-      state.token = token;
+      state.accessToken = accessToken;
       state.isAuthenticated = true;
       state.isLoading = false;
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
+      // Store short-lived token in localStorage for API calls
+      localStorage.setItem("access_token", accessToken);
+      // Store user info in sessionStorage (cleared on browser close)
+      sessionStorage.setItem("user", JSON.stringify(user));
     },
     loginFailure: (state) => {
       state.isLoading = false;
     },
+    setAccessToken: (state, action: PayloadAction<string>) => {
+      state.accessToken = action.payload;
+      state.isAuthenticated = true;
+      localStorage.setItem("access_token", action.payload);
+    },
     logout: (state) => {
       state.user = null;
-      state.token = null;
+      state.accessToken = null;
       state.isAuthenticated = false;
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      localStorage.removeItem("access_token");
+      sessionStorage.removeItem("user");
     },
   },
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout } =
-  authSlice.actions;
+export const {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+  setAccessToken,
+  logout,
+} = authSlice.actions;
 export default authSlice.reducer;

@@ -1,7 +1,9 @@
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Data;
 using Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -23,6 +25,15 @@ public class DeviceUsersController : ControllerBase
         _userEmailService = userEmailService;
     }
 
+    private Guid? GetCurrentUserId()
+    {
+        var val = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(val, out var id) ? id : null;
+    }
+
+    private bool IsAdmin() =>
+        User.FindFirstValue(ClaimTypes.Role) == UserRole.admin.ToString();
+
     private static string NormalizeMac(string mac)
     {
         var hex = new string((mac ?? "").Where(c => Uri.IsHexDigit(c)).ToArray()).ToUpperInvariant();
@@ -37,6 +48,7 @@ public class DeviceUsersController : ControllerBase
     private static DateTime UtcNow() => DateTime.UtcNow;
 
     [HttpPost("login")]
+    [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] DeviceLoginRequest req)
     {
         if (req is null)
@@ -75,7 +87,7 @@ public class DeviceUsersController : ControllerBase
         else
         {
             if (device.UserId != user.Id)
-                return Forbid("Device is owned by another user.");
+                return StatusCode(403, new { error = "Device is owned by another user." });
 
             device.LastSeenAt = UtcNow();
             await _db.SaveChangesAsync();
@@ -129,6 +141,7 @@ public class DeviceUsersController : ControllerBase
     }
 
     [HttpPost("enroll")]
+    [Authorize]
     public async Task<IActionResult> Enroll([FromBody] DeviceUsersEnrollRequest req)
     {
         if (req is null)
@@ -137,6 +150,14 @@ public class DeviceUsersController : ControllerBase
             return BadRequest(new { error = "UserId is required." });
         if (string.IsNullOrWhiteSpace(req.DeviceId))
             return BadRequest(new { error = "DeviceId is required." });
+
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+            return Unauthorized(new { error = "Invalid user token." });
+
+        // Users can only enroll themselves; admins can enroll anyone
+        if (req.UserId != currentUserId.Value && !IsAdmin())
+            return Forbid();
 
         var mac = NormalizeMac(req.DeviceId);
         if (!IsValidMac(mac))
@@ -156,6 +177,12 @@ public class DeviceUsersController : ControllerBase
             };
             _db.Devices.Add(device);
             await _db.SaveChangesAsync();
+        }
+        else
+        {
+            // If device exists, user must own it (or be admin) to enroll another user to it
+            if (device.UserId != currentUserId.Value && !IsAdmin())
+                return Forbid();
         }
 
         var existing = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac && x.UserId == req.UserId);

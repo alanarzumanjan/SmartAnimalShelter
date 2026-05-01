@@ -19,8 +19,19 @@ public class AdoptionController : ControllerBase
     }
 
     [HttpGet("user/{userId}")]
+    [Authorize]
     public async Task<IActionResult> GetUserAdoptions(Guid userId)
     {
+        var requestingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var requestingRole = User.FindFirstValue(ClaimTypes.Role);
+
+        if (!Guid.TryParse(requestingUserId, out var currentUserId))
+            return Unauthorized();
+
+        // Only the owner or admin/shelter can view adoption requests
+        if (currentUserId != userId && requestingRole != nameof(UserRole.admin) && requestingRole != nameof(UserRole.shelter))
+            return Forbid();
+
         var adoptions = await _db.AdoptionRequests
             .Include(a => a.Pet)
             .ThenInclude(p => p.Species)
@@ -78,9 +89,24 @@ public class AdoptionController : ControllerBase
     [Authorize(Roles = "shelter,admin")]
     public async Task<IActionResult> UpdateAdoptionStatus(Guid id, [FromBody] UpdateAdoptionStatusDto dto)
     {
-        var adoption = await _db.AdoptionRequests.FindAsync(id);
+        var adoption = await _db.AdoptionRequests
+            .Include(a => a.Pet)
+            .FirstOrDefaultAsync(a => a.Id == id);
         if (adoption == null)
             return NotFound("Adoption request not found.");
+
+        var requestingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var requestingRole = User.FindFirstValue(ClaimTypes.Role);
+
+        if (requestingRole == nameof(UserRole.shelter))
+        {
+            if (!Guid.TryParse(requestingUserId, out var currentUserId))
+                return Unauthorized();
+
+            var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.OwnerId == currentUserId);
+            if (shelter == null || adoption.Pet.ShelterId != shelter.Id)
+                return Forbid();
+        }
 
         if (Enum.TryParse<AdoptionRequestStatus>(dto.Status, true, out var newStatus))
             adoption.Status = newStatus;

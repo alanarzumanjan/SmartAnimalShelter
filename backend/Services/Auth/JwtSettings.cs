@@ -2,29 +2,35 @@ namespace Config;
 
 public sealed class JwtSettings
 {
-    public const int DefaultExpireMinutes = 60;
+    public const int DefaultAccessTokenExpireMinutes = 15;
+    public const int DefaultRefreshTokenExpireDays = 7;
 
-    public JwtSettings(string key, string? issuer, string? audience, int expireMinutes)
+    public JwtSettings(string key, string? issuer, string? audience, int accessTokenExpireMinutes, int refreshTokenExpireDays)
     {
         Key = key;
         Issuer = issuer;
         Audience = audience;
-        ExpireMinutes = expireMinutes;
+        AccessTokenExpireMinutes = accessTokenExpireMinutes;
+        RefreshTokenExpireDays = refreshTokenExpireDays;
     }
 
     public string Key { get; }
     public string? Issuer { get; }
     public string? Audience { get; }
-    public int ExpireMinutes { get; }
+    public int AccessTokenExpireMinutes { get; }
+    public int RefreshTokenExpireDays { get; }
+
+    public int ExpireMinutes => AccessTokenExpireMinutes;
 
     public static JwtSettings FromConfiguration(IConfiguration configuration)
     {
         var key = GetRequiredValue(configuration, "JWT_KEY", "Jwt:Key");
         var issuer = GetOptionalValue(configuration, "JWT_ISSUER", "Jwt:Issuer");
         var audience = GetOptionalValue(configuration, "JWT_AUDIENCE", "Jwt:Audience");
-        var expireMinutes = GetPositiveIntValue(configuration, DefaultExpireMinutes, "JWT_EXPIRE_MINUTES", "Jwt:ExpireMinutes");
+        var accessTokenExpireMinutes = GetPositiveIntValue(configuration, DefaultAccessTokenExpireMinutes, "JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "Jwt:AccessTokenExpireMinutes");
+        var refreshTokenExpireDays = GetPositiveIntValue(configuration, DefaultRefreshTokenExpireDays, "JWT_REFRESH_TOKEN_EXPIRE_DAYS", "Jwt:RefreshTokenExpireDays");
 
-        return new JwtSettings(key, issuer, audience, expireMinutes);
+        return new JwtSettings(key, issuer, audience, accessTokenExpireMinutes, refreshTokenExpireDays);
     }
 
     private static string GetRequiredValue(IConfiguration configuration, params string[] keys)

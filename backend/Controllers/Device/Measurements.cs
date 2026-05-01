@@ -16,7 +16,7 @@ namespace Controllers;
 public class MeasurementsController : ControllerBase
 {
     private readonly AppDbContext _db;
-    private readonly RedisService _redis;
+    private readonly IRedisService _redis;
     private readonly ILogger<MeasurementsController> _logger;
 
     // SCD41 hardware minimum interval is ~5 seconds per measurement
@@ -24,7 +24,7 @@ public class MeasurementsController : ControllerBase
     private const int IotRateLimit = 2;
     private const int HardCap = 5000;
 
-    public MeasurementsController(AppDbContext db, RedisService redis, ILogger<MeasurementsController> logger)
+    public MeasurementsController(AppDbContext db, IRedisService redis, ILogger<MeasurementsController> logger)
     {
         _db = db;
         _redis = redis;

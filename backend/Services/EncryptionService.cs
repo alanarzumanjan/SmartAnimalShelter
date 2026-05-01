@@ -5,29 +5,76 @@ namespace Services;
 
 public static class EncryptionService
 {
-    private static readonly string Key = Environment.GetEnvironmentVariable("ENCRYPTION_KEY") ?? "a3G!t8ZkL2#vN9@eQ4XpB1mR7wDfT6Hs";
+    private static byte[]? _key;
 
+    /// <summary>
+    /// Initializes the encryption service with a base64-encoded 32-byte key.
+    /// Must be called once before any Encrypt/Decrypt/Hash operations.
+    /// </summary>
+    public static void Initialize(string? keyString)
+    {
+        if (string.IsNullOrWhiteSpace(keyString))
+        {
+            throw new InvalidOperationException(
+                "Missing required ENCRYPTION_KEY. " +
+                "Provide a base64-encoded 32-byte key. Generate one with: openssl rand -base64 32");
+        }
+
+        try
+        {
+            _key = Convert.FromBase64String(keyString);
+        }
+        catch (FormatException)
+        {
+            throw new InvalidOperationException(
+                "ENCRYPTION_KEY must be a valid base64 string. " +
+                "Generate one with: openssl rand -base64 32");
+        }
+
+        if (_key.Length != 32)
+        {
+            throw new InvalidOperationException(
+                $"ENCRYPTION_KEY must decode to exactly 32 bytes for AES-256-GCM. " +
+                $"Current decoded length: {_key.Length} bytes. " +
+                "Generate one with: openssl rand -base64 32");
+        }
+    }
+
+    private static byte[] Key => _key ?? throw new InvalidOperationException(
+        "EncryptionService has not been initialized. Call EncryptionService.Initialize(key) first.");
+
+    /// <summary>
+    /// Encrypts plaintext using AES-256-GCM with a random 96-bit nonce.
+    /// Returns base64(nonce || tag || ciphertext).
+    /// </summary>
     public static string? Encrypt(string? plainText)
     {
         if (string.IsNullOrWhiteSpace(plainText))
             return null;
 
-        using var aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(Key);
-        aes.GenerateIV();
+        var plainBytes = Encoding.UTF8.GetBytes(plainText);
+        var nonce = new byte[AesGcm.NonceByteSizes.MaxSize]; // 12 bytes
+        var tag = new byte[AesGcm.TagByteSizes.MaxSize];     // 16 bytes
+        var cipherBytes = new byte[plainBytes.Length];
 
-        using var encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
-        using var ms = new MemoryStream();
-        ms.Write(aes.IV, 0, aes.IV.Length);
-        using var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write);
-        using var sw = new StreamWriter(cs);
-        sw.Write(plainText);
-        sw.Flush();
-        cs.FlushFinalBlock();
+        RandomNumberGenerator.Fill(nonce);
 
-        return Convert.ToBase64String(ms.ToArray());
+        using var aes = new AesGcm(Key, 16);
+        aes.Encrypt(nonce, plainBytes, cipherBytes, tag);
+
+        // Output: nonce (12) || tag (16) || ciphertext
+        var output = new byte[nonce.Length + tag.Length + cipherBytes.Length];
+        Buffer.BlockCopy(nonce, 0, output, 0, nonce.Length);
+        Buffer.BlockCopy(tag, 0, output, nonce.Length, tag.Length);
+        Buffer.BlockCopy(cipherBytes, 0, output, nonce.Length + tag.Length, cipherBytes.Length);
+
+        return Convert.ToBase64String(output);
     }
 
+    /// <summary>
+    /// Decrypts base64(nonce || tag || ciphertext) produced by Encrypt.
+    /// Throws CryptographicException on tampered or malformed input.
+    /// </summary>
     public static string? Decrypt(string? cipherText)
     {
         if (string.IsNullOrWhiteSpace(cipherText))
@@ -35,18 +82,28 @@ public static class EncryptionService
 
         var fullCipher = Convert.FromBase64String(cipherText);
 
-        using var aes = Aes.Create();
-        aes.Key = Encoding.UTF8.GetBytes(Key);
+        const int nonceSize = 12; // AesGcm.NonceByteSizes.MaxSize
+        const int tagSize = 16;   // AesGcm.TagByteSizes.MaxSize
 
-        var iv = new byte[16];
-        Array.Copy(fullCipher, iv, 16);
-        aes.IV = iv;
+        if (fullCipher.Length < nonceSize + tagSize)
+        {
+            throw new CryptographicException("Ciphertext is too short to contain a valid nonce and tag.");
+        }
 
-        using var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-        using var ms = new MemoryStream(fullCipher, 16, fullCipher.Length - 16);
-        using var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read);
-        using var sr = new StreamReader(cs);
-        return sr.ReadToEnd();
+        var nonce = new byte[nonceSize];
+        var tag = new byte[tagSize];
+        var cipherBytes = new byte[fullCipher.Length - nonceSize - tagSize];
+
+        Buffer.BlockCopy(fullCipher, 0, nonce, 0, nonceSize);
+        Buffer.BlockCopy(fullCipher, nonceSize, tag, 0, tagSize);
+        Buffer.BlockCopy(fullCipher, nonceSize + tagSize, cipherBytes, 0, cipherBytes.Length);
+
+        var plainBytes = new byte[cipherBytes.Length];
+
+        using var aes = new AesGcm(Key, 16);
+        aes.Decrypt(nonce, cipherBytes, tag, plainBytes);
+
+        return Encoding.UTF8.GetString(plainBytes);
     }
 
     public static string? NormalizeEmail(string? email)
@@ -73,10 +130,15 @@ public static class EncryptionService
         }
     }
 
+    /// <summary>
+    /// Keyed HMAC-SHA256 for deterministic, collision-resistant hash.
+    /// Uses ENCRYPTION_KEY as HMAC key. Suitable for GDPR pseudonymization
+    /// where identical inputs must produce identical outputs.
+    /// </summary>
     public static string Hash(string input)
     {
-        using var sha256 = SHA256.Create();
+        using var hmac = new HMACSHA256(Key);
         var bytes = Encoding.UTF8.GetBytes(input.ToLowerInvariant());
-        return Convert.ToBase64String(sha256.ComputeHash(bytes));
+        return Convert.ToBase64String(hmac.ComputeHash(bytes));
     }
 }
