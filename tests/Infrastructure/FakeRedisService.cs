@@ -53,5 +53,18 @@ internal sealed class FakeRedisService : IRedisService
         return Task.FromResult(allowed);
     }
 
+    public Task RevokeRefreshTokenAsync(string jti, TimeSpan ttl)
+    {
+        _entries[$"revoked_rt:{jti}"] = new Entry("1", DateTimeOffset.UtcNow.Add(ttl));
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> IsRefreshTokenRevokedAsync(string jti)
+    {
+        if (!_entries.TryGetValue($"revoked_rt:{jti}", out var entry))
+            return Task.FromResult(false);
+        return Task.FromResult(entry.ExpiresAt > DateTimeOffset.UtcNow);
+    }
+
     private sealed record Entry(string Value, DateTimeOffset ExpiresAt);
 }

@@ -29,6 +29,12 @@ public class RedisService : IRedisService
     public async Task DeleteAsync(string key) =>
         await _db.KeyDeleteAsync(key);
 
+    public async Task RevokeRefreshTokenAsync(string jti, TimeSpan ttl) =>
+        await _db.StringSetAsync($"revoked_rt:{jti}", "1", ttl);
+
+    public async Task<bool> IsRefreshTokenRevokedAsync(string jti) =>
+        await _db.KeyExistsAsync($"revoked_rt:{jti}");
+
     // Sliding window rate limiter — returns true if the request is allowed.
     public async Task<bool> AllowRequestAsync(string key, int limit, TimeSpan window)
     {

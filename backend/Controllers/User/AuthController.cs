@@ -1,9 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 using Config;
 using Data;
 using Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Models;
 using Services;
 using Services.Redis;
@@ -18,6 +22,7 @@ public class AuthController : ControllerBase
 {
     private readonly AppDbContext db;
     private readonly JwtService _jwtService;
+    private readonly JwtSettings _settings;
     private readonly PasswordHashingService _passwordHashingService;
     private readonly UserEmailService _userEmailService;
     private readonly IRedisService _redis;
@@ -31,6 +36,7 @@ public class AuthController : ControllerBase
     public AuthController(
         AppDbContext db,
         JwtService jwtService,
+        JwtSettings settings,
         PasswordHashingService passwordHashingService,
         UserEmailService userEmailService,
         IRedisService redis,
@@ -39,6 +45,7 @@ public class AuthController : ControllerBase
     {
         this.db = db;
         _jwtService = jwtService;
+        _settings = settings;
         _passwordHashingService = passwordHashingService;
         _userEmailService = userEmailService;
         _redis = redis;
@@ -254,36 +261,58 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken()
     {
-        // Read refresh token from httpOnly cookie
         var refreshToken = Request.Cookies["refresh_token"];
         if (string.IsNullOrWhiteSpace(refreshToken))
             return Unauthorized(new { error = "Refresh token missing." });
 
         try
         {
-            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-            var jwtToken = handler.ReadJwtToken(refreshToken);
+            var handler = new JwtSecurityTokenHandler();
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.Key));
 
-            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
-            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
-            var tokenTypeClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "token_type");
+            var principal = handler.ValidateToken(refreshToken, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = key,
+                ValidateIssuer = _settings.Issuer != null,
+                ValidIssuer = _settings.Issuer,
+                ValidateAudience = _settings.Audience != null,
+                ValidAudience = _settings.Audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            }, out _);
 
-            if (userIdClaim == null || roleClaim == null || tokenTypeClaim?.Value != "refresh")
+            var tokenTypeClaim = principal.FindFirstValue("token_type");
+            if (tokenTypeClaim != "refresh")
                 return Unauthorized(new { error = "Invalid refresh token." });
 
-            if (!Guid.TryParse(userIdClaim.Value, out var userId))
+            var jti = principal.FindFirstValue(JwtRegisteredClaimNames.Jti);
+            if (jti != null && await _redis.IsRefreshTokenRevokedAsync(jti))
+                return Unauthorized(new { error = "Refresh token has been revoked." });
+
+            var userIdStr = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdStr, out var userId))
                 return Unauthorized(new { error = "Invalid user ID in token." });
 
-            if (!Enum.TryParse<UserRole>(roleClaim.Value, out var role))
-                return Unauthorized(new { error = "Invalid role in token." });
-
-            // Verify user still exists
             var user = await db.Users.FindAsync(userId);
             if (user == null)
                 return Unauthorized(new { error = "User not found." });
 
-            // Generate new access token
-            string newAccessToken = _jwtService.GenerateAccessToken(userId, role);
+            // Rotate: revoke old token, issue new pair
+            if (jti != null)
+                await _redis.RevokeRefreshTokenAsync(jti, TimeSpan.FromDays(_settings.RefreshTokenExpireDays));
+
+            string newAccessToken = _jwtService.GenerateAccessToken(userId, user.Role);
+            string newRefreshToken = _jwtService.GenerateRefreshToken(userId, user.Role);
+
+            Response.Cookies.Append("refresh_token", newRefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(_settings.RefreshTokenExpireDays),
+                Path = "/"
+            });
 
             return Ok(new { accessToken = newAccessToken });
         }
@@ -294,10 +323,24 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
+    [Authorize]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    public IActionResult Logout()
+    public async Task<IActionResult> Logout()
     {
-        // Clear the refresh token cookie
+        var refreshToken = Request.Cookies["refresh_token"];
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jwtToken = handler.ReadJwtToken(refreshToken);
+                var jti = jwtToken.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value;
+                if (jti != null)
+                    await _redis.RevokeRefreshTokenAsync(jti, TimeSpan.FromDays(_settings.RefreshTokenExpireDays));
+            }
+            catch { }
+        }
+
         Response.Cookies.Delete("refresh_token", new CookieOptions
         {
             Path = "/",

@@ -6,4 +6,6 @@ public interface IRedisService
     Task<T?> GetAsync<T>(string key);
     Task DeleteAsync(string key);
     Task<bool> AllowRequestAsync(string key, int limit, TimeSpan window);
+    Task RevokeRefreshTokenAsync(string jti, TimeSpan ttl);
+    Task<bool> IsRefreshTokenRevokedAsync(string jti);
 }
