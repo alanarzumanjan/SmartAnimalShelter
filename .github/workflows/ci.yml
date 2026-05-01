@@ -1,4 +1,4 @@
-name: CI + Deploy
+name: CI
 
 on:
   push:
@@ -10,9 +10,16 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     env:
-      # Test encryption key (base64-encoded 32 random bytes)
-      # Generate: openssl rand -base64 32
       ENCRYPTION_KEY: ${{ secrets.TEST_ENCRYPTION_KEY }}
+      JWT_KEY: ${{ secrets.JWT_KEY }}
+      JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+      JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
+      EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_NAME: ${{ secrets.EMAIL_NAME }}
+      POSTGRES_CONNECTION_STRING: ${{ secrets.POSTGRES_CONNECTION_STRING }}
+      REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+      MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,31 +27,13 @@ jobs:
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: "9.0.x"
+
+      - name: Restore
+        run: dotnet restore tests/tests.csproj
 
       - name: Build
-        run: dotnet build backend/backend.csproj
+        run: dotnet build tests/tests.csproj --no-restore
 
       - name: Test
-        run: dotnet test tests/tests.csproj --verbosity normal
-
-  deploy:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Deploy to Production
-        env:
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-          # Add other production secrets here:
-          # DATABASE: ${{ secrets.DATABASE }}
-          # POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          # PASSWORD: ${{ secrets.PASSWORD }}
-          # JWT_KEY: ${{ secrets.JWT_KEY }}
-        run: |
-          echo "Deploying with production ENCRYPTION_KEY from GitHub Secrets..."
-          # Example: scp / rsync / docker-compose up
-          # docker compose -f docker-compose.prod.yml up -d --build
+        run: dotnet test tests/tests.csproj --no-build --verbosity normal
