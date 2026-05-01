@@ -104,7 +104,7 @@ public class AuthController : ControllerBase
                 Role = role
             };
 
-string accessToken = _jwtService.GenerateAccessToken(newUser.Id, role);
+            string accessToken = _jwtService.GenerateAccessToken(newUser.Id, role);
             string refreshToken = _jwtService.GenerateRefreshToken(newUser.Id, role);
 
             // Set refresh token as secure httpOnly cookie
@@ -131,7 +131,7 @@ string accessToken = _jwtService.GenerateAccessToken(newUser.Id, role);
 
             await transaction.CommitAsync();
 
-return Ok(new
+            return Ok(new
             {
                 accessToken,
                 user = new
@@ -187,7 +187,7 @@ return Ok(new
                 return Unauthorized("Incorrect email or password.");
             }
 
-bool isPasswordCorrect = _passwordHashingService.VerifyPassword(loginRequest.password, user.PasswordHash);
+            bool isPasswordCorrect = _passwordHashingService.VerifyPassword(loginRequest.password, user.PasswordHash);
 
             if (!isPasswordCorrect)
             {
@@ -197,7 +197,7 @@ bool isPasswordCorrect = _passwordHashingService.VerifyPassword(loginRequest.pas
                 return Unauthorized("Incorrect email or password.");
             }
 
-string accessToken = _jwtService.GenerateAccessToken(user.Id, user.Role);
+            string accessToken = _jwtService.GenerateAccessToken(user.Id, user.Role);
             string refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.Role);
 
             // Set refresh token as secure httpOnly cookie
@@ -230,7 +230,7 @@ string accessToken = _jwtService.GenerateAccessToken(user.Id, user.Role);
             }
             catch { }
 
-return Ok(new
+            return Ok(new
             {
                 accessToken,
                 id = user.Id,
@@ -245,7 +245,7 @@ return Ok(new
             _logger.LogError(ex, "> ❌ Login error");
             var logMessage3 = $"> ❌ Login error: {ex}";
             Console.WriteLine(logMessage3);
-return Problem("Error: " + ex.Message);
+            return Problem("Error: " + ex.Message);
         }
     }
 
@@ -298,7 +298,7 @@ return Problem("Error: " + ex.Message);
     public IActionResult Logout()
     {
         // Clear the refresh token cookie
-Response.Cookies.Delete("refresh_token", new CookieOptions
+        Response.Cookies.Delete("refresh_token", new CookieOptions
         {
             Path = "/",
             HttpOnly = true,

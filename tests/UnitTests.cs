@@ -47,7 +47,7 @@ public class UnitTests
     [Fact]
     public void JwtService_GenerateToken_ReturnsValidJwt()
     {
-var settings = new JwtSettings(
+        var settings = new JwtSettings(
             key: new string('a', 32),
             issuer: "TestIssuer",
             audience: "TestAudience",
@@ -107,7 +107,7 @@ var settings = new JwtSettings(
         var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TestIssuer";
         var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TestAudience";
 
-var settings = new JwtSettings(key, issuer, audience, 60, 7);
+        var settings = new JwtSettings(key, issuer, audience, 60, 7);
         var jwtService = new JwtService(settings);
         var userId = Guid.NewGuid();
 
@@ -130,7 +130,7 @@ var settings = new JwtSettings(key, issuer, audience, 60, 7);
     {
         var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? new string('x', 32);
         var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TestIssuer";
-var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TestAudience";
+        var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TestAudience";
 
         var settings = new JwtSettings(key, issuer, audience, 60, 7);
         var jwtService = new JwtService(settings);
