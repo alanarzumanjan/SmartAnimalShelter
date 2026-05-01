@@ -47,11 +47,12 @@ public class UnitTests
     [Fact]
     public void JwtService_GenerateToken_ReturnsValidJwt()
     {
-        var settings = new JwtSettings(
+var settings = new JwtSettings(
             key: new string('a', 32),
             issuer: "TestIssuer",
             audience: "TestAudience",
-            expireMinutes: 60
+            accessTokenExpireMinutes: 60,
+            refreshTokenExpireDays: 7
         );
         var jwtService = new JwtService(settings);
         var userId = Guid.NewGuid();
@@ -106,7 +107,7 @@ public class UnitTests
         var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TestIssuer";
         var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TestAudience";
 
-        var settings = new JwtSettings(key, issuer, audience, 60);
+var settings = new JwtSettings(key, issuer, audience, 60, 7);
         var jwtService = new JwtService(settings);
         var userId = Guid.NewGuid();
 
@@ -129,9 +130,9 @@ public class UnitTests
     {
         var key = Environment.GetEnvironmentVariable("JWT_KEY") ?? new string('x', 32);
         var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? "TestIssuer";
-        var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TestAudience";
+var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? "TestAudience";
 
-        var settings = new JwtSettings(key, issuer, audience, 60);
+        var settings = new JwtSettings(key, issuer, audience, 60, 7);
         var jwtService = new JwtService(settings);
         var userId = Guid.NewGuid();
 
@@ -181,11 +182,13 @@ public class UnitTests
 public class EncryptionServiceTests : IDisposable
 {
     private readonly string? _originalKey;
+    private const string TestKeyBase64 = "MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTI=";
 
     public EncryptionServiceTests()
     {
         _originalKey = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
-        Environment.SetEnvironmentVariable("ENCRYPTION_KEY", "12345678901234567890123456789012");
+        Environment.SetEnvironmentVariable("ENCRYPTION_KEY", TestKeyBase64);
+        EncryptionService.Initialize(TestKeyBase64);
     }
 
     public void Dispose()
