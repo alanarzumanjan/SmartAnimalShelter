@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: ["CI"]
     types: [completed]
-    branches: [master]
+    branches: [master, dev, hotfix, hotfix/**]
   workflow_dispatch:
     inputs:
       deploy:
@@ -47,8 +47,10 @@ jobs:
           BRANCH="${{ github.ref_name }}"
           if [[ "$BRANCH" == "main" || "$BRANCH" == "master" ]]; then
             echo "branch_tag=latest" >> $GITHUB_OUTPUT
-          elif [[ "$BRANCH" == "dev2" ]]; then
+          elif [[ "$BRANCH" == "dev" || "$BRANCH" == "dev2" ]]; then
             echo "branch_tag=dev" >> $GITHUB_OUTPUT
+          elif [[ "$BRANCH" == "hotfix" ]]; then
+            echo "branch_tag=hotfix" >> $GITHUB_OUTPUT
           else
             echo "branch_tag=$BRANCH" >> $GITHUB_OUTPUT
           fi
@@ -239,4 +241,3 @@ jobs:
           package-type: 'container'
           min-versions-to-keep: 10
           delete-only-untagged-versions: true
-
