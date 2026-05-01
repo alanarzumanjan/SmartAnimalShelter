@@ -1,0 +1,16 @@
+name: Docker Image CI
+
+on:
+  push:
+    branches: [master, main, dev, hotfix, hotfix/**]
+  pull_request:
+    branches: [master, main, dev, hotfix, hotfix/**]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: docker build ./backend --file ./backend/Dockerfile --tag smart-shelter-backend:${{ github.sha }}
