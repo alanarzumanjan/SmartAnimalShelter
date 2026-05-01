@@ -17,6 +17,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   DOTNET_VERSION: "9.0.x"
   NODE_VERSION: "20"
@@ -33,7 +36,7 @@ jobs:
       workflows: ${{ steps.filter.outputs.workflows }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5.0.1
 
       - name: Check changed files
         uses: dorny/paths-filter@v3
@@ -95,27 +98,27 @@ jobs:
         ports:
           - 27017:27017
     env:
-      ENCRYPTION_KEY: ${{ secrets.TEST_ENCRYPTION_KEY }}
-      JWT_KEY: ${{ secrets.JWT_KEY }}
-      JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
-      JWT_AUDIENCE: ${{ secrets.JWT_AUDIENCE }}
-      EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
-      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-      EMAIL_NAME: ${{ secrets.EMAIL_NAME }}
-      POSTGRES_CONNECTION_STRING: ${{ secrets.POSTGRES_CONNECTION_STRING }}
-      REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
-      MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
+      ENCRYPTION_KEY: ${{ secrets.TEST_ENCRYPTION_KEY || secrets.ENCRYPTION_KEY }}
+      JWT_KEY: ${{ secrets.TEST_JWT_KEY || secrets.JWT_KEY }}
+      JWT_ISSUER: ${{ secrets.TEST_JWT_ISSUER || secrets.JWT_ISSUER }}
+      JWT_AUDIENCE: ${{ secrets.TEST_JWT_AUDIENCE || secrets.JWT_AUDIENCE }}
+      EMAIL_ADDRESS: ${{ secrets.TEST_EMAIL_ADDRESS || secrets.EMAIL_ADDRESS }}
+      EMAIL_PASSWORD: ${{ secrets.TEST_EMAIL_PASSWORD || secrets.EMAIL_PASSWORD }}
+      EMAIL_NAME: ${{ secrets.TEST_EMAIL_NAME || secrets.EMAIL_NAME }}
+      POSTGRES_CONNECTION_STRING: ${{ secrets.TEST_POSTGRES_CONNECTION_STRING || secrets.POSTGRES_CONNECTION_STRING }}
+      REDIS_CONNECTION_STRING: ${{ secrets.TEST_REDIS_CONNECTION_STRING || secrets.REDIS_CONNECTION_STRING }}
+      MONGODB_CONNECTION_STRING: ${{ secrets.TEST_MONGODB_CONNECTION_STRING || secrets.MONGODB_CONNECTION_STRING }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5.0.1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5.0.1
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@v4.2.0
         with:
           path: ~/.nuget/packages
           key: ${{ runner.os }}-nuget-${{ hashFiles('backend/backend.csproj', 'tests/tests.csproj') }}
@@ -136,7 +139,7 @@ jobs:
         run: dotnet test tests/tests.csproj --no-build --configuration Release --verbosity normal
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: backend-test-results
@@ -153,10 +156,10 @@ jobs:
         working-directory: ./frontend
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5.0.1
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5.0.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
@@ -178,14 +181,14 @@ jobs:
         run: npm run test
 
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: frontend-test-results
           path: frontend/coverage/
 
   docker-build-test:
-    name: Docker Build Test
+    name: Docker Smoke Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: changes
@@ -194,28 +197,28 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5.0.1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3.12.0
 
       - name: Build backend image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v6.19.0
         with:
           context: ./backend
           push: false
-          load: true
+          load: false
           tags: backend:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Build frontend image (no push)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v6.19.0
         with:
           context: ./frontend
           file: ./frontend/docker/Dockerfile
           push: false
-          load: true
+          load: false
           tags: frontend:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -228,10 +231,10 @@ jobs:
     if: ${{ always() && (needs.backend.result == 'success' || needs.frontend.result == 'success') }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5.0.1
 
       - name: Run Trivy vulnerability scanner (Backend)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: "fs"
           scan-ref: "./backend"
@@ -241,7 +244,7 @@ jobs:
           exit-code: "1"
 
       - name: Run Trivy vulnerability scanner (Frontend)
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: "fs"
           scan-ref: "./frontend"
@@ -251,7 +254,7 @@ jobs:
           exit-code: "1"
 
       - name: Upload Trivy scan results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         if: always()
         with:
           name: trivy-scan-results
