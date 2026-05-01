@@ -138,7 +138,7 @@ public class AuthTests : EndpointTestBase
         Assert.False(string.IsNullOrWhiteSpace(json.GetProperty("accessToken").GetString()));
     }
 
-[Fact]
+    [Fact]
     public async Task Logout_ClearsRefreshCookie()
     {
         // First seed a user and get authenticated client with JWT token
