@@ -1,6 +1,8 @@
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using Data;
 using Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Models;
@@ -10,6 +12,7 @@ namespace Controllers;
 [ApiController]
 [Route("/devices")]
 [Produces("application/json")]
+[Authorize]
 public class DevicesController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -20,6 +23,15 @@ public class DevicesController : ControllerBase
         _db = db;
         _logger = logger;
     }
+
+    private Guid? GetCurrentUserId()
+    {
+        var val = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(val, out var id) ? id : null;
+    }
+
+    private bool IsAdmin() =>
+        User.FindFirstValue(ClaimTypes.Role) == UserRole.admin.ToString();
 
     private static string NormalizeMac(string mac)
     {
@@ -56,10 +68,12 @@ public class DevicesController : ControllerBase
     {
         if (request is null)
             return BadRequest(new { error = "Body is required." });
-        if (request.UserId == Guid.Empty)
-            return BadRequest(new { error = "UserId is required." });
         if (string.IsNullOrWhiteSpace(request.Id))
             return BadRequest(new { error = "Device ID (MAC) is required." });
+
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+            return Unauthorized(new { error = "Invalid user token." });
 
         var mac = NormalizeMac(request.Id);
         if (!IsValidMac(mac))
@@ -76,7 +90,7 @@ public class DevicesController : ControllerBase
             if (!string.IsNullOrEmpty(name))
             {
                 var existsName = await _db.Devices
-                    .AnyAsync(d => d.UserId == request.UserId && d.Name != null &&
+                    .AnyAsync(d => d.UserId == currentUserId.Value && d.Name != null &&
                                    d.Name.ToLower() == name.ToLower());
                 if (existsName)
                     return Conflict(new { error = "Device with this name already exists for this user." });
@@ -85,7 +99,7 @@ public class DevicesController : ControllerBase
             if (!string.IsNullOrEmpty(location))
             {
                 var existsLocation = await _db.Devices
-                    .AnyAsync(d => d.UserId == request.UserId && d.Location != null &&
+                    .AnyAsync(d => d.UserId == currentUserId.Value && d.Location != null &&
                                    d.Location.ToLower() == location.ToLower());
                 if (existsLocation)
                     return Conflict(new { error = "Device with this location already exists for this user." });
@@ -98,7 +112,7 @@ public class DevicesController : ControllerBase
                 Name = name,
                 Location = location,
                 RegisteredAt = DateTime.UtcNow,
-                UserId = request.UserId
+                UserId = currentUserId.Value
             };
 
             _db.Devices.Add(device);
@@ -120,6 +134,14 @@ public class DevicesController : ControllerBase
     [HttpGet("user/{userId:guid}")]
     public async Task<IActionResult> GetByUser(Guid userId)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+            return Unauthorized(new { error = "Invalid user token." });
+
+        // Users can only see their own devices; admins can see any user's devices
+        if (userId != currentUserId.Value && !IsAdmin())
+            return Forbid();
+
         try
         {
             var devices = await _db.Devices
@@ -146,6 +168,10 @@ public class DevicesController : ControllerBase
     [HttpGet("id/{deviceId}")]
     public async Task<IActionResult> GetOne(string deviceId)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+            return Unauthorized(new { error = "Invalid user token." });
+
         if (string.IsNullOrWhiteSpace(deviceId))
             return BadRequest(new { error = "DeviceId is required." });
 
@@ -158,6 +184,10 @@ public class DevicesController : ControllerBase
             var device = await _db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.DeviceId == mac);
             if (device is null)
                 return NotFound(new { error = "Device not found." });
+
+            // Users can only access their own devices; admins can access any
+            if (device.UserId != currentUserId.Value && !IsAdmin())
+                return Forbid();
 
             var message = $"> Device '{device.DeviceId}' fetched.";
             _logger.LogInformation(message);
@@ -175,6 +205,10 @@ public class DevicesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(string id, [FromBody] UpdateDeviceDto? dto)
     {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId is null)
+            return Unauthorized(new { error = "Invalid user token." });
+
         if (string.IsNullOrWhiteSpace(id))
             return BadRequest(new { error = "DeviceId is required." });
 
@@ -188,6 +222,10 @@ public class DevicesController : ControllerBase
         var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac);
         if (device is null)
             return NotFound(new { error = "Device not found." });
+
+        // Users can only update their own devices; admins can update any
+        if (device.UserId != currentUserId.Value && !IsAdmin())
+            return Forbid();
 
         if (dto.Name != null)
             device.Name = dto.Name.Trim();
@@ -212,6 +250,4 @@ public class DevicesController : ControllerBase
             return StatusCode(500, new { error = "Failed to update device." });
         }
     }
-
-
 }

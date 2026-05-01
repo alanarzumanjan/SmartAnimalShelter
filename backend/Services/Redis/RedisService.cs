@@ -3,7 +3,7 @@ using StackExchange.Redis;
 
 namespace Services.Redis;
 
-public class RedisService
+public class RedisService : IRedisService
 {
     private readonly IDatabase _db;
 

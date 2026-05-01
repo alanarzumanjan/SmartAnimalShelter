@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Config;
 using Data;
 using Dtos;
@@ -19,7 +20,7 @@ public class AuthController : ControllerBase
     private readonly JwtService _jwtService;
     private readonly PasswordHashingService _passwordHashingService;
     private readonly UserEmailService _userEmailService;
-    private readonly RedisService _redis;
+    private readonly IRedisService _redis;
     private readonly ShelterService _shelterService;
     private readonly ILogger<AuthController> _logger;
 
@@ -32,7 +33,7 @@ public class AuthController : ControllerBase
         JwtService jwtService,
         PasswordHashingService passwordHashingService,
         UserEmailService userEmailService,
-        RedisService redis,
+        IRedisService redis,
         ShelterService shelterService,
         ILogger<AuthController> logger)
     {
@@ -103,7 +104,18 @@ public class AuthController : ControllerBase
                 Role = role
             };
 
-            string token = _jwtService.GenerateToken(newUser.Id, role);
+string accessToken = _jwtService.GenerateAccessToken(newUser.Id, role);
+            string refreshToken = _jwtService.GenerateRefreshToken(newUser.Id, role);
+
+            // Set refresh token as secure httpOnly cookie
+            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                Path = "/"
+            });
 
             using var transaction = await db.Database.BeginTransactionAsync();
             await db.Users.AddAsync(newUser);
@@ -119,9 +131,9 @@ public class AuthController : ControllerBase
 
             await transaction.CommitAsync();
 
-            return Ok(new
+return Ok(new
             {
-                token,
+                accessToken,
                 user = new
                 {
                     id = newUser.Id,
@@ -175,7 +187,7 @@ public class AuthController : ControllerBase
                 return Unauthorized("Incorrect email or password.");
             }
 
-            bool isPasswordCorrect = _passwordHashingService.VerifyPassword(loginRequest.password, user.PasswordHash);
+bool isPasswordCorrect = _passwordHashingService.VerifyPassword(loginRequest.password, user.PasswordHash);
 
             if (!isPasswordCorrect)
             {
@@ -185,7 +197,18 @@ public class AuthController : ControllerBase
                 return Unauthorized("Incorrect email or password.");
             }
 
-            string token = _jwtService.GenerateToken(user.Id, user.Role);
+string accessToken = _jwtService.GenerateAccessToken(user.Id, user.Role);
+            string refreshToken = _jwtService.GenerateRefreshToken(user.Id, user.Role);
+
+            // Set refresh token as secure httpOnly cookie
+            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(7),
+                Path = "/"
+            });
 
             _logger.LogInformation("> ✅ Login success: {Username}, Role: {Role}", user.Username, user.Role);
             var logMessage2 = $"> ✅ Login success: {user.Username}, Role: {user.Role}";
@@ -207,9 +230,9 @@ public class AuthController : ControllerBase
             }
             catch { }
 
-            return Ok(new
+return Ok(new
             {
-                token,
+                accessToken,
                 id = user.Id,
                 name = user.Username,
                 email = decryptedEmail,
@@ -222,7 +245,67 @@ public class AuthController : ControllerBase
             _logger.LogError(ex, "> ❌ Login error");
             var logMessage3 = $"> ❌ Login error: {ex}";
             Console.WriteLine(logMessage3);
-            return Problem("Error: " + ex.Message);
+return Problem("Error: " + ex.Message);
         }
+    }
+
+    [HttpPost("refresh")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> RefreshToken()
+    {
+        // Read refresh token from httpOnly cookie
+        var refreshToken = Request.Cookies["refresh_token"];
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return Unauthorized(new { error = "Refresh token missing." });
+
+        try
+        {
+            var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(refreshToken);
+
+            var userIdClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            var roleClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+            var tokenTypeClaim = jwtToken.Claims.FirstOrDefault(c => c.Type == "token_type");
+
+            if (userIdClaim == null || roleClaim == null || tokenTypeClaim?.Value != "refresh")
+                return Unauthorized(new { error = "Invalid refresh token." });
+
+            if (!Guid.TryParse(userIdClaim.Value, out var userId))
+                return Unauthorized(new { error = "Invalid user ID in token." });
+
+            if (!Enum.TryParse<UserRole>(roleClaim.Value, out var role))
+                return Unauthorized(new { error = "Invalid role in token." });
+
+            // Verify user still exists
+            var user = await db.Users.FindAsync(userId);
+            if (user == null)
+                return Unauthorized(new { error = "User not found." });
+
+            // Generate new access token
+            string newAccessToken = _jwtService.GenerateAccessToken(userId, role);
+
+            return Ok(new { accessToken = newAccessToken });
+        }
+        catch
+        {
+            return Unauthorized(new { error = "Invalid or expired refresh token." });
+        }
+    }
+
+    [HttpPost("logout")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    public IActionResult Logout()
+    {
+        // Clear the refresh token cookie
+Response.Cookies.Delete("refresh_token", new CookieOptions
+        {
+            Path = "/",
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax
+        });
+
+        return Ok(new { message = "Logged out successfully." });
     }
 }

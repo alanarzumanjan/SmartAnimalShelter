@@ -21,6 +21,25 @@ var solutionRoot = Directory.GetParent(Directory.GetCurrentDirectory())!.FullNam
 Env.Load(Path.Combine(solutionRoot, ".env"));
 Console.WriteLine("✅ .env loaded from: " + Path.Combine(solutionRoot, ".env"));
 
+// Fail-fast on missing critical security configuration
+var encryptionKey = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
+if (string.IsNullOrWhiteSpace(encryptionKey))
+{
+    throw new InvalidOperationException(
+        "ENCRYPTION_KEY is missing. Provide a base64-encoded 32-byte key. " +
+        "Generate one with: openssl rand -base64 32");
+}
+
+try
+{
+    EncryptionService.Initialize(encryptionKey);
+    Console.WriteLine("🔐 EncryptionService initialized successfully.");
+}
+catch (InvalidOperationException ex)
+{
+    throw new InvalidOperationException($"Failed to initialize EncryptionService: {ex.Message}", ex);
+}
+
 var builder = WebApplication.CreateBuilder(args);
 var jwtSettings = JwtSettings.FromConfiguration(builder.Configuration);
 
@@ -95,7 +114,7 @@ builder.Services.AddScoped<UserEmailService>();
 var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "localhost:6379";
 var redisMultiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
-builder.Services.AddSingleton<RedisService>();
+builder.Services.AddSingleton<IRedisService, RedisService>();
 
 // Controllers
 builder.Services.AddControllers()
