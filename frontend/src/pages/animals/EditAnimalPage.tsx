@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { PawPrint, Save, ArrowLeft, Upload, X, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import api from "@/services/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -548,13 +550,16 @@ export default function EditAnimalPage() {
                 <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Intake date
                 </label>
-                <input
-                  type="date"
-                  value={f.intakeDate}
-                  onChange={(e) => setF({ ...f, intakeDate: e.target.value })}
+                <DatePicker
+                  selected={f.intakeDate ? new Date(f.intakeDate) : null}
+                  onChange={(date: Date | null) =>
+                    setF({ ...f, intakeDate: date ? date.toISOString().split("T")[0] : "" })
+                  }
+                  dateFormat="yyyy-MM-dd"
+                  locale="en"
+                  placeholderText="Select date"
                   className={sel}
-                  lang="en"
-                  style={{ colorScheme: "light dark" }}
+                  wrapperClassName="w-full"
                 />
               </div>
             </div>

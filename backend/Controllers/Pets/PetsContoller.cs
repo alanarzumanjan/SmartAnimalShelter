@@ -252,7 +252,7 @@ public class PetsController : ControllerBase
         if (patch.IntakeReason != null)
             pet.IntakeReason = patch.IntakeReason;
         if (patch.IntakeDate != null)
-            pet.IntakeDate = patch.IntakeDate;
+            pet.IntakeDate = DateTime.SpecifyKind(DateTime.Parse(patch.IntakeDate), DateTimeKind.Utc);
         if (patch.Color != null)
             pet.Color = patch.Color;
         if (patch.Age != null)
