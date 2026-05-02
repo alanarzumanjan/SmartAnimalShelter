@@ -9,6 +9,7 @@ import {
   getUserDevices,
   type DeviceRecord,
 } from "@/services/device.service";
+import { formatDateTimeForTimeZone } from "@/services/timezone.service";
 
 const PAGE_SIZE = 30;
 
@@ -57,8 +58,7 @@ function co2Quality(co2: number): { title: string; badgeClass: string } {
 }
 
 function formatDateTime(value: string) {
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString();
+  return formatDateTimeForTimeZone(value);
 }
 
 // datetime-local input value
