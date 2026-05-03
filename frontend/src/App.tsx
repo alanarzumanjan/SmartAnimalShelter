@@ -21,6 +21,8 @@ import CreateAnimalPage from "@/pages/animals/CreateAnimalPage";
 import EditAnimalPage from "@/pages/animals/EditAnimalPage";
 import AdoptionFormPage from "@/pages/animals/AdoptionFormPage";
 import ShelterPage from "@/pages/animals/ShelterPage";
+import ShelterManagementPage from "@/pages/shelter/ShelterManagementPage";
+import EnclosurePage from "@/pages/shelter/EnclosurePage";
 import ChatPage from "@/pages/chat/ChatPage";
 import ProfilePage from "@/pages/profile/ProfilePage";
 
@@ -75,6 +77,23 @@ function AppRoutes() {
           />
           <Route path="/adoption" element={<AdoptionFormPage />} />
           <Route path="/shelters/:shelterId" element={<ShelterPage />} />
+
+          <Route
+            path="/shelter"
+            element={
+              <ProtectedRoute>
+                <ShelterManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/enclosures/:enclosureId"
+            element={
+              <ProtectedRoute>
+                <EnclosurePage />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/dashboard"
