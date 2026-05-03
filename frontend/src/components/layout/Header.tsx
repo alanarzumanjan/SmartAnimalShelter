@@ -9,6 +9,7 @@ import {
   PawPrint,
   Menu,
   X,
+  LayoutGrid,
 } from "lucide-react";
 
 import type { RootState, AppDispatch } from "@/store/store";
@@ -69,9 +70,17 @@ export default function Header() {
             </Link>
             {isAuthenticated && (
               <>
-                <Link to="/dashboard" className={navLink}>
-                  Dashboard
-                </Link>
+                {user?.role === "shelter" && (
+                  <Link to="/shelter" className={navLink}>
+                    <LayoutGrid className="w-4 h-4 inline mr-1" />
+                    Shelter
+                  </Link>
+                )}
+                {user?.role === "admin" && (
+                  <Link to="/dashboard" className={navLink}>
+                    Dashboard
+                  </Link>
+                )}
                 <Link to="/dashboard/chats" className={navLink}>
                   <MessageSquare className="w-4 h-4 inline mr-1" />
                   Chats
@@ -157,9 +166,16 @@ export default function Header() {
 
           {isAuthenticated && (
             <>
-              <Link to="/dashboard" className={mobileLink} onClick={closeMenu}>
-                Dashboard
-              </Link>
+              {user?.role === "shelter" && (
+                <Link to="/shelter" className={mobileLink} onClick={closeMenu}>
+                  <LayoutGrid className="w-4 h-4" /> Shelter
+                </Link>
+              )}
+              {user?.role === "admin" && (
+                <Link to="/dashboard" className={mobileLink} onClick={closeMenu}>
+                  Dashboard
+                </Link>
+              )}
               <Link
                 to="/dashboard/chats"
                 className={mobileLink}
