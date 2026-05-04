@@ -441,7 +441,9 @@ const DeviceDetailPage: React.FC = () => {
                 <Edit2 className="w-4 h-4" />
               </button>
               <p className="text-sm text-slate-500 dark:text-slate-400 ml-2">
-                Location: {device.location} · MAC:{" "}
+                {device.enclosureName
+                  ? <>Enclosure: <span className="font-medium">{device.enclosureName}</span></>
+                  : <>Location: {device.location}</>} · MAC:{" "}
                 <span className="font-mono">{device.deviceId}</span>
                 {latest ? (
                   <span className="ml-2 text-xs">

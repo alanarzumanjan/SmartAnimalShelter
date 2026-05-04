@@ -36,7 +36,7 @@ public class BreedResolver
         catch (Exception ex)
         {
             Console.WriteLine("❌ Breed resolution error: " + ex.Message);
-            return await GetOrCreateBreedAsync("Unknown", null);
+            return await GetOrCreateBreedAsync("Unknown", speciesId);
         }
     }
 
@@ -47,10 +47,13 @@ public class BreedResolver
             name = "Unknown";
         }
 
+        if (speciesId == null || speciesId == 0)
+            throw new InvalidOperationException("Cannot create breed without a valid speciesId.");
+
         var newBreed = new Breed
         {
             Name = name,
-            SpeciesId = speciesId ?? 0 // default fallback to 0 if speciesId is null
+            SpeciesId = speciesId.Value
         };
 
         _db.Breeds.Add(newBreed);

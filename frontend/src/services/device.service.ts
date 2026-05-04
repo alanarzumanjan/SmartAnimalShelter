@@ -10,6 +10,7 @@ export interface DeviceRecord {
   registeredAt?: string;
   lastSeenAt?: string | null;
   userId?: string;
+  enclosureName?: string | null;
 }
 
 export interface MeasurementRecord {
@@ -53,6 +54,7 @@ function normalizeDevice(raw: unknown): DeviceRecord {
     registeredAt: r?.registeredAt ? str(r.registeredAt) : undefined,
     lastSeenAt: r?.lastSeenAt ? str(r.lastSeenAt) : null,
     userId: r?.userId ? str(r.userId) : undefined,
+    enclosureName: r?.enclosureName != null ? str(r.enclosureName) : null,
   };
 }
 

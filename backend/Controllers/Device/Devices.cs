@@ -181,7 +181,10 @@ public class DevicesController : ControllerBase
 
         try
         {
-            var device = await _db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.DeviceId == mac);
+            var device = await _db.Devices
+                .AsNoTracking()
+                .Include(d => d.Enclosure)
+                .FirstOrDefaultAsync(d => d.DeviceId == mac);
             if (device is null)
                 return NotFound(new { error = "Device not found." });
 
@@ -192,7 +195,7 @@ public class DevicesController : ControllerBase
             var message = $"> Device '{device.DeviceId}' fetched.";
             _logger.LogInformation(message);
             Console.WriteLine(message);
-            return Ok(new { message, data = DeviceOutDTO.FromEntity(device) });
+            return Ok(new { message, data = DeviceOutDTO.FromEntity(device, device.Enclosure?.Name) });
         }
         catch (Exception ex)
         {

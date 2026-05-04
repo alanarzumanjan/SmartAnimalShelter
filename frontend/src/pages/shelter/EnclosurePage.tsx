@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   ArrowLeft, Wind, Thermometer, Droplets, Cpu, PawPrint,
-  Plus, X, Pencil, Check, Trash2,
+  Plus, X, Pencil, Check, Settings, ExternalLink, AlertTriangle, CheckCircle2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { RootState } from "@/store/store";
@@ -17,53 +17,229 @@ import api from "@/services/api";
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
 
-function MetricCard({ icon: Icon, label, value, unit, highlight }: {
-  icon: React.ElementType; label: string; value: string; unit: string; highlight?: string;
-}) {
-  return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm px-4 py-3 flex-1">
-      <div className="flex items-center gap-1.5 mb-1">
-        <Icon className="w-3.5 h-3.5 text-slate-400" />
-        <span className="text-[10px] uppercase tracking-wide text-slate-400 font-medium">{label}</span>
-      </div>
-      <div className="text-2xl font-bold text-slate-900 dark:text-white">
-        {value}
-        <span className="text-sm font-normal text-slate-400 ml-1">{unit}</span>
-      </div>
-      {highlight && <div className={`mt-1 text-xs font-semibold ${highlight}`}>{label}</div>}
-    </div>
-  );
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function co2Label(co2: number): string {
+  if (co2 <= 600) return "Excellent";
+  if (co2 <= 700) return "Normal";
+  if (co2 <= 1000) return "Not good";
+  if (co2 <= 1200) return "Bad";
+  return "Danger";
 }
 
-function PetChip({ pet, onRemove }: {
+function tempLabel(t: number): string {
+  if (t < 10) return "Too cold";
+  if (t <= 18) return "Cool";
+  if (t <= 26) return "Comfortable";
+  if (t <= 30) return "Warm";
+  return "Too hot";
+}
+
+function humLabel(h: number): string {
+  if (h < 30) return "Too dry";
+  if (h <= 60) return "Normal";
+  if (h <= 75) return "Humid";
+  return "Too humid";
+}
+
+function co2Bar(co2: number): number { return Math.min(100, (co2 / 2000) * 100); }
+function tempBar(t: number): number { return Math.min(100, Math.max(0, ((t + 10) / 60) * 100)); }
+function humBar(h: number): number { return Math.min(100, h); }
+
+function barColor(pct: number): string {
+  if (pct < 40) return "bg-emerald-500";
+  if (pct < 65) return "bg-amber-400";
+  return "bg-red-500";
+}
+
+type NoticeLevel = "green" | "orange" | "red";
+interface Notice { level: NoticeLevel; title: string; text: string; }
+
+function co2Notice(co2: number | null): Notice | null {
+  if (co2 == null) return null;
+  if (co2 <= 700) return { level: "green",  title: "Air quality is good",        text: "Conditions are healthy. No action needed." };
+  if (co2 <= 1200) return { level: "orange", title: "Air needs freshening",       text: "Open a window or increase ventilation for 5–10 min." };
+  return              { level: "red",    title: "High CO\u2082 — ventilate now", text: "Ventilate immediately. Avoid prolonged exposure." };
+}
+
+const noticeStyles: Record<NoticeLevel, { wrap: string; badge: string; dot: string; icon: string }> = {
+  green:  { wrap: "border-emerald-500/25 bg-emerald-500/8",  badge: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/25",  dot: "bg-emerald-400",  icon: "text-emerald-500" },
+  orange: { wrap: "border-amber-500/25   bg-amber-500/8",    badge: "bg-amber-500/15   text-amber-700   dark:text-amber-300   border-amber-500/25",    dot: "bg-amber-400",    icon: "text-amber-500" },
+  red:    { wrap: "border-red-500/25     bg-red-500/8",      badge: "bg-red-500/15     text-red-700     dark:text-red-300     border-red-500/25",      dot: "bg-red-400",      icon: "text-red-500" },
+};
+
+// ── PetCard ───────────────────────────────────────────────────────────────────
+
+function PetCard({ pet, onRemove }: {
   pet: { id: string; name: string | null; mongoImageId?: string | null; species?: string; breed?: string };
   onRemove: (id: string) => void;
 }) {
   const src = pet.mongoImageId ? `${API_BASE}/pets/${pet.id}/image` : null;
   return (
-    <div className="relative group w-36">
-      <Link to={`/animals/${pet.id}`} className="block rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:border-indigo-400 dark:hover:border-indigo-500 transition-colors">
-        <div className="w-full aspect-square overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+    <div className="relative group">
+      <Link
+        to={`/animals/${pet.id}`}
+        className="block rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all hover:shadow-lg hover:-translate-y-0.5"
+      >
+        <div className="relative w-full aspect-[2/3] bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center overflow-hidden">
           {src
             ? <img src={src} alt={pet.name ?? ""} className="w-full h-full object-cover" />
-            : <PawPrint className="w-10 h-10 text-slate-300 dark:text-slate-600" />}
-        </div>
-        <div className="px-2.5 py-2">
-          <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{pet.name ?? "Unnamed"}</p>
-          {(pet.species || pet.breed) && (
-            <p className="text-[11px] text-slate-400 truncate mt-0.5">{[pet.species, pet.breed].filter(Boolean).join(" · ")}</p>
-          )}
+            : <PawPrint className="w-12 h-12 text-slate-300 dark:text-slate-600" />}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/10 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 px-3 py-2.5">
+            <p className="text-sm font-bold text-white truncate leading-tight">{pet.name ?? "Unnamed"}</p>
+            {(pet.species || pet.breed) && (
+              <p className="text-[11px] text-white/70 truncate mt-0.5">{[pet.species, pet.breed].filter(Boolean).join(" · ")}</p>
+            )}
+          </div>
         </div>
       </Link>
       <button
         onClick={() => onRemove(pet.id)}
-        className="absolute top-2 right-2 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 hover:bg-red-500 text-white"
+        className="absolute top-2 right-2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-red-500 text-white"
       >
         <X className="w-3.5 h-3.5" />
       </button>
     </div>
   );
 }
+
+// ── EnvironmentWidget ─────────────────────────────────────────────────────────
+
+function EnvironmentWidget({ enc, devices, selectedDevice, savingDevice, showDeviceSettings, onSelectDevice, onSaveDevice, onToggleSettings }: {
+  enc: EnclosureRecord;
+  devices: DeviceRecord[];
+  selectedDevice: string;
+  savingDevice: boolean;
+  showDeviceSettings: boolean;
+  onSelectDevice: (id: string) => void;
+  onSaveDevice: () => void;
+  onToggleSettings: () => void;
+}) {
+  const m = enc.latestMeasurement;
+  const status = co2Status(m?.co2 ?? null);
+  const notice = co2Notice(m?.co2 ?? null);
+  const ns = notice ? noticeStyles[notice.level] : null;
+
+  const metrics = m ? [
+    { icon: Wind,        label: "CO₂",  value: m.co2.toFixed(0),         unit: "ppm", sublabel: co2Label(m.co2),         bar: co2Bar(m.co2) },
+    { icon: Thermometer, label: "Temp", value: m.temperature.toFixed(1),  unit: "°C",  sublabel: tempLabel(m.temperature), bar: tempBar(m.temperature) },
+    { icon: Droplets,    label: "Hum",  value: m.humidity.toFixed(0),     unit: "%",   sublabel: humLabel(m.humidity),     bar: humBar(m.humidity) },
+  ] : null;
+
+  return (
+    <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+      {/* Compact header row */}
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <Cpu className="w-4 h-4 text-indigo-500 shrink-0" />
+        <span className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+          {enc.device?.name ?? "No device"}
+        </span>
+        {enc.device && (
+          <span className="text-xs font-mono text-slate-400 truncate hidden sm:block">{enc.device.deviceId}</span>
+        )}
+        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${status.dot}`} />
+        <span className={`text-xs font-semibold shrink-0 ${status.color}`}>{status.label}</span>
+        {m && (
+          <span className="ml-auto text-[11px] text-slate-400 shrink-0">
+            {formatDateTimeForTimeZone(m.timestamp)}
+          </span>
+        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {enc.device && (
+            <Link
+              to={`/dashboard/devices/${encodeURIComponent(enc.device.deviceId)}`}
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-400 hover:text-indigo-500 hover:border-indigo-300 dark:hover:border-indigo-500/40 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          )}
+          <button
+            onClick={onToggleSettings}
+            className={`p-1.5 rounded-lg border transition-colors ${
+              showDeviceSettings
+                ? "bg-indigo-50 dark:bg-indigo-500/10 border-indigo-200 dark:border-indigo-500/30 text-indigo-500"
+                : "border-slate-200 dark:border-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+            }`}
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Device picker */}
+      {showDeviceSettings && (
+        <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+          {devices.length === 0 ? (
+            <p className="text-xs text-slate-400">No devices. <Link to="/shelter" className="text-indigo-500 hover:underline">Register one first.</Link></p>
+          ) : (
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedDevice}
+                onChange={e => onSelectDevice(e.target.value)}
+                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">— No device —</option>
+                {devices.map(d => (
+                  <option key={d.id} value={d.uuid ?? d.id}>{d.name} ({d.deviceId})</option>
+                ))}
+              </select>
+              <button
+                onClick={onSaveDevice}
+                disabled={savingDevice}
+                className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 disabled:opacity-50 transition-colors"
+              >
+                {savingDevice ? "…" : "Save"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Compact notice banner */}
+      {notice && ns && (
+        <div className={`flex items-center gap-3 px-4 py-2 border-t border-slate-100 dark:border-slate-800 ${ns.wrap}`}>
+          {notice.level === "green"
+            ? <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${ns.icon}`} />
+            : <AlertTriangle className={`w-3.5 h-3.5 shrink-0 ${ns.icon}`} />}
+          <span className="text-xs font-semibold text-slate-900 dark:text-white shrink-0">{notice.title}</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400 truncate">{notice.text}</span>
+          <span className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${ns.badge}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${ns.dot}`} />
+            {m!.co2.toFixed(0)} ppm
+          </span>
+        </div>
+      )}
+
+      {/* Metrics inline strip */}
+      {metrics ? (
+        <div className="grid grid-cols-3 divide-x divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800">
+          {metrics.map(({ icon: Icon, label, value, unit, sublabel, bar }) => (
+            <div key={label} className="flex items-center gap-3 px-4 py-2.5">
+              <Icon className="w-4 h-4 text-slate-400 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-base font-bold text-slate-900 dark:text-white">{value}</span>
+                  <span className="text-xs text-slate-400">{unit}</span>
+                </div>
+                <div className="w-full h-1 rounded-full bg-slate-100 dark:bg-slate-800 mt-1 overflow-hidden">
+                  <div className={`h-full rounded-full ${barColor(bar)}`} style={{ width: `${bar}%` }} />
+                </div>
+              </div>
+              <span className="text-[11px] text-slate-400 shrink-0 hidden md:block">{sublabel}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-400">
+          No measurements — assign a device above.
+        </p>
+      )}
+    </section>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function EnclosurePage() {
   const { enclosureId } = useParams<{ enclosureId: string }>();
@@ -75,19 +251,17 @@ export default function EnclosurePage() {
   const [allPets, setAllPets] = useState<{ id: string; name: string | null; mongoImageId?: string | null; species?: string; breed?: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Edit name/desc
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Assign pet modal
   const [showAssign, setShowAssign] = useState(false);
   const [assigningPet, setAssigningPet] = useState<string | null>(null);
 
-  // Device select
   const [selectedDevice, setSelectedDevice] = useState<string>("");
   const [savingDevice, setSavingDevice] = useState(false);
+  const [showDeviceSettings, setShowDeviceSettings] = useState(false);
 
   const load = useCallback(async () => {
     if (!enclosureId || !user?.id) return;
@@ -146,6 +320,7 @@ export default function EnclosurePage() {
         device: found ? { id: found.uuid ?? found.id, deviceId: found.deviceId, name: found.name, location: found.location, lastSeenAt: found.lastSeenAt } : null
       } : prev);
       toast.success(selectedDevice ? "Device assigned" : "Device removed");
+      setShowDeviceSettings(false);
     } catch {
       toast.error("Failed to assign device");
     } finally {
@@ -180,14 +355,9 @@ export default function EnclosurePage() {
     }
   }
 
-  if (loading) {
-    return <div className="py-16 text-center text-slate-400">Loading...</div>;
-  }
-
+  if (loading) return <div className="py-16 text-center text-slate-400">Loading...</div>;
   if (!enc) return null;
 
-  const m = enc.latestMeasurement;
-  const status = co2Status(m?.co2 ?? null);
   const assignedPetIds = new Set(enc.pets.map(p => p.id));
   const availablePets = allPets.filter(p => !assignedPetIds.has(p.id));
 
@@ -243,20 +413,19 @@ export default function EnclosurePage() {
             <p className="text-slate-500 dark:text-slate-400 mt-1">{enc.description}</p>
           )}
         </div>
-
-        <div className="flex items-center gap-2 shrink-0 mt-8">
-          <span className={`w-2.5 h-2.5 rounded-full ${status.dot}`} />
-          <span className={`text-sm font-semibold ${status.color}`}>{status.label}</span>
-        </div>
       </div>
 
       {/* Animals */}
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
+      <section>
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <PawPrint className="w-5 h-5 text-indigo-500" />
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Animals</h2>
-            <span className="text-sm text-slate-400">{enc.pets.length}</span>
+            {enc.pets.length > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
+                {enc.pets.length}
+              </span>
+            )}
           </div>
           {availablePets.length > 0 && (
             <button
@@ -270,91 +439,40 @@ export default function EnclosurePage() {
         </div>
 
         {enc.pets.length === 0 ? (
-          <div className="text-center py-8 text-slate-400">
-            <PawPrint className="mx-auto w-8 h-8 mb-2 text-slate-300" />
-            <p className="text-sm">No animals in this enclosure yet.</p>
+          <div className="flex flex-col items-center justify-center py-16 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-500/10 dark:to-purple-500/10 flex items-center justify-center mb-4">
+              <PawPrint className="w-8 h-8 text-indigo-400 dark:text-indigo-500" />
+            </div>
+            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">No animals assigned yet</p>
+            {availablePets.length > 0 && (
+              <button
+                onClick={() => setShowAssign(true)}
+                className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-indigo-500 hover:text-indigo-400 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Assign an animal
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {enc.pets.map(p => (
-              <PetChip key={p.id} pet={p} onRemove={handleRemovePet} />
+              <PetCard key={p.id} pet={p} onRemove={handleRemovePet} />
             ))}
           </div>
         )}
       </section>
 
-      {/* IoT Device + Latest measurements */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-4 items-stretch">
-
-        {/* IoT Device */}
-        <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Cpu className="w-5 h-5 text-indigo-500" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">IoT Device</h2>
-          </div>
-
-          {devices.length === 0 ? (
-            <p className="text-sm text-slate-400">No devices registered. <Link to="/shelter" className="text-indigo-500 hover:underline">Register a device first.</Link></p>
-          ) : (
-            <div className="flex flex-wrap items-end gap-3">
-              <div className="flex-1 min-w-[200px]">
-                <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Select device</label>
-                <select
-                  value={selectedDevice}
-                  onChange={e => setSelectedDevice(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                >
-                  <option value="">— No device —</option>
-                  {devices.map(d => (
-                    <option key={d.id} value={d.uuid ?? d.id}>{d.name} ({d.deviceId})</option>
-                  ))}
-                </select>
-              </div>
-              <button
-                onClick={handleAssignDevice}
-                disabled={savingDevice}
-                className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 disabled:opacity-50 transition-colors"
-              >
-                {savingDevice ? "Saving..." : "Save"}
-              </button>
-            </div>
-          )}
-
-          {enc.device && (
-            <Link
-              to={`/dashboard/devices/${encodeURIComponent(enc.device.deviceId)}`}
-              className="mt-4 flex items-center gap-3 p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors"
-            >
-              <Cpu className="w-4 h-4 text-indigo-500 shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">{enc.device.name}</p>
-                <p className="text-xs text-indigo-500 font-mono">{enc.device.deviceId}</p>
-              </div>
-              {enc.device.lastSeenAt && (
-                <p className="text-xs text-indigo-400 ml-auto">Last seen: {formatDateTimeForTimeZone(enc.device.lastSeenAt)}</p>
-              )}
-            </Link>
-          )}
-        </section>
-
-        {/* Latest measurements */}
-        <section className="flex flex-col gap-3">
-          <div className="flex items-center gap-2">
-            <Wind className="w-4 h-4 text-slate-400" />
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-400">Latest measurements</h2>
-          </div>
-          {m && <p className="text-xs text-slate-400 -mt-2">{formatDateTimeForTimeZone(m.timestamp)}</p>}
-          <div className="flex flex-col gap-3 flex-1">
-            <MetricCard icon={Wind} label="CO₂" value={m ? m.co2.toFixed(0) : "—"} unit="ppm" />
-            <MetricCard icon={Thermometer} label="Temperature" value={m ? m.temperature.toFixed(1) : "—"} unit="°C" />
-            <MetricCard icon={Droplets} label="Humidity" value={m ? m.humidity.toFixed(0) : "—"} unit="%" />
-          </div>
-          {!m && (
-            <p className="text-xs text-slate-400">No measurements yet.</p>
-          )}
-        </section>
-
-      </div>
+      {/* Environment widget */}
+      <EnvironmentWidget
+        enc={enc}
+        devices={devices}
+        selectedDevice={selectedDevice}
+        savingDevice={savingDevice}
+        showDeviceSettings={showDeviceSettings}
+        onSelectDevice={setSelectedDevice}
+        onSaveDevice={handleAssignDevice}
+        onToggleSettings={() => setShowDeviceSettings(v => !v)}
+      />
 
       {/* Assign pet modal */}
       {showAssign && (

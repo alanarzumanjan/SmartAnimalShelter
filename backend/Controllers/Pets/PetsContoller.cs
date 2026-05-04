@@ -197,7 +197,7 @@ public class PetsController : ControllerBase
             SpecialNeeds = dto.specialNeeds,
             CurrentMedications = dto.currentMedications,
             IntakeReason = dto.intakeReason,
-            IntakeDate = dto.intakeDate,
+            IntakeDate = dto.intakeDate.HasValue ? DateTime.SpecifyKind(dto.intakeDate.Value, DateTimeKind.Utc) : null,
             EnergyLevel = dto.energyLevel,
             ExperienceLevel = dto.experienceLevel,
             HousingRequirement = dto.housingRequirement,
@@ -218,7 +218,7 @@ public class PetsController : ControllerBase
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
 
-        return Ok(newPet);
+        return Ok(new { newPet.Id, newPet.Name, newPet.ShelterId, newPet.SpeciesId, newPet.BreedId, newPet.StatusId, newPet.CreatedAt });
     }
 
     [Authorize(Roles = "shelter")]
