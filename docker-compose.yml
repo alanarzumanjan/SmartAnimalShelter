@@ -89,6 +89,7 @@ services:
     build:
       context: ./frontend
       dockerfile: ./docker/Dockerfile
+      network: host
     container_name: shelter_frontend
     depends_on:
       - backend

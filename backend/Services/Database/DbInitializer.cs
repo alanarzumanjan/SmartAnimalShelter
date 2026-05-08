@@ -33,6 +33,7 @@ public static class DbInitializer
 
     public static async Task EnsureDbIsInitializedAsync(AppDbContext db)
     {
+        await SeedAdminAsync(db);
         Console.WriteLine("🔍 Checking species...");
 
         foreach (var species in RequiredSpecies)
@@ -73,6 +74,37 @@ public static class DbInitializer
 
         Console.WriteLine("✅ Seed data check complete.");
         await SeedBreedsAsync(db);
+    }
+
+    private static async Task SeedAdminAsync(AppDbContext db)
+    {
+        var email = Environment.GetEnvironmentVariable("ADMIN_EMAIL");
+        var password = Environment.GetEnvironmentVariable("ADMIN_PASSWORD");
+        var username = Environment.GetEnvironmentVariable("ADMIN_USERNAME") ?? "admin";
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            Console.WriteLine("⚠️ ADMIN_EMAIL or ADMIN_PASSWORD not set. Skipping admin seed.");
+            return;
+        }
+
+        var exists = await db.Users.AnyAsync(u => u.Email == email);
+        if (!exists)
+        {
+            db.Users.Add(new User
+            {
+                Username = username,
+                Email = email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                Role = UserRole.admin
+            });
+            await db.SaveChangesAsync();
+            Console.WriteLine($"✅ Admin user created: {email}");
+        }
+        else
+        {
+            Console.WriteLine("✅ Admin user already exists.");
+        }
     }
 
     private static async Task SeedBreedsAsync(AppDbContext db)

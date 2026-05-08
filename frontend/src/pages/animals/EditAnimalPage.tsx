@@ -3,6 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { PawPrint, Save, ArrowLeft, Upload, X, Trash2 } from "lucide-react";
 import toast from "react-hot-toast";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import api from "@/services/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -80,6 +82,7 @@ export default function EditAnimalPage() {
   const [imagePreview, setImagePreview] = useState("");
   const [currentImageUrl, setCurrentImageUrl] = useState("");
   const [currentBreedName, setCurrentBreedName] = useState("");
+  const [originalSpeciesId, setOriginalSpeciesId] = useState("");
 
   const [f, setF] = useState({
     name: "",
@@ -125,6 +128,14 @@ export default function EditAnimalPage() {
         setSpeciesList(speciesRes.data);
         const a = animalRes.data;
         setCurrentBreedName(a.breed?.name || a.Breed?.Name || "");
+        const speciesIdStr =
+          (
+            a.speciesId ??
+            a.SpeciesId ??
+            a.species?.id ??
+            a.Species?.Id
+          )?.toString() || "";
+        setOriginalSpeciesId(speciesIdStr);
 
         const ageYears = a.age ?? a.Age;
         let ageValue = "",
@@ -140,14 +151,26 @@ export default function EditAnimalPage() {
 
         setF({
           name: a.name || a.Name || "",
-          speciesId: (a.speciesId ?? a.SpeciesId)?.toString() || "",
+          speciesId: speciesIdStr,
           breed: a.breed?.name || a.Breed?.Name || "",
-          gender: (a.genderId ?? a.GenderId)?.toString() || "",
+          gender:
+            (
+              a.genderId ??
+              a.GenderId ??
+              a.gender?.id ??
+              a.Gender?.Id
+            )?.toString() || "",
           ageValue,
           ageUnit,
           weight: (a.weight ?? a.Weight)?.toString() || "",
           color: a.color || a.Color || "",
-          statusId: (a.statusId ?? a.StatusId)?.toString() || "1",
+          statusId:
+            (
+              a.statusId ??
+              a.StatusId ??
+              a.status?.id ??
+              a.Status?.Id
+            )?.toString() || "1",
           size: a.size || a.Size || "",
           description: a.description || a.Description || "",
           medicalNotes: a.medicalNotes || a.MedicalNotes || "",
@@ -231,7 +254,7 @@ export default function EditAnimalPage() {
 
       await api.patch(`/pets/${animalId}`, patch);
 
-      if (f.breed !== currentBreedName) {
+      if (f.breed !== currentBreedName || f.speciesId !== originalSpeciesId) {
         try {
           await api.patch(`/pets/${animalId}/breed`, { breedName: f.breed });
         } catch {
@@ -545,11 +568,19 @@ export default function EditAnimalPage() {
                 <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
                   Intake date
                 </label>
-                <input
-                  type="date"
-                  value={f.intakeDate}
-                  onChange={(e) => setF({ ...f, intakeDate: e.target.value })}
+                <DatePicker
+                  selected={f.intakeDate ? new Date(f.intakeDate) : null}
+                  onChange={(date: Date | null) =>
+                    setF({
+                      ...f,
+                      intakeDate: date ? date.toISOString().split("T")[0] : "",
+                    })
+                  }
+                  dateFormat="yyyy-MM-dd"
+                  locale="en"
+                  placeholderText="Select date"
                   className={sel}
+                  wrapperClassName="w-full"
                 />
               </div>
             </div>

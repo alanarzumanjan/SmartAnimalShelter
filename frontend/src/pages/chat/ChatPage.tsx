@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { MessageSquare, Send, Plus } from "lucide-react";
+import { MessageSquare, Send, Plus, X } from "lucide-react";
 
 import api from "@/services/api";
 import {
@@ -58,9 +58,11 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
-  const [newRoomName, setNewRoomName] = useState("");
   const [showNewRoom, setShowNewRoom] = useState(false);
-  const [roomNames, setRoomNames] = useState<Record<string, string>>({});
+  const [shelterList, setShelterList] = useState<
+    { id: string; name: string; ownerId: string }[]
+  >([]);
+  const [roomNames] = useState<Record<string, string>>({});
 
   const activeRoomRef = useRef<string | null>(null);
   const prevRoomRef = useRef<string | null>(null);
@@ -116,6 +118,11 @@ export default function ChatPage() {
     }
   }, []);
 
+  const pendingRecipientRef = useRef<{
+    roomId: string;
+    recipientId: string | null;
+  } | null>(null);
+
   const switchRoom = useCallback(
     async (roomId: string, recipient?: string, recipientName?: string) => {
       try {
@@ -139,20 +146,34 @@ export default function ChatPage() {
       setMessages([]);
       prevRoomRef.current = roomId;
 
-      try {
-        await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
+      // Only join existing rooms (those already in apiRooms), not new ones
+      const isExisting = apiRooms.some((r) => r.roomId === roomId);
+      if (isExisting) {
+        try {
+          await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
+            recipientId: recipient || null,
+          });
+        } catch {
+          /* ignore */
+        }
+        try {
+          await joinRoom(roomId);
+        } catch {
+          /* ignore */
+        }
+        await loadMessages(roomId);
+      } else {
+        // New room — defer join until first message is sent
+        pendingRecipientRef.current = {
+          roomId,
           recipientId: recipient || null,
-        });
-      } catch {
-        /* ignore */
+        };
+        try {
+          await joinRoom(roomId);
+        } catch {
+          /* ignore */
+        }
       }
-
-      try {
-        await joinRoom(roomId);
-      } catch {
-        /* ignore */
-      }
-      await loadMessages(roomId);
 
       // Apply pre-filled message from URL (e.g. coming from animal page)
       if (pendingMessageRef.current) {
@@ -160,7 +181,7 @@ export default function ChatPage() {
         pendingMessageRef.current = "";
       }
     },
-    [loadMessages],
+    [loadMessages, apiRooms],
   );
 
   // SignalR connect + message handler
@@ -175,6 +196,19 @@ export default function ChatPage() {
       if (msg.roomId !== activeRoomRef.current) return;
       setMessages((prev) => {
         if (prev.some((m) => m.id === msg.id)) return prev;
+        // Replace optimistic message from same sender with same text
+        const optimisticIdx = prev.findIndex(
+          (m) =>
+            m.senderId === msg.senderId &&
+            m.text === msg.text &&
+            m.id.length === 36 &&
+            !m.id.startsWith("msg-"),
+        );
+        if (optimisticIdx !== -1) {
+          const next = [...prev];
+          next[optimisticIdx] = msg;
+          return next;
+        }
         return [...prev, msg];
       });
       api
@@ -252,40 +286,78 @@ export default function ChatPage() {
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     if (!input.trim() || !activeRoom || !connected) return;
+    const text = input.trim();
+    setInput("");
+
+    // Optimistically add message to UI immediately
+    const optimisticMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      roomId: activeRoom,
+      senderId: user?.id ?? "",
+      senderName: user?.name ?? "You",
+      text,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
     try {
-      await sendMessage(activeRoom, input.trim());
-      setInput("");
+      // If this is a new room, register it on the backend first
+      if (pendingRecipientRef.current?.roomId === activeRoom) {
+        const { roomId, recipientId } = pendingRecipientRef.current;
+        pendingRecipientRef.current = null;
+        await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
+          recipientId,
+        });
+        api
+          .get("/chat/rooms")
+          .then(({ data }) => setApiRooms(data))
+          .catch(() => {});
+      }
+      await sendMessage(activeRoom, text);
     } catch {
       setConnected(false);
+      // Remove optimistic message on failure
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+      setInput(text);
     }
   }
 
-  function handleCreateRoom(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newRoomName.trim() || !user?.id) return;
-    const roomId = newRoomName
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "");
-    setRoomNames((prev) => ({ ...prev, [roomId]: newRoomName.trim() }));
-    setApiRooms((prev) => {
-      if (prev.find((r) => r.roomId === roomId)) return prev;
-      return [
-        {
-          roomId,
-          lastMessage: {
-            senderName: user?.name ?? "You",
-            text: "Conversation started",
-            createdAt: new Date().toISOString(),
-          },
-        },
-        ...prev,
-      ];
-    });
-    setNewRoomName("");
+  async function handleOpenNewChat() {
+    if (showNewRoom) {
+      setShowNewRoom(false);
+      return;
+    }
+    try {
+      const { data } = await api.get("/shelters?page=1&pageSize=100");
+      const shelters = (Array.isArray(data?.shelters) ? data.shelters : []) as {
+        id?: string;
+        Id?: string;
+        name?: string;
+        Name?: string;
+        ownerId?: string;
+        OwnerId?: string;
+      }[];
+      setShelterList(
+        shelters
+          .filter((s) => (s.ownerId ?? s.OwnerId) !== user?.id)
+          .map((s) => ({
+            id: s.id ?? s.Id ?? "",
+            name: s.name ?? s.Name ?? "Shelter",
+            ownerId: s.ownerId ?? s.OwnerId ?? "",
+          }))
+          .filter((s) => s.id && s.ownerId),
+      );
+    } catch {
+      setShelterList([]);
+    }
+    setShowNewRoom(true);
+  }
+
+  function handleStartChat(ownerId: string, shelterName: string) {
+    if (!user?.id) return;
+    const roomId = dmRoomId(user.id, ownerId);
     setShowNewRoom(false);
-    switchRoom(roomId);
+    void switchRoom(roomId, ownerId, shelterName);
   }
 
   return (
@@ -316,28 +388,37 @@ export default function ChatPage() {
               Conversations
             </span>
             <button
-              onClick={() => setShowNewRoom((v) => !v)}
+              onClick={() => void handleOpenNewChat()}
               className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               title="New conversation"
             >
-              <Plus className="w-4 h-4" />
+              {showNewRoom ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
             </button>
           </div>
 
           {showNewRoom && (
-            <form
-              onSubmit={handleCreateRoom}
-              className="shrink-0 border-b border-slate-200/80 px-3 py-2 dark:border-slate-800"
-            >
-              <input
-                autoFocus
-                type="text"
-                value={newRoomName}
-                onChange={(e) => setNewRoomName(e.target.value)}
-                placeholder="Room name..."
-                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-              />
-            </form>
+            <div className="shrink-0 border-b border-slate-200/80 dark:border-slate-800">
+              {shelterList.length === 0 ? (
+                <p className="px-4 py-3 text-xs text-slate-400">
+                  No shelters found
+                </p>
+              ) : (
+                shelterList.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => handleStartChat(s.ownerId, s.name)}
+                    className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    {s.name}
+                  </button>
+                ))
+              )}
+            </div>
           )}
 
           <div className="flex-1 overflow-y-auto p-2 space-y-1">

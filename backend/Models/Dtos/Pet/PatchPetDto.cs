@@ -9,7 +9,7 @@ public class PatchPetDto
     public string? SpecialNeeds { get; set; }
     public string? CurrentMedications { get; set; }
     public string? IntakeReason { get; set; }
-    public DateTime? IntakeDate { get; set; }
+    public string? IntakeDate { get; set; }
     public string? Color { get; set; }
     public float? Age { get; set; }
     public float? Weight { get; set; }

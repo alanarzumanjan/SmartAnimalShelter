@@ -2,12 +2,13 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Activity, Cpu, MapPin, History as HistoryIcon } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
 import TimeZoneSelect from "@/components/ui/TimeZoneSelect";
 import {
   type DeviceRecord,
   type MeasurementRecord,
   getLatestMeasurement,
-  getStoredUser,
   getUserDevices,
 } from "@/services/device.service";
 import {
@@ -50,7 +51,7 @@ const DashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [timeZone, setTimeZone] = useState(getPreferredTimeZone());
 
-  const currentUser = getStoredUser();
+  const currentUser = useSelector((state: RootState) => state.auth.user);
 
   const loadDashboard = useCallback(async () => {
     if (!currentUser?.id) {
