@@ -1,18 +1,19 @@
-using System.Security.Claims;
-using System.Text;
-using Config;
-using Data;
-using DotNetEnv;
-using Hubs;
-using ImageFetchers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using MongoDB.Driver;
-using Services;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using StackExchange.Redis;
 using Services.Payments;
 using Services.Redis;
-using StackExchange.Redis;
+using MongoDB.Driver;
+using ImageFetchers;
+using System.Text;
+using DotNetEnv;
+using Config;
+using Data;
+using Hubs;
+
+using Services;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -65,6 +66,28 @@ builder.Services.AddSingleton<IMongoDatabase>(mongoDb);
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Smart Animal Shelter API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header
+    });
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 // JWT Authentication
