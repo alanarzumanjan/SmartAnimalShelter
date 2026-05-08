@@ -150,7 +150,7 @@ export default function AnimalsPage() {
           (!species || a.species === species) &&
           (!shelter || a.shelterName === shelter),
       ),
-    [animals, status, species, shelter],
+    [animals, status, species, shelter, user?.role, user?.id],
   );
 
   const visibleStatusOptions = useMemo(

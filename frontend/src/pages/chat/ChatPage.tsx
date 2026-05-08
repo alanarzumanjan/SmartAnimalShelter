@@ -58,10 +58,9 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
-  const [newRoomName, setNewRoomName] = useState("");
   const [showNewRoom, setShowNewRoom] = useState(false);
   const [shelterList, setShelterList] = useState<{ id: string; name: string; ownerId: string }[]>([]);
-  const [roomNames, setRoomNames] = useState<Record<string, string>>({});
+  const [roomNames] = useState<Record<string, string>>({});
 
   const activeRoomRef = useRef<string | null>(null);
   const prevRoomRef = useRef<string | null>(null);
