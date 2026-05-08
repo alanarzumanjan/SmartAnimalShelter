@@ -128,7 +128,13 @@ export default function EditAnimalPage() {
         setSpeciesList(speciesRes.data);
         const a = animalRes.data;
         setCurrentBreedName(a.breed?.name || a.Breed?.Name || "");
-        const speciesIdStr = (a.speciesId ?? a.SpeciesId ?? a.species?.id ?? a.Species?.Id)?.toString() || "";
+        const speciesIdStr =
+          (
+            a.speciesId ??
+            a.SpeciesId ??
+            a.species?.id ??
+            a.Species?.Id
+          )?.toString() || "";
         setOriginalSpeciesId(speciesIdStr);
 
         const ageYears = a.age ?? a.Age;
@@ -147,12 +153,24 @@ export default function EditAnimalPage() {
           name: a.name || a.Name || "",
           speciesId: speciesIdStr,
           breed: a.breed?.name || a.Breed?.Name || "",
-          gender: (a.genderId ?? a.GenderId ?? a.gender?.id ?? a.Gender?.Id)?.toString() || "",
+          gender:
+            (
+              a.genderId ??
+              a.GenderId ??
+              a.gender?.id ??
+              a.Gender?.Id
+            )?.toString() || "",
           ageValue,
           ageUnit,
           weight: (a.weight ?? a.Weight)?.toString() || "",
           color: a.color || a.Color || "",
-          statusId: (a.statusId ?? a.StatusId ?? a.status?.id ?? a.Status?.Id)?.toString() || "1",
+          statusId:
+            (
+              a.statusId ??
+              a.StatusId ??
+              a.status?.id ??
+              a.Status?.Id
+            )?.toString() || "1",
           size: a.size || a.Size || "",
           description: a.description || a.Description || "",
           medicalNotes: a.medicalNotes || a.MedicalNotes || "",
@@ -553,7 +571,10 @@ export default function EditAnimalPage() {
                 <DatePicker
                   selected={f.intakeDate ? new Date(f.intakeDate) : null}
                   onChange={(date: Date | null) =>
-                    setF({ ...f, intakeDate: date ? date.toISOString().split("T")[0] : "" })
+                    setF({
+                      ...f,
+                      intakeDate: date ? date.toISOString().split("T")[0] : "",
+                    })
                   }
                   dateFormat="yyyy-MM-dd"
                   locale="en"

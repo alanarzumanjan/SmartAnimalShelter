@@ -70,20 +70,37 @@ export default function AnimalCard({
     return (
       <article className="flex items-center gap-4 rounded-2xl border border-white/70 bg-white/80 p-3 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/75">
         <div className="w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
-          {imageUrl
-            ? <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
-            : <span className="w-full h-full flex items-center justify-center text-2xl text-slate-300">🐾</span>}
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="w-full h-full flex items-center justify-center text-2xl text-slate-300">
+              🐾
+            </span>
+          )}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-bold text-slate-900 dark:text-white">{name}</h3>
-            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColors[status]}`}>{status}</span>
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusColors[status]}`}
+            >
+              {status}
+            </span>
           </div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {species}{breed ? ` · ${breed}` : ""}{age ? ` · ${age}` : ""}
+            {species}
+            {breed ? ` · ${breed}` : ""}
+            {age ? ` · ${age}` : ""}
           </p>
           {shelterName && shelterId && (
-            <Link to={`/shelters/${shelterId}`} className="text-xs text-slate-400 hover:text-primary-600 transition-colors">
+            <Link
+              to={`/shelters/${shelterId}`}
+              className="text-xs text-slate-400 hover:text-primary-600 transition-colors"
+            >
               {shelterName}
             </Link>
           )}
@@ -91,15 +108,26 @@ export default function AnimalCard({
         <div className="flex items-center gap-2 shrink-0">
           {canEdit && (
             <>
-              <Link to={`/animals/${id}/edit`} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors" title="Edit">
+              <Link
+                to={`/animals/${id}/edit`}
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors"
+                title="Edit"
+              >
                 <Pencil className="w-4 h-4" />
               </Link>
-              <button onClick={handleDelete} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-red-400 transition-colors" title="Delete">
+              <button
+                onClick={handleDelete}
+                className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-red-400 transition-colors"
+                title="Delete"
+              >
                 <Trash2 className="w-4 h-4" />
               </button>
             </>
           )}
-          <Link to={`/animals/${id}`} className="px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors">
+          <Link
+            to={`/animals/${id}`}
+            className="px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 transition-colors"
+          >
             View
           </Link>
         </div>

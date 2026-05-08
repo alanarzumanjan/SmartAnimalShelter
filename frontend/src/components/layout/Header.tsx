@@ -172,7 +172,11 @@ export default function Header() {
                 </Link>
               )}
               {user?.role === "admin" && (
-                <Link to="/dashboard" className={mobileLink} onClick={closeMenu}>
+                <Link
+                  to="/dashboard"
+                  className={mobileLink}
+                  onClick={closeMenu}
+                >
                   Dashboard
                 </Link>
               )}

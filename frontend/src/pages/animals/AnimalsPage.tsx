@@ -1,7 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { HeartHandshake, Plus, ChevronDown, LayoutGrid, List } from "lucide-react";
+import {
+  HeartHandshake,
+  Plus,
+  ChevronDown,
+  LayoutGrid,
+  List,
+} from "lucide-react";
 
 import AnimalCard from "./AnimalCard";
 import api from "@/services/api";
@@ -144,7 +150,9 @@ export default function AnimalsPage() {
     () =>
       animals.filter(
         (a) =>
-          (user?.role !== "shelter" || a.status !== "Adopted" || a.shelterOwnerId === user?.id) &&
+          (user?.role !== "shelter" ||
+            a.status !== "Adopted" ||
+            a.shelterOwnerId === user?.id) &&
           (user?.role === "shelter" || a.status !== "Adopted") &&
           (!status || a.status === status) &&
           (!species || a.species === species) &&
@@ -154,7 +162,10 @@ export default function AnimalsPage() {
   );
 
   const visibleStatusOptions = useMemo(
-    () => user?.role === "shelter" ? statusOptions : statusOptions.filter(o => o.value === ""),
+    () =>
+      user?.role === "shelter"
+        ? statusOptions
+        : statusOptions.filter((o) => o.value === ""),
     [user],
   );
 
@@ -310,7 +321,13 @@ export default function AnimalsPage() {
           No animals match the selected filters.
         </div>
       ) : (
-        <section className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8" : "flex flex-col gap-3"}>
+        <section
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"
+              : "flex flex-col gap-3"
+          }
+        >
           {filtered.map((animal) => (
             <AnimalCard
               key={animal.id}

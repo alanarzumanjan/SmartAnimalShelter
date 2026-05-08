@@ -59,7 +59,9 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
   const [showNewRoom, setShowNewRoom] = useState(false);
-  const [shelterList, setShelterList] = useState<{ id: string; name: string; ownerId: string }[]>([]);
+  const [shelterList, setShelterList] = useState<
+    { id: string; name: string; ownerId: string }[]
+  >([]);
   const [roomNames] = useState<Record<string, string>>({});
 
   const activeRoomRef = useRef<string | null>(null);
@@ -116,7 +118,10 @@ export default function ChatPage() {
     }
   }, []);
 
-  const pendingRecipientRef = useRef<{ roomId: string; recipientId: string | null } | null>(null);
+  const pendingRecipientRef = useRef<{
+    roomId: string;
+    recipientId: string | null;
+  } | null>(null);
 
   const switchRoom = useCallback(
     async (roomId: string, recipient?: string, recipientName?: string) => {
@@ -142,19 +147,32 @@ export default function ChatPage() {
       prevRoomRef.current = roomId;
 
       // Only join existing rooms (those already in apiRooms), not new ones
-      const isExisting = apiRooms.some(r => r.roomId === roomId);
+      const isExisting = apiRooms.some((r) => r.roomId === roomId);
       if (isExisting) {
         try {
           await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
             recipientId: recipient || null,
           });
-        } catch { /* ignore */ }
-        try { await joinRoom(roomId); } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
+        try {
+          await joinRoom(roomId);
+        } catch {
+          /* ignore */
+        }
         await loadMessages(roomId);
       } else {
         // New room — defer join until first message is sent
-        pendingRecipientRef.current = { roomId, recipientId: recipient || null };
-        try { await joinRoom(roomId); } catch { /* ignore */ }
+        pendingRecipientRef.current = {
+          roomId,
+          recipientId: recipient || null,
+        };
+        try {
+          await joinRoom(roomId);
+        } catch {
+          /* ignore */
+        }
       }
 
       // Apply pre-filled message from URL (e.g. coming from animal page)
@@ -180,7 +198,11 @@ export default function ChatPage() {
         if (prev.some((m) => m.id === msg.id)) return prev;
         // Replace optimistic message from same sender with same text
         const optimisticIdx = prev.findIndex(
-          m => m.senderId === msg.senderId && m.text === msg.text && m.id.length === 36 && !m.id.startsWith("msg-")
+          (m) =>
+            m.senderId === msg.senderId &&
+            m.text === msg.text &&
+            m.id.length === 36 &&
+            !m.id.startsWith("msg-"),
         );
         if (optimisticIdx !== -1) {
           const next = [...prev];
@@ -276,37 +298,58 @@ export default function ChatPage() {
       text,
       createdAt: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, optimisticMsg]);
+    setMessages((prev) => [...prev, optimisticMsg]);
 
     try {
       // If this is a new room, register it on the backend first
       if (pendingRecipientRef.current?.roomId === activeRoom) {
         const { roomId, recipientId } = pendingRecipientRef.current;
         pendingRecipientRef.current = null;
-        await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, { recipientId });
-        api.get("/chat/rooms").then(({ data }) => setApiRooms(data)).catch(() => {});
+        await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
+          recipientId,
+        });
+        api
+          .get("/chat/rooms")
+          .then(({ data }) => setApiRooms(data))
+          .catch(() => {});
       }
       await sendMessage(activeRoom, text);
     } catch {
       setConnected(false);
       // Remove optimistic message on failure
-      setMessages(prev => prev.filter(m => m.id !== optimisticMsg.id));
+      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
       setInput(text);
     }
   }
 
   async function handleOpenNewChat() {
-    if (showNewRoom) { setShowNewRoom(false); return; }
+    if (showNewRoom) {
+      setShowNewRoom(false);
+      return;
+    }
     try {
       const { data } = await api.get("/shelters?page=1&pageSize=100");
-      const shelters = (Array.isArray(data?.shelters) ? data.shelters : []) as { id?: string; Id?: string; name?: string; Name?: string; ownerId?: string; OwnerId?: string }[];
+      const shelters = (Array.isArray(data?.shelters) ? data.shelters : []) as {
+        id?: string;
+        Id?: string;
+        name?: string;
+        Name?: string;
+        ownerId?: string;
+        OwnerId?: string;
+      }[];
       setShelterList(
         shelters
-          .filter(s => (s.ownerId ?? s.OwnerId) !== user?.id)
-          .map(s => ({ id: s.id ?? s.Id ?? "", name: s.name ?? s.Name ?? "Shelter", ownerId: s.ownerId ?? s.OwnerId ?? "" }))
-          .filter(s => s.id && s.ownerId)
+          .filter((s) => (s.ownerId ?? s.OwnerId) !== user?.id)
+          .map((s) => ({
+            id: s.id ?? s.Id ?? "",
+            name: s.name ?? s.Name ?? "Shelter",
+            ownerId: s.ownerId ?? s.OwnerId ?? "",
+          }))
+          .filter((s) => s.id && s.ownerId),
       );
-    } catch { setShelterList([]); }
+    } catch {
+      setShelterList([]);
+    }
     setShowNewRoom(true);
   }
 
@@ -349,16 +392,22 @@ export default function ChatPage() {
               className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
               title="New conversation"
             >
-              {showNewRoom ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              {showNewRoom ? (
+                <X className="w-4 h-4" />
+              ) : (
+                <Plus className="w-4 h-4" />
+              )}
             </button>
           </div>
 
           {showNewRoom && (
             <div className="shrink-0 border-b border-slate-200/80 dark:border-slate-800">
               {shelterList.length === 0 ? (
-                <p className="px-4 py-3 text-xs text-slate-400">No shelters found</p>
+                <p className="px-4 py-3 text-xs text-slate-400">
+                  No shelters found
+                </p>
               ) : (
-                shelterList.map(s => (
+                shelterList.map((s) => (
                   <button
                     key={s.id}
                     type="button"

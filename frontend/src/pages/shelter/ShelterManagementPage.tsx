@@ -2,21 +2,41 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
-  PawPrint, Plus, Cpu, Wind, Thermometer, Droplets,
-  LayoutGrid, ChevronRight, Trash2, X, Check,
+  PawPrint,
+  Plus,
+  Cpu,
+  Wind,
+  Thermometer,
+  Droplets,
+  LayoutGrid,
+  ChevronRight,
+  Trash2,
+  X,
+  Check,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import type { RootState } from "@/store/store";
 import {
-  getMyEnclosures, createEnclosure, deleteEnclosure,
-  co2Status, type EnclosureRecord,
+  getMyEnclosures,
+  createEnclosure,
+  deleteEnclosure,
+  co2Status,
+  type EnclosureRecord,
 } from "@/services/enclosure.service";
 import { getUserDevices, type DeviceRecord } from "@/services/device.service";
 import api from "@/services/api";
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
+const API_BASE =
+  (import.meta.env.VITE_API_URL as string | undefined) ||
+  "http://localhost:5000";
 
-function EnclosureCard({ enc, onDelete }: { enc: EnclosureRecord; onDelete: (id: string) => void }) {
+function EnclosureCard({
+  enc,
+  onDelete,
+}: {
+  enc: EnclosureRecord;
+  onDelete: (id: string) => void;
+}) {
   const m = enc.latestMeasurement;
   const status = co2Status(m?.co2 ?? null);
   const [deleting, setDeleting] = useState(false);
@@ -45,14 +65,20 @@ function EnclosureCard({ enc, onDelete }: { enc: EnclosureRecord; onDelete: (id:
       >
         <div className="flex items-start justify-between gap-3 mb-5">
           <div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">{enc.name}</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              {enc.name}
+            </h3>
             {enc.description && (
-              <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">{enc.description}</p>
+              <p className="text-xs text-slate-400 mt-0.5 line-clamp-1">
+                {enc.description}
+              </p>
             )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <span className={`w-2 h-2 rounded-full ${status.dot}`} />
-            <span className={`text-xs font-semibold ${status.color}`}>{status.label}</span>
+            <span className={`text-xs font-semibold ${status.color}`}>
+              {status.label}
+            </span>
           </div>
         </div>
 
@@ -64,16 +90,31 @@ function EnclosureCard({ enc, onDelete }: { enc: EnclosureRecord; onDelete: (id:
         ) : (
           <div className="grid grid-cols-4 gap-1.5 mb-4">
             {enc.pets.slice(0, 4).map((p, i) => {
-              const src = p.mongoImageId ? `${API_BASE}/pets/${p.id}/image` : null;
+              const src = p.mongoImageId
+                ? `${API_BASE}/pets/${p.id}/image`
+                : null;
               const isLast = i === 3 && enc.pets.length > 4;
               return (
-                <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
-                  {src
-                    ? <img src={src} alt={p.name ?? ""} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center"><PawPrint className="w-5 h-5 text-slate-400" /></div>}
+                <div
+                  key={p.id}
+                  className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800"
+                >
+                  {src ? (
+                    <img
+                      src={src}
+                      alt={p.name ?? ""}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <PawPrint className="w-5 h-5 text-slate-400" />
+                    </div>
+                  )}
                   {isLast && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">+{enc.pets.length - 3}</span>
+                      <span className="text-white text-sm font-bold">
+                        +{enc.pets.length - 3}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -86,15 +127,42 @@ function EnclosureCard({ enc, onDelete }: { enc: EnclosureRecord; onDelete: (id:
         <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
           <span className="flex items-center gap-1">
             <Wind className="w-3 h-3" />
-            {m ? <><span className="font-semibold text-slate-700 dark:text-slate-200">{m.co2.toFixed(0)}</span> ppm</> : "—"}
+            {m ? (
+              <>
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  {m.co2.toFixed(0)}
+                </span>{" "}
+                ppm
+              </>
+            ) : (
+              "—"
+            )}
           </span>
           <span className="flex items-center gap-1">
             <Thermometer className="w-3 h-3" />
-            {m ? <><span className="font-semibold text-slate-700 dark:text-slate-200">{m.temperature.toFixed(1)}</span> °C</> : "—"}
+            {m ? (
+              <>
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  {m.temperature.toFixed(1)}
+                </span>{" "}
+                °C
+              </>
+            ) : (
+              "—"
+            )}
           </span>
           <span className="flex items-center gap-1">
             <Droplets className="w-3 h-3" />
-            {m ? <><span className="font-semibold text-slate-700 dark:text-slate-200">{m.humidity.toFixed(0)}</span> %</> : "—"}
+            {m ? (
+              <>
+                <span className="font-semibold text-slate-700 dark:text-slate-200">
+                  {m.humidity.toFixed(0)}
+                </span>{" "}
+                %
+              </>
+            ) : (
+              "—"
+            )}
           </span>
           <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
         </div>
@@ -102,7 +170,9 @@ function EnclosureCard({ enc, onDelete }: { enc: EnclosureRecord; onDelete: (id:
         {enc.device && (
           <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5">
             <Cpu className="w-3 h-3 text-indigo-400" />
-            <span className="text-[11px] text-slate-400">{enc.device.name}</span>
+            <span className="text-[11px] text-slate-400">
+              {enc.device.name}
+            </span>
           </div>
         )}
       </Link>
@@ -118,7 +188,10 @@ function EnclosureCard({ enc, onDelete }: { enc: EnclosureRecord; onDelete: (id:
   );
 }
 
-function CreateEnclosureModal({ onClose, onCreate }: {
+function CreateEnclosureModal({
+  onClose,
+  onCreate,
+}: {
   onClose: () => void;
   onCreate: (enc: EnclosureRecord) => void;
 }) {
@@ -131,7 +204,10 @@ function CreateEnclosureModal({ onClose, onCreate }: {
     if (!name.trim()) return;
     setLoading(true);
     try {
-      const enc = await createEnclosure({ name: name.trim(), description: desc.trim() || undefined });
+      const enc = await createEnclosure({
+        name: name.trim(),
+        description: desc.trim() || undefined,
+      });
       onCreate(enc);
       toast.success("Enclosure created");
       onClose();
@@ -146,37 +222,54 @@ function CreateEnclosureModal({ onClose, onCreate }: {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">New Enclosure</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            New Enclosure
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name *</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Name *
+            </label>
             <input
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Block A, East Wing"
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500"
               autoFocus
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Description
+            </label>
             <textarea
               value={desc}
-              onChange={e => setDesc(e.target.value)}
+              onChange={(e) => setDesc(e.target.value)}
               placeholder="Optional description"
               rows={2}
               className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
             />
           </div>
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={loading || !name.trim()} className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+            <button
+              type="submit"
+              disabled={loading || !name.trim()}
+              className="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
               <Check className="w-4 h-4" />
               {loading ? "Creating..." : "Create"}
             </button>
@@ -193,7 +286,9 @@ export default function ShelterManagementPage() {
 
   const [enclosures, setEnclosures] = useState<EnclosureRecord[]>([]);
   const [devices, setDevices] = useState<DeviceRecord[]>([]);
-  const [animals, setAnimals] = useState<{ id: string; name: string | null }[]>([]);
+  const [animals, setAnimals] = useState<{ id: string; name: string | null }[]>(
+    [],
+  );
   const [shelterId, setShelterId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -211,8 +306,13 @@ export default function ShelterManagementPage() {
       setDevices(devRes);
 
       if (encRes.shelterId) {
-        const { data } = await api.get(`/pets?shelterId=${encRes.shelterId}&pageSize=100`);
-        const pets = (data?.pets ?? []) as { id: string; name: string | null }[];
+        const { data } = await api.get(
+          `/pets?shelterId=${encRes.shelterId}&pageSize=100`,
+        );
+        const pets = (data?.pets ?? []) as {
+          id: string;
+          name: string | null;
+        }[];
         setAnimals(pets);
       }
     } catch {
@@ -222,22 +322,31 @@ export default function ShelterManagementPage() {
     }
   }, [user?.id]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   if (user?.role !== "shelter") {
     return (
       <div className="py-16 text-center">
         <PawPrint className="mx-auto mb-4 h-16 w-16 text-slate-300" />
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Access Denied</h2>
-        <button onClick={() => navigate(-1)} className="mt-4 px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          Access Denied
+        </h2>
+        <button
+          onClick={() => navigate(-1)}
+          className="mt-4 px-4 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+        >
           Go Back
         </button>
       </div>
     );
   }
 
-  const assignedPetIds = new Set(enclosures.flatMap(e => e.pets.map(p => p.id)));
-  const unassignedAnimals = animals.filter(a => !assignedPetIds.has(a.id));
+  const assignedPetIds = new Set(
+    enclosures.flatMap((e) => e.pets.map((p) => p.id)),
+  );
+  const unassignedAnimals = animals.filter((a) => !assignedPetIds.has(a.id));
 
   return (
     <div className="py-8 space-y-8">
@@ -249,7 +358,9 @@ export default function ShelterManagementPage() {
               <LayoutGrid className="w-4 h-4" />
               Shelter Management
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">My Shelter</h1>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              My Shelter
+            </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-1">
               Manage enclosures, monitor IoT sensors and track your animals.
             </p>
@@ -279,9 +390,16 @@ export default function ShelterManagementPage() {
             { label: "Animals", value: animals.length },
             { label: "Devices", value: devices.length },
           ].map(({ label, value }) => (
-            <div key={label} className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4">
-              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{label}</div>
-              <div className="text-2xl font-bold text-slate-900 dark:text-white">{value}</div>
+            <div
+              key={label}
+              className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-4"
+            >
+              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+                {label}
+              </div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-white">
+                {value}
+              </div>
             </div>
           ))}
         </div>
@@ -291,7 +409,9 @@ export default function ShelterManagementPage() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Enclosures</h2>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              Enclosures
+            </h2>
             <span className="text-sm text-slate-400">{enclosures.length}</span>
           </div>
           <button
@@ -310,8 +430,12 @@ export default function ShelterManagementPage() {
         ) : enclosures.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 p-12 text-center">
             <LayoutGrid className="mx-auto w-10 h-10 text-slate-300 mb-3" />
-            <p className="font-semibold text-slate-900 dark:text-white">No enclosures yet</p>
-            <p className="text-sm text-slate-400 mt-1">Create your first enclosure to assign animals and IoT devices.</p>
+            <p className="font-semibold text-slate-900 dark:text-white">
+              No enclosures yet
+            </p>
+            <p className="text-sm text-slate-400 mt-1">
+              Create your first enclosure to assign animals and IoT devices.
+            </p>
             <button
               onClick={() => setShowCreate(true)}
               className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-colors"
@@ -321,11 +445,13 @@ export default function ShelterManagementPage() {
           </div>
         ) : (
           <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-            {enclosures.map(enc => (
+            {enclosures.map((enc) => (
               <EnclosureCard
                 key={enc.id}
                 enc={enc}
-                onDelete={id => setEnclosures(prev => prev.filter(e => e.id !== id))}
+                onDelete={(id) =>
+                  setEnclosures((prev) => prev.filter((e) => e.id !== id))
+                }
               />
             ))}
           </div>
@@ -337,11 +463,15 @@ export default function ShelterManagementPage() {
         <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
             <PawPrint className="w-5 h-5 text-indigo-500" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Not assigned to any enclosure</h2>
-            <span className="text-sm text-slate-400">{unassignedAnimals.length}</span>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Not assigned to any enclosure
+            </h2>
+            <span className="text-sm text-slate-400">
+              {unassignedAnimals.length}
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {unassignedAnimals.map(a => (
+            {unassignedAnimals.map((a) => (
               <Link
                 key={a.id}
                 to={`/animals/${a.id}`}
@@ -360,11 +490,15 @@ export default function ShelterManagementPage() {
         <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-4">
             <Cpu className="w-5 h-5 text-indigo-500" />
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">My Devices</h2>
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              My Devices
+            </h2>
           </div>
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-            {devices.map(d => {
-              const assignedTo = enclosures.find(e => e.device?.deviceId === d.deviceId);
+            {devices.map((d) => {
+              const assignedTo = enclosures.find(
+                (e) => e.device?.deviceId === d.deviceId,
+              );
               return (
                 <Link
                   key={d.id}
@@ -375,10 +509,16 @@ export default function ShelterManagementPage() {
                     <Cpu className="w-4 h-4 text-indigo-500" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{d.name}</p>
-                    <p className="text-xs text-slate-400 font-mono truncate">{d.deviceId}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                      {d.name}
+                    </p>
+                    <p className="text-xs text-slate-400 font-mono truncate">
+                      {d.deviceId}
+                    </p>
                     {assignedTo && (
-                      <p className="text-xs text-indigo-500 mt-0.5">→ {assignedTo.name}</p>
+                      <p className="text-xs text-indigo-500 mt-0.5">
+                        → {assignedTo.name}
+                      </p>
                     )}
                   </div>
                 </Link>
@@ -391,7 +531,12 @@ export default function ShelterManagementPage() {
       {showCreate && (
         <CreateEnclosureModal
           onClose={() => setShowCreate(false)}
-          onCreate={enc => setEnclosures(prev => [...prev, { ...enc, pets: [], device: null, latestMeasurement: null }])}
+          onCreate={(enc) =>
+            setEnclosures((prev) => [
+              ...prev,
+              { ...enc, pets: [], device: null, latestMeasurement: null },
+            ])
+          }
         />
       )}
     </div>

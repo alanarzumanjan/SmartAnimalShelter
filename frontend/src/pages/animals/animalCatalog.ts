@@ -267,7 +267,8 @@ export const previewAnimals: AnimalItem[] = [
 ];
 
 export const normalizeStatus = (value: unknown): AnimalStatus => {
-  if (typeof value === "string" && value.toLowerCase() === "adopted") return "Adopted";
+  if (typeof value === "string" && value.toLowerCase() === "adopted")
+    return "Adopted";
   if (typeof value === "number" && value === 2) return "Adopted";
   return "Available";
 };
@@ -301,7 +302,9 @@ export const mapAnimal = (animal: BackendAnimal, index = 0): AnimalItem => {
     species: getEntityName(animal.species) ?? "Pet",
     breed: getEntityName(animal.breed) ?? undefined,
     age: ageDisplay,
-    status: normalizeStatus(getEntityName(animal.status) ?? animal.statusId ?? animal.StatusId),
+    status: normalizeStatus(
+      getEntityName(animal.status) ?? animal.statusId ?? animal.StatusId,
+    ),
     imageUrl: resolvedImageUrl,
     shelterName: shelterName ?? "Shelter network",
     contactName: shelterName ?? "Shelter team",

@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN --network=host npm install
+RUN npm install
 
 COPY . .
 
