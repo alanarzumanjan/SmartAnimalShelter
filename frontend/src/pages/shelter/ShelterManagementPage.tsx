@@ -16,17 +16,6 @@ import api from "@/services/api";
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) || "http://localhost:5000";
 
-function PetAvatar({ pet }: { pet: { id: string; name: string | null; mongoImageId?: string | null } }) {
-  const src = pet.mongoImageId ? `${API_BASE}/pets/${pet.id}/image` : null;
-  return (
-    <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white dark:border-slate-800 bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
-      {src
-        ? <img src={src} alt={pet.name ?? ""} className="w-full h-full object-cover" />
-        : <PawPrint className="w-4 h-4 text-slate-400" />}
-    </div>
-  );
-}
-
 function EnclosureCard({ enc, onDelete }: { enc: EnclosureRecord; onDelete: (id: string) => void }) {
   const m = enc.latestMeasurement;
   const status = co2Status(m?.co2 ?? null);
@@ -67,37 +56,46 @@ function EnclosureCard({ enc, onDelete }: { enc: EnclosureRecord; onDelete: (id:
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mb-5">
-          {([
-            { icon: Wind, label: "CO₂", value: m ? m.co2.toFixed(0) : "—", unit: "ppm" },
-            { icon: Thermometer, label: "Temp", value: m ? m.temperature.toFixed(1) : "—", unit: "°C" },
-            { icon: Droplets, label: "Hum", value: m ? m.humidity.toFixed(0) : "—", unit: "%" },
-          ] as const).map(({ icon: Icon, label, value, unit }) => (
-            <div key={label} className="rounded-2xl bg-slate-50 dark:bg-slate-800 p-3">
-              <div className="flex items-center gap-1 mb-1">
-                <Icon className="w-3 h-3 text-slate-400" />
-                <span className="text-[10px] uppercase tracking-wide text-slate-400">{label}</span>
-              </div>
-              <div className="text-base font-bold text-slate-900 dark:text-white">
-                {value}<span className="text-xs font-normal text-slate-400 ml-0.5">{unit}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {enc.pets.length === 0 ? (
+        {/* Animal photos grid */}
+        {enc.pets.length === 0 ? (
+          <div className="flex items-center justify-center h-24 rounded-2xl bg-slate-50 dark:bg-slate-800 mb-4">
             <span className="text-xs text-slate-400">No animals assigned</span>
-          ) : (
-            <>
-              <div className="flex -space-x-2">
-                {enc.pets.slice(0, 5).map(p => <PetAvatar key={p.id} pet={p} />)}
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                {enc.pets.length} animal{enc.pets.length !== 1 ? "s" : ""}
-              </span>
-            </>
-          )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-1.5 mb-4">
+            {enc.pets.slice(0, 4).map((p, i) => {
+              const src = p.mongoImageId ? `${API_BASE}/pets/${p.id}/image` : null;
+              const isLast = i === 3 && enc.pets.length > 4;
+              return (
+                <div key={p.id} className="relative aspect-square rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800">
+                  {src
+                    ? <img src={src} alt={p.name ?? ""} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center"><PawPrint className="w-5 h-5 text-slate-400" /></div>}
+                  {isLast && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">+{enc.pets.length - 3}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Measurements row */}
+        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+          <span className="flex items-center gap-1">
+            <Wind className="w-3 h-3" />
+            {m ? <><span className="font-semibold text-slate-700 dark:text-slate-200">{m.co2.toFixed(0)}</span> ppm</> : "—"}
+          </span>
+          <span className="flex items-center gap-1">
+            <Thermometer className="w-3 h-3" />
+            {m ? <><span className="font-semibold text-slate-700 dark:text-slate-200">{m.temperature.toFixed(1)}</span> °C</> : "—"}
+          </span>
+          <span className="flex items-center gap-1">
+            <Droplets className="w-3 h-3" />
+            {m ? <><span className="font-semibold text-slate-700 dark:text-slate-200">{m.humidity.toFixed(0)}</span> %</> : "—"}
+          </span>
           <ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
         </div>
 
