@@ -42,6 +42,7 @@ public class PetsController : ControllerBase
             .Include(p => p.Species)
             .Include(p => p.Breed)
             .Include(p => p.Gender)
+            .Include(p => p.Status)
             .Include(p => p.Shelter)
             .AsQueryable();
 
@@ -96,6 +97,7 @@ public class PetsController : ControllerBase
             .Include(p => p.Species)
             .Include(p => p.Breed)
             .Include(p => p.Gender)
+            .Include(p => p.Status)
             .Include(p => p.Shelter)
             .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -229,7 +231,9 @@ public class PetsController : ControllerBase
         if (userId == null)
             return Unauthorized();
 
-        var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == id);
+        var pet = await _db.Pets
+            .Include(p => p.Status)
+            .FirstOrDefaultAsync(p => p.Id == id);
         if (pet == null)
             return NotFound("Pet not found");
 
