@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { HeartHandshake, Plus, ChevronDown } from "lucide-react";
+import { HeartHandshake, Plus, ChevronDown, LayoutGrid, List } from "lucide-react";
 
 import AnimalCard from "./AnimalCard";
 import api from "@/services/api";
@@ -106,6 +106,7 @@ export default function AnimalsPage() {
   const [species, setSpecies] = useState("");
   const [shelter, setShelter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   const canCreate = isAuthenticated && user?.role === "shelter";
 
@@ -143,11 +144,18 @@ export default function AnimalsPage() {
     () =>
       animals.filter(
         (a) =>
+          (user?.role !== "shelter" || a.status !== "Adopted" || a.shelterOwnerId === user?.id) &&
+          (user?.role === "shelter" || a.status !== "Adopted") &&
           (!status || a.status === status) &&
           (!species || a.species === species) &&
           (!shelter || a.shelterName === shelter),
       ),
     [animals, status, species, shelter],
+  );
+
+  const visibleStatusOptions = useMemo(
+    () => user?.role === "shelter" ? statusOptions : statusOptions.filter(o => o.value === ""),
+    [user],
   );
 
   const hasFilters = speciesOptions.length > 0 || shelterOptions.length > 0;
@@ -195,22 +203,24 @@ export default function AnimalsPage() {
       {hasFilters && (
         <div className="flex flex-wrap items-center gap-2">
           {/* Status pills */}
-          <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-1.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
-            {statusOptions.map((opt) => (
-              <button
-                key={opt.value || "all"}
-                type="button"
-                onClick={() => setStatus(opt.value)}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
-                  status === opt.value
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                    : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
+          {visibleStatusOptions.length > 1 && (
+            <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-1.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+              {visibleStatusOptions.map((opt) => (
+                <button
+                  key={opt.value || "all"}
+                  type="button"
+                  onClick={() => setStatus(opt.value)}
+                  className={`px-3 py-1 rounded-full text-sm font-medium transition-all ${
+                    status === opt.value
+                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                      : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Divider */}
           {(speciesOptions.length > 0 || shelterOptions.length > 0) && (
@@ -251,6 +261,33 @@ export default function AnimalsPage() {
               </button>
             </>
           )}
+
+          <div className="ml-auto flex items-center gap-1 rounded-full border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900">
+            <button
+              type="button"
+              onClick={() => setViewMode("grid")}
+              className={`p-1.5 rounded-full transition-all ${
+                viewMode === "grid"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              }`}
+              title="Grid view"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode("list")}
+              className={`p-1.5 rounded-full transition-all ${
+                viewMode === "list"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                  : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+              }`}
+              title="List view"
+            >
+              <List className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -273,7 +310,7 @@ export default function AnimalsPage() {
           No animals match the selected filters.
         </div>
       ) : (
-        <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+        <section className={viewMode === "grid" ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8" : "flex flex-col gap-3"}>
           {filtered.map((animal) => (
             <AnimalCard
               key={animal.id}
@@ -289,6 +326,7 @@ export default function AnimalsPage() {
               shelterName={animal.shelterName}
               shelterId={animal.shelterId}
               shelterOwnerId={animal.shelterOwnerId}
+              viewMode={viewMode}
             />
           ))}
         </section>
