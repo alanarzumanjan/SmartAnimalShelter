@@ -47,7 +47,7 @@ export default function LoginPage() {
       const { data } = await api.post("/login", { email, password });
       dispatch(loginSuccess(data));
       toast.success("Welcome back!");
-      navigate("/dashboard");
+      navigate(data.role === "shelter" ? "/shelter" : "/animals");
     } catch (err: unknown) {
       dispatch(loginFailure());
       const message = isAxiosError(err) ? err.response?.data?.message : null;

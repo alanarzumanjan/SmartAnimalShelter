@@ -32,7 +32,10 @@ public sealed class DeviceOutDTO
     [JsonPropertyName("userId")]
     public Guid UserId { get; init; }
 
-    public static DeviceOutDTO FromEntity(Device d) => new()
+    [JsonPropertyName("enclosureName")]
+    public string? EnclosureName { get; init; }
+
+    public static DeviceOutDTO FromEntity(Device d, string? enclosureName = null) => new()
     {
         Id = d.DeviceId,
         Uuid = d.Id,
@@ -42,6 +45,7 @@ public sealed class DeviceOutDTO
         Description = d.Description,
         RegisteredAt = d.RegisteredAt,
         LastSeenAt = d.LastSeenAt,
-        UserId = d.UserId
+        UserId = d.UserId,
+        EnclosureName = enclosureName
     };
 }

@@ -42,6 +42,7 @@ public class PetsController : ControllerBase
             .Include(p => p.Species)
             .Include(p => p.Breed)
             .Include(p => p.Gender)
+            .Include(p => p.Status)
             .Include(p => p.Shelter)
             .AsQueryable();
 
@@ -96,6 +97,7 @@ public class PetsController : ControllerBase
             .Include(p => p.Species)
             .Include(p => p.Breed)
             .Include(p => p.Gender)
+            .Include(p => p.Status)
             .Include(p => p.Shelter)
             .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -197,7 +199,7 @@ public class PetsController : ControllerBase
             SpecialNeeds = dto.specialNeeds,
             CurrentMedications = dto.currentMedications,
             IntakeReason = dto.intakeReason,
-            IntakeDate = dto.intakeDate,
+            IntakeDate = dto.intakeDate.HasValue ? DateTime.SpecifyKind(dto.intakeDate.Value, DateTimeKind.Utc) : null,
             EnergyLevel = dto.energyLevel,
             ExperienceLevel = dto.experienceLevel,
             HousingRequirement = dto.housingRequirement,
@@ -218,7 +220,7 @@ public class PetsController : ControllerBase
         await _db.SaveChangesAsync();
         await transaction.CommitAsync();
 
-        return Ok(newPet);
+        return Ok(new { newPet.Id, newPet.Name, newPet.ShelterId, newPet.SpeciesId, newPet.BreedId, newPet.StatusId, newPet.CreatedAt });
     }
 
     [Authorize(Roles = "shelter")]
@@ -229,7 +231,9 @@ public class PetsController : ControllerBase
         if (userId == null)
             return Unauthorized();
 
-        var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == id);
+        var pet = await _db.Pets
+            .Include(p => p.Status)
+            .FirstOrDefaultAsync(p => p.Id == id);
         if (pet == null)
             return NotFound("Pet not found");
 
@@ -252,7 +256,7 @@ public class PetsController : ControllerBase
         if (patch.IntakeReason != null)
             pet.IntakeReason = patch.IntakeReason;
         if (patch.IntakeDate != null)
-            pet.IntakeDate = patch.IntakeDate;
+            pet.IntakeDate = DateTime.SpecifyKind(DateTime.Parse(patch.IntakeDate), DateTimeKind.Utc);
         if (patch.Color != null)
             pet.Color = patch.Color;
         if (patch.Age != null)

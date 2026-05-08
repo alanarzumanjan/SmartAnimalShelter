@@ -45,8 +45,8 @@ export default function RegisterPage() {
         password,
         role,
       });
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("user", JSON.stringify(data.user));
       toast.success("Account created!");
       navigate("/dashboard");
     } catch (err: unknown) {

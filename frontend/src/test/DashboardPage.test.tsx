@@ -2,6 +2,8 @@ import "@testing-library/jest-dom";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
+import { Provider } from "react-redux";
+import { store } from "../store/store";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 
 // Mock API module (used internally by device.service)
@@ -47,9 +49,11 @@ vi.mock("react-hot-toast", () => ({
 describe("DashboardPage", () => {
   it("renders dashboard header and stats", async () => {
     render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
+      <Provider store={store}>
+        <MemoryRouter>
+          <DashboardPage />
+        </MemoryRouter>
+      </Provider>,
     );
 
     expect(await screen.findByText("Dashboard")).toBeInTheDocument();
@@ -58,9 +62,11 @@ describe("DashboardPage", () => {
 
   it("shows connection guide section", async () => {
     render(
-      <MemoryRouter>
-        <DashboardPage />
-      </MemoryRouter>,
+      <Provider store={store}>
+        <MemoryRouter>
+          <DashboardPage />
+        </MemoryRouter>
+      </Provider>,
     );
 
     expect(await screen.findByText("How to connect")).toBeInTheDocument();

@@ -141,7 +141,9 @@ public class AuthTests : EndpointTestBase
     [Fact]
     public async Task Logout_ClearsRefreshCookie()
     {
-        var client = CreateClient();
+        // First seed a user and get authenticated client with JWT token
+        var userId = await Factory.SeedUserAsync("logoutuser", "logout@test.com", "SecurePass123!");
+        var client = CreateAuthenticatedClient(userId, UserRole.user);
 
         var response = await client.PostAsync("/logout", JsonContent.Create(new { }));
 

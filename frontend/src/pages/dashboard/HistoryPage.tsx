@@ -2,13 +2,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Filter } from "lucide-react";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store/store";
 import {
   type MeasurementRecord,
-  getStoredUser,
   getUserMeasurements,
   getUserDevices,
   type DeviceRecord,
 } from "@/services/device.service";
+import { formatDateTimeForTimeZone } from "@/services/timezone.service";
 
 const PAGE_SIZE = 30;
 
@@ -57,8 +59,7 @@ function co2Quality(co2: number): { title: string; badgeClass: string } {
 }
 
 function formatDateTime(value: string) {
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? "—" : parsed.toLocaleString();
+  return formatDateTimeForTimeZone(value);
 }
 
 // datetime-local input value
@@ -78,7 +79,7 @@ function presetMs(p: PresetKey): number | null {
 }
 
 const HistoryPage: React.FC = () => {
-  const currentUser = getStoredUser();
+  const currentUser = useSelector((state: RootState) => state.auth.user);
 
   const [measurements, setMeasurements] = useState<MeasurementRecord[]>([]);
   const [devices, setDevices] = useState<DeviceRecord[]>([]);

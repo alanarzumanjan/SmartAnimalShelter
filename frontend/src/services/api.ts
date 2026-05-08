@@ -56,7 +56,7 @@ api.interceptors.response.use(
         const response = await axios.post(
           `${config.api.baseUrl}/refresh`,
           {},
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const { accessToken } = response.data;

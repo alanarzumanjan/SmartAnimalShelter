@@ -37,7 +37,7 @@ const getStoredBuyer = (): {
   name?: string;
   email?: string;
 } | null => {
-  const raw = localStorage.getItem("user");
+  const raw = sessionStorage.getItem("user");
   if (!raw) {
     return null;
   }
