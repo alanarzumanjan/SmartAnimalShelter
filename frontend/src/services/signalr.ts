@@ -7,7 +7,7 @@ let connectingPromise: Promise<void> | null = null;
 function buildConnection(): signalR.HubConnection {
   return new signalR.HubConnectionBuilder()
     .withUrl(`${config.api.baseUrl}/chatHub`, {
-      accessTokenFactory: () => localStorage.getItem("token") ?? "",
+      accessTokenFactory: () => localStorage.getItem("access_token") ?? "",
       withCredentials: false,
     })
     .withAutomaticReconnect([0, 2000, 5000, 10000])
