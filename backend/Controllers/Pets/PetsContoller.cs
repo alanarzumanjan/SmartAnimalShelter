@@ -33,36 +33,28 @@ public class PetsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] Guid? shelterId, [FromQuery] int? speciesId, [FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] Guid? shelterId, [FromQuery] int? speciesId, [FromQuery] string? name, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
-        if (page <= 0)
-            page = 1;
-        if (pageSize <= 0 || pageSize > 100)
-            pageSize = 10;
+        if (page <= 0) page = 1;
+        if (pageSize <= 0 || pageSize > 100) pageSize = 10;
 
         var query = _db.Pets
-            .Include(p => p.Species)
-            .Include(p => p.Breed)
-            .Include(p => p.Gender)
-            .Include(p => p.Status)
-            .Include(p => p.Shelter)
-            .AsQueryable();
+            .Include(p => p.Species).Include(p => p.Breed)
+            .Include(p => p.Gender).Include(p => p.Status)
+            .Include(p => p.Shelter).AsQueryable();
 
-        if (shelterId != null)
-            query = query.Where(p => p.ShelterId == shelterId);
-        if (speciesId != null)
-            query = query.Where(p => p.SpeciesId == speciesId);
-        if (!string.IsNullOrWhiteSpace(name))
-            query = query.Where(p => p.Name != null && p.Name.ToLower().Contains(name.ToLower()));
+        if (shelterId != null) query = query.Where(p => p.ShelterId == shelterId);
+        if (speciesId != null) query = query.Where(p => p.SpeciesId == speciesId);
+        if (!string.IsNullOrWhiteSpace(name)) query = query.Where(p => p.Name != null && p.Name.ToLower().Contains(name.ToLower()));
 
-        int totalCount = await query.CountAsync();
+        int totalCount = await query.CountAsync(ct);
         int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
 
         var pets = await query
             .OrderByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var result = pets.Select(p => new
         {
@@ -93,15 +85,13 @@ public class PetsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var pet = await _db.Pets
-            .Include(p => p.Species)
-            .Include(p => p.Breed)
-            .Include(p => p.Gender)
-            .Include(p => p.Status)
+            .Include(p => p.Species).Include(p => p.Breed)
+            .Include(p => p.Gender).Include(p => p.Status)
             .Include(p => p.Shelter)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
 
         if (pet == null)
             return NotFound("Pet not found");
@@ -156,87 +146,59 @@ public class PetsController : ControllerBase
 
     [Authorize(Roles = "shelter")]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreatePetDto dto)
+    public async Task<IActionResult> Create([FromBody] CreatePetDto dto, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized();
+        if (userId == null) return Unauthorized();
 
         var shelter = await _shelterService.EnsureUserShelterAsync(userId.Value, dto.shelterId);
         _logger.LogInformation("> Ensured shelter {ShelterId} for pet creation by user {UserId}", shelter.Id, userId);
 
-        // Resolve breed: prefer breedName, fallback to breedId, or create default
         int breedId;
         if (!string.IsNullOrWhiteSpace(dto.breedName))
-        {
             breedId = await _breedResolver.ResolveBreedIdAsync(dto.breedName, dto.speciesId);
-        }
         else if (dto.breedId.HasValue && dto.breedId.Value > 0)
-        {
             breedId = dto.breedId.Value;
-        }
         else
-        {
             breedId = await _breedResolver.ResolveBreedIdAsync("Mixed", dto.speciesId);
-        }
 
         var newPet = new Pet
         {
             Id = Guid.NewGuid(),
-            Name = dto.name,
-            SpeciesId = dto.speciesId,
-            BreedId = breedId,
-            GenderId = dto.genderId,
-            Age = dto.age,
-            Weight = dto.weight,
-            Color = dto.color,
-            Size = dto.size,
-            StatusId = dto.statusId,
-            Description = dto.description,
-            MedicalNotes = dto.medicalNotes,
-            IdealHome = dto.idealHome,
-            SpecialNeeds = dto.specialNeeds,
-            CurrentMedications = dto.currentMedications,
-            IntakeReason = dto.intakeReason,
+            Name = dto.name, SpeciesId = dto.speciesId, BreedId = breedId,
+            GenderId = dto.genderId, Age = dto.age, Weight = dto.weight,
+            Color = dto.color, Size = dto.size, StatusId = dto.statusId,
+            Description = dto.description, MedicalNotes = dto.medicalNotes,
+            IdealHome = dto.idealHome, SpecialNeeds = dto.specialNeeds,
+            CurrentMedications = dto.currentMedications, IntakeReason = dto.intakeReason,
             IntakeDate = dto.intakeDate.HasValue ? DateTime.SpecifyKind(dto.intakeDate.Value, DateTimeKind.Utc) : null,
-            EnergyLevel = dto.energyLevel,
-            ExperienceLevel = dto.experienceLevel,
-            HousingRequirement = dto.housingRequirement,
-            ChipNumber = dto.chipNumber,
-            AdoptionFee = dto.adoptionFee,
-            IsNeutered = dto.isNeutered,
-            IsChipped = dto.isChipped,
-            IsHouseTrained = dto.isHouseTrained,
-            GoodWithKids = dto.goodWithKids,
-            GoodWithDogs = dto.goodWithDogs,
-            GoodWithCats = dto.goodWithCats,
-            ShelterId = shelter.Id,
-            CreatedAt = DateTime.UtcNow
+            EnergyLevel = dto.energyLevel, ExperienceLevel = dto.experienceLevel,
+            HousingRequirement = dto.housingRequirement, ChipNumber = dto.chipNumber,
+            AdoptionFee = dto.adoptionFee, IsNeutered = dto.isNeutered, IsChipped = dto.isChipped,
+            IsHouseTrained = dto.isHouseTrained, GoodWithKids = dto.goodWithKids,
+            GoodWithDogs = dto.goodWithDogs, GoodWithCats = dto.goodWithCats,
+            ShelterId = shelter.Id, CreatedAt = DateTime.UtcNow
         };
 
-        using var transaction = await _db.Database.BeginTransactionAsync();
-        await _db.Pets.AddAsync(newPet);
-        await _db.SaveChangesAsync();
-        await transaction.CommitAsync();
+        using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        await _db.Pets.AddAsync(newPet, ct);
+        await _db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
 
         return Ok(new { newPet.Id, newPet.Name, newPet.ShelterId, newPet.SpeciesId, newPet.BreedId, newPet.StatusId, newPet.CreatedAt });
     }
 
     [Authorize(Roles = "shelter")]
     [HttpPatch("{id}")]
-    public async Task<IActionResult> Patch(Guid id, [FromBody] PatchPetDto patch)
+    public async Task<IActionResult> Patch(Guid id, [FromBody] PatchPetDto patch, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized();
+        if (userId == null) return Unauthorized();
 
-        var pet = await _db.Pets
-            .Include(p => p.Status)
-            .FirstOrDefaultAsync(p => p.Id == id);
-        if (pet == null)
-            return NotFound("Pet not found");
+        var pet = await _db.Pets.Include(p => p.Status).FirstOrDefaultAsync(p => p.Id == id, ct);
+        if (pet == null) return NotFound("Pet not found");
 
-        var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId);
+        var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId, ct);
         if (shelter == null || shelter.OwnerId != userId)
             return StatusCode(403, "You do not own this shelter.");
 
@@ -293,62 +255,53 @@ public class PetsController : ControllerBase
         if (patch.AdoptionFee != null)
             pet.AdoptionFee = patch.AdoptionFee;
 
-        await _db.SaveChangesAsync();
-
+        await _db.SaveChangesAsync(ct);
         return Ok(pet);
     }
 
     [Authorize(Roles = "shelter")]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized();
+        if (userId == null) return Unauthorized();
 
-        var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == id);
-        if (pet == null)
-            return NotFound("Pet not found");
+        var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == id, ct);
+        if (pet == null) return NotFound("Pet not found");
 
-        var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId);
+        var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId, ct);
         if (shelter == null || shelter.OwnerId != userId)
             return StatusCode(403, "You do not own this shelter.");
 
-        using var transaction = await _db.Database.BeginTransactionAsync();
+        using var transaction = await _db.Database.BeginTransactionAsync(ct);
         _db.Pets.Remove(pet);
-        await _db.SaveChangesAsync();
-        await transaction.CommitAsync();
+        await _db.SaveChangesAsync(ct);
+        await transaction.CommitAsync(ct);
 
         return Ok("Pet deleted.");
     }
 
     [Authorize(Roles = "shelter")]
     [HttpPatch("{id}/breed")]
-    public async Task<IActionResult> UpdateBreed(Guid id, [FromBody] UpdateBreedDto dto)
+    public async Task<IActionResult> UpdateBreed(Guid id, [FromBody] UpdateBreedDto dto, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null)
-            return Unauthorized();
+        if (userId == null) return Unauthorized();
 
-        var pet = await _db.Pets
-            .Include(p => p.Species)
-            .FirstOrDefaultAsync(p => p.Id == id);
-        if (pet == null)
-            return NotFound("Pet not found");
+        var pet = await _db.Pets.Include(p => p.Species).FirstOrDefaultAsync(p => p.Id == id, ct);
+        if (pet == null) return NotFound("Pet not found");
 
-        var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId);
+        var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.Id == pet.ShelterId, ct);
         if (shelter == null || shelter.OwnerId != userId)
             return StatusCode(403, "You do not own this shelter.");
 
-        // Resolve or create breed by name
         var breedName = dto?.breedName?.Trim();
         if (string.IsNullOrWhiteSpace(breedName))
             return BadRequest("Breed name is required.");
 
         int breedId = await _breedResolver.ResolveBreedIdAsync(breedName, pet.SpeciesId);
-
         pet.BreedId = breedId;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         return Ok(new { message = "Breed updated", breedId, breedName });
     }
