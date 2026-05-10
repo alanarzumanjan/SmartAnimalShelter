@@ -269,11 +269,20 @@ public class PaymentsController : ControllerBase
         _logger.LogInformation("⏰ Checkout session expired: {SessionId}", session.Id);
 
         var order = await _orderService.GetOrderByStripeSessionIdAsync(session.Id, cancellationToken);
-        if (order != null && order.Status == OrderStatus.pending)
+        if (order == null)
         {
-            await _orderService.MarkOrderAsFailedAsync(session.Id, cancellationToken);
-            _logger.LogInformation("❌ Order {OrderId} marked as failed (session expired)", order.Id);
+            _logger.LogInformation("ℹ️ No order found for expired session {SessionId}, skipping.", session.Id);
+            return;
         }
+
+        if (order.Status != OrderStatus.pending)
+        {
+            _logger.LogInformation("ℹ️ Order {OrderId} already in terminal status {Status}, skipping expired event.", order.Id, order.Status);
+            return;
+        }
+
+        await _orderService.MarkOrderAsFailedAsync(session.Id, cancellationToken);
+        _logger.LogInformation("❌ Order {OrderId} marked as failed (session expired)", order.Id);
     }
 
     private async Task HandleCheckoutSessionPaymentFailedAsync(Event stripeEvent, CancellationToken cancellationToken)
@@ -285,11 +294,20 @@ public class PaymentsController : ControllerBase
         _logger.LogWarning("❌ Checkout session payment failed: {SessionId}", session.Id);
 
         var order = await _orderService.GetOrderByStripeSessionIdAsync(session.Id, cancellationToken);
-        if (order != null && order.Status == OrderStatus.pending)
+        if (order == null)
         {
-            await _orderService.MarkOrderAsFailedAsync(session.Id, cancellationToken);
-            _logger.LogInformation("❌ Order {OrderId} marked as failed (payment failed)", order.Id);
+            _logger.LogInformation("ℹ️ No order found for failed session {SessionId}, skipping.", session.Id);
+            return;
         }
+
+        if (order.Status != OrderStatus.pending)
+        {
+            _logger.LogInformation("ℹ️ Order {OrderId} already in terminal status {Status}, skipping payment_failed event.", order.Id, order.Status);
+            return;
+        }
+
+        await _orderService.MarkOrderAsFailedAsync(session.Id, cancellationToken);
+        _logger.LogInformation("❌ Order {OrderId} marked as failed (payment failed)", order.Id);
     }
 }
 
