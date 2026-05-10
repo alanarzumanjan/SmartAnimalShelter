@@ -12,6 +12,7 @@ using Models;
 using Services;
 using Services.Redis;
 using Validation;
+using Microsoft.AspNetCore.Antiforgery;
 
 namespace Controllers;
 
@@ -28,6 +29,7 @@ public class AuthController : ControllerBase
     private readonly IRedisService _redis;
     private readonly ShelterService _shelterService;
     private readonly ILogger<AuthController> _logger;
+    private readonly IAntiforgery _antiforgery;
 
     private static readonly TimeSpan AuthRateWindow = TimeSpan.FromMinutes(15);
     private static readonly int AuthRateLimit =
@@ -41,7 +43,8 @@ public class AuthController : ControllerBase
         UserEmailService userEmailService,
         IRedisService redis,
         ShelterService shelterService,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        IAntiforgery antiforgery)
     {
         this.db = db;
         _jwtService = jwtService;
@@ -51,13 +54,23 @@ public class AuthController : ControllerBase
         _redis = redis;
         _shelterService = shelterService;
         _logger = logger;
+        _antiforgery = antiforgery;
+    }
+
+    [HttpGet("csrf-token")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public IActionResult GetCsrfToken()
+    {
+        var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+        Response.Headers["X-CSRF-TOKEN"] = tokens.RequestToken;
+        return NoContent();
     }
 
     [HttpPost("register")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status429TooManyRequests)]
-    public async Task<IActionResult> Register([FromBody] UserRegisterDto user)
+    public async Task<IActionResult> Register([FromBody] UserRegisterDto user, CancellationToken ct)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         if (!await _redis.AllowRequestAsync($"ratelimit:auth:{ip}", AuthRateLimit, AuthRateWindow))
@@ -85,7 +98,7 @@ public class AuthController : ControllerBase
             if (encryptedEmail == null)
                 return BadRequest("Email encryption failed. Email is empty or invalid.");
 
-            var usernameExists = await db.Users.AnyAsync(u => u.Username == user.name);
+            var usernameExists = await db.Users.AnyAsync(u => u.Username == user.name, ct);
             var emailExists = await _userEmailService.EmailExistsAsync(trimmedEmail);
             if (usernameExists || emailExists)
                 return BadRequest(new { error = "Username or email already in use." });
@@ -123,18 +136,17 @@ public class AuthController : ControllerBase
                 Path = "/"
             });
 
-            using var transaction = await db.Database.BeginTransactionAsync();
-            await db.Users.AddAsync(newUser);
-            await db.SaveChangesAsync();
+            using var transaction = await db.Database.BeginTransactionAsync(ct);
+            await db.Users.AddAsync(newUser, ct);
+            await db.SaveChangesAsync(ct);
 
-            // Auto-create a Shelter for shelter and veterinarian role users
             if (role == UserRole.shelter)
             {
                 await _shelterService.EnsureUserShelterAsync(newUser.Id, null);
                 _logger.LogInformation("> Auto-created shelter for new user {UserId} with role {Role}", newUser.Id, role);
             }
 
-            await transaction.CommitAsync();
+            await transaction.CommitAsync(ct);
 
             return Ok(new
             {
@@ -161,7 +173,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status429TooManyRequests)]
-    public async Task<IActionResult> Login([FromBody] UserLoginDto loginRequest)
+    public async Task<IActionResult> Login([FromBody] UserLoginDto loginRequest, CancellationToken ct)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         if (!await _redis.AllowRequestAsync($"ratelimit:auth:{ip}", AuthRateLimit, AuthRateWindow))
@@ -181,7 +193,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            var user = await _userEmailService.FindByEmailAsync(loginRequest.email);
+            var user = await _userEmailService.FindByEmailAsync(loginRequest.email, cancellationToken: ct);
 
             if (user == null)
             {
@@ -246,9 +258,10 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    [ValidateAntiForgeryToken]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshToken()
+    public async Task<IActionResult> RefreshToken(CancellationToken ct)
     {
         var refreshToken = Request.Cookies["refresh_token"];
         if (string.IsNullOrWhiteSpace(refreshToken))
@@ -283,7 +296,7 @@ public class AuthController : ControllerBase
             if (!Guid.TryParse(userIdStr, out var userId))
                 return Unauthorized(new { error = "Invalid user ID in token." });
 
-            var user = await db.Users.FindAsync(userId);
+            var user = await db.Users.FindAsync([userId], ct);
             if (user == null)
                 return Unauthorized(new { error = "User not found." });
 
@@ -313,8 +326,9 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
+    [ValidateAntiForgeryToken]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
         var refreshToken = Request.Cookies["refresh_token"];
         if (!string.IsNullOrWhiteSpace(refreshToken))
