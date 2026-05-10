@@ -63,7 +63,6 @@ public class ShelterService
         await _db.SaveChangesAsync(ct);
 
         _logger.LogInformation("> Auto-created shelter {ShelterId} for user {UserId}", shelter.Id, userId);
-        Console.WriteLine($"> Auto-created shelter {shelter.Id} for user {userId}");
 
         return shelter;
     }
