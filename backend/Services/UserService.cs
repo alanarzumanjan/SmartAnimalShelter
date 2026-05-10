@@ -75,7 +75,8 @@ public sealed class UserService
     public async Task<UpdateResult> UpdateAsync(Guid id, UserUpdateDto dto, CancellationToken ct = default)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id, ct);
-        if (user == null) return UpdateResult.NotFound;
+        if (user == null)
+            return UpdateResult.NotFound;
 
         if (!string.IsNullOrWhiteSpace(dto.email))
         {
@@ -85,9 +86,12 @@ public sealed class UserService
             user.Email = EncryptionService.Encrypt(trimmed) ?? user.Email;
         }
 
-        if (!string.IsNullOrWhiteSpace(dto.name)) user.Username = dto.name;
-        if (!string.IsNullOrWhiteSpace(dto.phone)) user.Phone = EncryptionService.Encrypt(dto.phone) ?? user.Phone;
-        if (dto.address != null) user.Address = dto.address;
+        if (!string.IsNullOrWhiteSpace(dto.name))
+            user.Username = dto.name;
+        if (!string.IsNullOrWhiteSpace(dto.phone))
+            user.Phone = EncryptionService.Encrypt(dto.phone) ?? user.Phone;
+        if (dto.address != null)
+            user.Address = dto.address;
         if (!string.IsNullOrWhiteSpace(dto.role) && Enum.TryParse<UserRole>(dto.role, out var roleEnum))
             user.Role = roleEnum;
 
@@ -98,10 +102,13 @@ public sealed class UserService
     public async Task<PasswordUpdateResult> UpdatePasswordAsync(Guid id, PasswordUpdateDto dto, CancellationToken ct = default)
     {
         var user = await _db.Users.FindAsync([id], ct);
-        if (user == null) return PasswordUpdateResult.NotFound;
+        if (user == null)
+            return PasswordUpdateResult.NotFound;
 
-        if (string.IsNullOrWhiteSpace(dto.CurrentPassword)) return PasswordUpdateResult.MissingCurrent;
-        if (string.IsNullOrWhiteSpace(dto.NewPassword)) return PasswordUpdateResult.MissingNew;
+        if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
+            return PasswordUpdateResult.MissingCurrent;
+        if (string.IsNullOrWhiteSpace(dto.NewPassword))
+            return PasswordUpdateResult.MissingNew;
         if (!_passwordHashingService.VerifyPassword(dto.CurrentPassword, user.PasswordHash))
             return PasswordUpdateResult.WrongCurrent;
 
@@ -113,7 +120,8 @@ public sealed class UserService
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var user = await _db.Users.FindAsync([id], ct);
-        if (user == null) return false;
+        if (user == null)
+            return false;
         _db.Users.Remove(user);
         await _db.SaveChangesAsync(ct);
         return true;
@@ -122,7 +130,8 @@ public sealed class UserService
     public async Task<int> DeleteAllAsync(CancellationToken ct = default)
     {
         var users = await _db.Users.ToListAsync(ct);
-        if (users.Count == 0) return 0;
+        if (users.Count == 0)
+            return 0;
         _db.Users.RemoveRange(users);
         await _db.SaveChangesAsync(ct);
         return users.Count;
@@ -141,8 +150,10 @@ public sealed class UserService
 
     private static string? TryDecrypt(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-        try { return EncryptionService.Decrypt(value); }
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        try
+        { return EncryptionService.Decrypt(value); }
         catch { return value; }
     }
 

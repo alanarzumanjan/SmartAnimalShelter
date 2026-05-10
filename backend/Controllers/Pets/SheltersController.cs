@@ -68,9 +68,12 @@ public class SheltersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
-        if (page < 1) page = 1;
-        if (pageSize < 1) pageSize = 10;
-        if (pageSize > 100) pageSize = 100;
+        if (page < 1)
+            page = 1;
+        if (pageSize < 1)
+            pageSize = 10;
+        if (pageSize > 100)
+            pageSize = 100;
 
         int totalCount = await db.Shelters.CountAsync(ct);
         int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -92,7 +95,8 @@ public class SheltersController : ControllerBase
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         Shelter? shelter = await db.Shelters.Include(s => s.Owner).FirstOrDefaultAsync(s => s.Id == id, ct);
-        if (shelter == null) return NotFound("Shelter not found.");
+        if (shelter == null)
+            return NotFound("Shelter not found.");
 
         string? ownerPhone = null;
         try
@@ -118,10 +122,12 @@ public class SheltersController : ControllerBase
     {
         ShelterValidator validator = new ShelterValidator();
         Dictionary<string, string> errors = validator.Validate(dto);
-        if (errors.Count > 0) return BadRequest(new { errors });
+        if (errors.Count > 0)
+            return BadRequest(new { errors });
 
         Guid? userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         try
         {
@@ -152,22 +158,30 @@ public class SheltersController : ControllerBase
     public async Task<IActionResult> Patch(Guid id, [FromBody] ShelterUpdateDto dto, CancellationToken ct)
     {
         Shelter? shelter = await db.Shelters.FindAsync([id], ct);
-        if (shelter == null) return NotFound("Shelter not found.");
+        if (shelter == null)
+            return NotFound("Shelter not found.");
 
         Guid? userId = GetUserId();
-        if (userId == null || shelter.OwnerId != userId.Value) return Forbid();
+        if (userId == null || shelter.OwnerId != userId.Value)
+            return Forbid();
 
         ShelterValidator validator = new ShelterValidator();
         Dictionary<string, string> errors = validator.ValidatePatch(dto);
-        if (errors.Count > 0) return BadRequest(new { errors });
+        if (errors.Count > 0)
+            return BadRequest(new { errors });
 
         try
         {
-            if (dto.name != null) shelter.Name = dto.name;
-            if (dto.address != null) shelter.Address = dto.address;
-            if (dto.phone != null) shelter.Phone = dto.phone;
-            if (dto.email != null) shelter.Email = EncryptionService.Encrypt(dto.email);
-            if (dto.description != null) shelter.Description = dto.description;
+            if (dto.name != null)
+                shelter.Name = dto.name;
+            if (dto.address != null)
+                shelter.Address = dto.address;
+            if (dto.phone != null)
+                shelter.Phone = dto.phone;
+            if (dto.email != null)
+                shelter.Email = EncryptionService.Encrypt(dto.email);
+            if (dto.description != null)
+                shelter.Description = dto.description;
 
             using var transaction = await db.Database.BeginTransactionAsync(ct);
             await db.SaveChangesAsync(ct);
@@ -183,10 +197,12 @@ public class SheltersController : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         Shelter? shelter = await db.Shelters.FindAsync([id], ct);
-        if (shelter == null) return NotFound("Shelter not found.");
+        if (shelter == null)
+            return NotFound("Shelter not found.");
 
         Guid? userId = GetUserId();
-        if (userId == null || shelter.OwnerId != userId.Value) return Forbid();
+        if (userId == null || shelter.OwnerId != userId.Value)
+            return Forbid();
 
         try
         {

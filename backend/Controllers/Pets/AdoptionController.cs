@@ -37,9 +37,13 @@ public class AdoptionController : ControllerBase
             .OrderByDescending(a => a.CreatedAt)
             .Select(a => new
             {
-                a.Id, a.PetId,
+                a.Id,
+                a.PetId,
                 petName = a.Pet.Name,
-                a.UserId, a.Message, a.Status, a.CreatedAt
+                a.UserId,
+                a.Message,
+                a.Status,
+                a.CreatedAt
             })
             .ToListAsync(ct);
 
@@ -55,7 +59,8 @@ public class AdoptionController : ControllerBase
             return Unauthorized();
 
         var pet = await _db.Pets.FindAsync([dto.PetId], ct);
-        if (pet == null) return NotFound("Pet not found.");
+        if (pet == null)
+            return NotFound("Pet not found.");
 
         var existing = await _db.AdoptionRequests
             .FirstOrDefaultAsync(a => a.UserId == userId && a.PetId == dto.PetId && a.Status == AdoptionRequestStatus.pending, ct);
@@ -84,7 +89,8 @@ public class AdoptionController : ControllerBase
         var adoption = await _db.AdoptionRequests
             .Include(a => a.Pet)
             .FirstOrDefaultAsync(a => a.Id == id, ct);
-        if (adoption == null) return NotFound("Adoption request not found.");
+        if (adoption == null)
+            return NotFound("Adoption request not found.");
 
         var requestingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var requestingRole = User.FindFirstValue(ClaimTypes.Role);

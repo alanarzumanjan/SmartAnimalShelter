@@ -29,10 +29,12 @@ public class EnclosuresController : ControllerBase
     public async Task<IActionResult> GetMy(CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var shelter = await GetOwnedShelterAsync(userId.Value, ct);
-        if (shelter == null) return NotFound(new { error = "Shelter not found." });
+        if (shelter == null)
+            return NotFound(new { error = "Shelter not found." });
 
         var enclosures = await _db.Enclosures
             .Where(e => e.ShelterId == shelter.Id)
@@ -87,10 +89,12 @@ public class EnclosuresController : ControllerBase
     public async Task<IActionResult> GetOne(Guid id, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var shelter = await GetOwnedShelterAsync(userId.Value, ct);
-        if (shelter == null) return NotFound(new { error = "Shelter not found." });
+        if (shelter == null)
+            return NotFound(new { error = "Shelter not found." });
 
         var enclosure = await _db.Enclosures
             .Include(e => e.Pets).ThenInclude(p => p.Species)
@@ -98,7 +102,8 @@ public class EnclosuresController : ControllerBase
             .Include(e => e.Devices)
             .FirstOrDefaultAsync(e => e.Id == id && e.ShelterId == shelter.Id, ct);
 
-        if (enclosure == null) return NotFound(new { error = "Enclosure not found." });
+        if (enclosure == null)
+            return NotFound(new { error = "Enclosure not found." });
 
         var device = enclosure.Devices.FirstOrDefault();
         var measurement = device != null
@@ -145,10 +150,12 @@ public class EnclosuresController : ControllerBase
     public async Task<IActionResult> Create([FromBody] EnclosureDto dto, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var shelter = await GetOwnedShelterAsync(userId.Value, ct);
-        if (shelter == null) return NotFound(new { error = "Shelter not found." });
+        if (shelter == null)
+            return NotFound(new { error = "Shelter not found." });
 
         if (string.IsNullOrWhiteSpace(dto.Name))
             return BadRequest(new { error = "Name is required." });
@@ -172,16 +179,21 @@ public class EnclosuresController : ControllerBase
     public async Task<IActionResult> Update(Guid id, [FromBody] EnclosureDto dto, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var shelter = await GetOwnedShelterAsync(userId.Value, ct);
-        if (shelter == null) return NotFound(new { error = "Shelter not found." });
+        if (shelter == null)
+            return NotFound(new { error = "Shelter not found." });
 
         var enclosure = await _db.Enclosures.FirstOrDefaultAsync(e => e.Id == id && e.ShelterId == shelter.Id, ct);
-        if (enclosure == null) return NotFound(new { error = "Enclosure not found." });
+        if (enclosure == null)
+            return NotFound(new { error = "Enclosure not found." });
 
-        if (!string.IsNullOrWhiteSpace(dto.Name)) enclosure.Name = dto.Name.Trim();
-        if (dto.Description != null) enclosure.Description = dto.Description.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.Name))
+            enclosure.Name = dto.Name.Trim();
+        if (dto.Description != null)
+            enclosure.Description = dto.Description.Trim();
 
         await _db.SaveChangesAsync(ct);
         return Ok(new { message = "Enclosure updated." });
@@ -191,13 +203,16 @@ public class EnclosuresController : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var shelter = await GetOwnedShelterAsync(userId.Value, ct);
-        if (shelter == null) return NotFound(new { error = "Shelter not found." });
+        if (shelter == null)
+            return NotFound(new { error = "Shelter not found." });
 
         var enclosure = await _db.Enclosures.FirstOrDefaultAsync(e => e.Id == id && e.ShelterId == shelter.Id, ct);
-        if (enclosure == null) return NotFound(new { error = "Enclosure not found." });
+        if (enclosure == null)
+            return NotFound(new { error = "Enclosure not found." });
 
         await _db.Pets.Where(p => p.EnclosureId == id)
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.EnclosureId, (Guid?)null), ct);
@@ -214,13 +229,16 @@ public class EnclosuresController : ControllerBase
     public async Task<IActionResult> AssignDevice(Guid id, [FromBody] AssignDeviceDto dto, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var shelter = await GetOwnedShelterAsync(userId.Value, ct);
-        if (shelter == null) return NotFound(new { error = "Shelter not found." });
+        if (shelter == null)
+            return NotFound(new { error = "Shelter not found." });
 
         var enclosure = await _db.Enclosures.FirstOrDefaultAsync(e => e.Id == id && e.ShelterId == shelter.Id, ct);
-        if (enclosure == null) return NotFound(new { error = "Enclosure not found." });
+        if (enclosure == null)
+            return NotFound(new { error = "Enclosure not found." });
 
         await _db.Devices.Where(d => d.EnclosureId == id)
             .ExecuteUpdateAsync(s => s.SetProperty(d => d.EnclosureId, (Guid?)null), ct);
@@ -228,7 +246,8 @@ public class EnclosuresController : ControllerBase
         if (dto.DeviceId != null)
         {
             var device = await _db.Devices.FirstOrDefaultAsync(d => d.Id == dto.DeviceId && d.UserId == userId.Value, ct);
-            if (device == null) return NotFound(new { error = "Device not found." });
+            if (device == null)
+                return NotFound(new { error = "Device not found." });
 
             device.EnclosureId = id;
             device.ShelterId = shelter.Id;
@@ -242,16 +261,20 @@ public class EnclosuresController : ControllerBase
     public async Task<IActionResult> AssignPet(Guid id, Guid petId, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var shelter = await GetOwnedShelterAsync(userId.Value, ct);
-        if (shelter == null) return NotFound(new { error = "Shelter not found." });
+        if (shelter == null)
+            return NotFound(new { error = "Shelter not found." });
 
         var enclosure = await _db.Enclosures.FirstOrDefaultAsync(e => e.Id == id && e.ShelterId == shelter.Id, ct);
-        if (enclosure == null) return NotFound(new { error = "Enclosure not found." });
+        if (enclosure == null)
+            return NotFound(new { error = "Enclosure not found." });
 
         var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == petId && p.ShelterId == shelter.Id, ct);
-        if (pet == null) return NotFound(new { error = "Pet not found." });
+        if (pet == null)
+            return NotFound(new { error = "Pet not found." });
 
         pet.EnclosureId = id;
         await _db.SaveChangesAsync(ct);
@@ -263,13 +286,16 @@ public class EnclosuresController : ControllerBase
     public async Task<IActionResult> RemovePet(Guid id, Guid petId, CancellationToken ct)
     {
         var userId = GetUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var shelter = await GetOwnedShelterAsync(userId.Value, ct);
-        if (shelter == null) return NotFound(new { error = "Shelter not found." });
+        if (shelter == null)
+            return NotFound(new { error = "Shelter not found." });
 
         var pet = await _db.Pets.FirstOrDefaultAsync(p => p.Id == petId && p.ShelterId == shelter.Id && p.EnclosureId == id, ct);
-        if (pet == null) return NotFound(new { error = "Pet not found in this enclosure." });
+        if (pet == null)
+            return NotFound(new { error = "Pet not found in this enclosure." });
 
         pet.EnclosureId = null;
         await _db.SaveChangesAsync(ct);

@@ -1,5 +1,11 @@
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import { Provider, useSelector } from "react-redux";
 import { setNavigator } from "@/services/navigator";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
@@ -67,19 +73,92 @@ function AppRoutes() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/animals" element={<AnimalsPage />} />
             <Route path="/animals/:animalId" element={<AnimalDetailsPage />} />
-            <Route path="/animals/create" element={<ProtectedRoute><CreateAnimalPage /></ProtectedRoute>} />
-            <Route path="/animals/:animalId/edit" element={<ProtectedRoute><EditAnimalPage /></ProtectedRoute>} />
+            <Route
+              path="/animals/create"
+              element={
+                <ProtectedRoute>
+                  <CreateAnimalPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/animals/:animalId/edit"
+              element={
+                <ProtectedRoute>
+                  <EditAnimalPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/adoption" element={<AdoptionFormPage />} />
             <Route path="/shelters/:shelterId" element={<ShelterPage />} />
-            <Route path="/shelter" element={<ProtectedRoute><ShelterManagementPage /></ProtectedRoute>} />
-            <Route path="/enclosures/:enclosureId" element={<ProtectedRoute><EnclosurePage /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/dashboard/devices/:deviceId" element={<ProtectedRoute><DeviceDetailPage /></ProtectedRoute>} />
-            <Route path="/dashboard/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-            <Route path="/dashboard/chats" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
-            <Route path="/dashboard/chat" element={<Navigate to="/dashboard/chats" replace />} />
-            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route
+              path="/shelter"
+              element={
+                <ProtectedRoute>
+                  <ShelterManagementPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/enclosures/:enclosureId"
+              element={
+                <ProtectedRoute>
+                  <EnclosurePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/devices/:deviceId"
+              element={
+                <ProtectedRoute>
+                  <DeviceDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/history"
+              element={
+                <ProtectedRoute>
+                  <HistoryPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/chats"
+              element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/chat"
+              element={<Navigate to="/dashboard/chats" replace />}
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute requireAdmin>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </ErrorBoundary>

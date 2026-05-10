@@ -25,9 +25,11 @@ public sealed class MeasurementService
 
     public static string NormalizeMac(string mac)
     {
-        if (string.IsNullOrWhiteSpace(mac)) return mac ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(mac))
+            return mac ?? string.Empty;
         var hex = new string(mac.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
-        if (hex.Length != 12) return mac.Trim();
+        if (hex.Length != 12)
+            return mac.Trim();
         return string.Join(":", Enumerable.Range(0, 6).Select(i => hex.Substring(i * 2, 2)));
     }
 
@@ -151,14 +153,16 @@ public sealed class MeasurementService
     public async Task<MeasurementOutDTO?> GetLatestByDeviceAsync(string mac, CancellationToken ct = default)
     {
         var cached = await _redis.GetAsync<MeasurementOutDTO>($"device:latest:{mac}");
-        if (cached != null) return cached;
+        if (cached != null)
+            return cached;
 
         var item = await _db.Measurements.AsNoTracking()
             .Where(m => m.DeviceId == mac)
             .OrderByDescending(m => m.Timestamp)
             .FirstOrDefaultAsync(ct);
 
-        if (item == null) return null;
+        if (item == null)
+            return null;
 
         var dto = MeasurementOutDTO.FromEntity(item);
         await _redis.SetAsync($"device:latest:{mac}", dto, LatestCacheTtl);

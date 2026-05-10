@@ -4,6 +4,7 @@ using System.Text;
 using Config;
 using Data;
 using Dtos;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,6 @@ using Models;
 using Services;
 using Services.Redis;
 using Validation;
-using Microsoft.AspNetCore.Antiforgery;
 
 namespace Controllers;
 

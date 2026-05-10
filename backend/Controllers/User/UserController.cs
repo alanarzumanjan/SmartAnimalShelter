@@ -47,8 +47,10 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var currentUserId = GetCurrentUserId();
-        if (currentUserId == null) return Unauthorized();
-        if (currentUserId != id && !User.IsInRole("admin")) return Forbid();
+        if (currentUserId == null)
+            return Unauthorized();
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
 
         var user = await _userService.GetByIdAsync(id, ct);
         return user == null ? NotFound(new { error = "User not found." }) : Ok(user);
@@ -59,7 +61,8 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetCurrentUser(CancellationToken ct)
     {
         var userId = GetCurrentUserId();
-        if (userId == null) return Unauthorized();
+        if (userId == null)
+            return Unauthorized();
 
         var user = await _userService.GetByIdAsync(userId.Value, ct);
         return user == null ? NotFound() : Ok(user);
@@ -70,8 +73,10 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Patch(Guid id, [FromBody] UserUpdateDto dto, CancellationToken ct)
     {
         var currentUserId = GetCurrentUserId();
-        if (currentUserId == null) return Unauthorized();
-        if (currentUserId != id && !User.IsInRole("admin")) return Forbid();
+        if (currentUserId == null)
+            return Unauthorized();
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
 
         var result = await _userService.UpdateAsync(id, dto, ct);
         return result switch
@@ -87,8 +92,10 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdatePassword(Guid id, [FromBody] PasswordUpdateDto dto, CancellationToken ct)
     {
         var currentUserId = GetCurrentUserId();
-        if (currentUserId == null) return Unauthorized();
-        if (currentUserId != id && !User.IsInRole("admin")) return Forbid();
+        if (currentUserId == null)
+            return Unauthorized();
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
 
         var result = await _userService.UpdatePasswordAsync(id, dto, ct);
         return result switch
@@ -106,8 +113,10 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var currentUserId = GetCurrentUserId();
-        if (currentUserId == null) return Unauthorized();
-        if (currentUserId != id && !User.IsInRole("admin")) return Forbid();
+        if (currentUserId == null)
+            return Unauthorized();
+        if (currentUserId != id && !User.IsInRole("admin"))
+            return Forbid();
 
         var deleted = await _userService.DeleteAsync(id, ct);
         return deleted ? Ok(new { message = "User deleted." }) : NotFound(new { error = "User not found." });

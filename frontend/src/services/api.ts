@@ -21,10 +21,15 @@ export interface ApiError {
 
 export function toApiError(err: unknown): ApiError {
   if (axios.isAxiosError(err)) {
-    const axiosErr = err as AxiosError<{ error?: string; errors?: Record<string, string>; title?: string }>;
+    const axiosErr = err as AxiosError<{
+      error?: string;
+      errors?: Record<string, string>;
+      title?: string;
+    }>;
     const data = axiosErr.response?.data;
     return {
-      message: data?.error ?? data?.title ?? axiosErr.message ?? "Request failed",
+      message:
+        data?.error ?? data?.title ?? axiosErr.message ?? "Request failed",
       status: axiosErr.response?.status ?? null,
       errors: data?.errors,
     };
@@ -97,7 +102,11 @@ api.interceptors.response.use(
     const retryCount: number = originalRequest._retryCount ?? 0;
 
     // Retry on network errors and 502/503/504 (skip if it's a 401 — handled below)
-    if (axios.isAxiosError(error) && shouldRetry(error, retryCount) && error.response?.status !== 401) {
+    if (
+      axios.isAxiosError(error) &&
+      shouldRetry(error, retryCount) &&
+      error.response?.status !== 401
+    ) {
       originalRequest._retryCount = retryCount + 1;
       await retryDelay(retryCount);
       return api(originalRequest);

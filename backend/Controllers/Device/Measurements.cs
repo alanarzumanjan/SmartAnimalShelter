@@ -75,15 +75,18 @@ public class MeasurementsController : ControllerBase
         CancellationToken ct = default)
     {
         var currentUserId = GetCurrentUserId();
-        if (currentUserId == null) return Unauthorized();
+        if (currentUserId == null)
+            return Unauthorized();
 
         var mac = MeasurementService.NormalizeMac(deviceId);
 
         if (!IsAdmin())
         {
             var device = await _measurementService.GetDeviceByMacAsync(mac, ct);
-            if (device == null) return NotFound(new { error = "Device not found." });
-            if (device.UserId != currentUserId) return Forbid();
+            if (device == null)
+                return NotFound(new { error = "Device not found." });
+            if (device.UserId != currentUserId)
+                return Forbid();
         }
 
         var (total, items) = await _measurementService.GetByDeviceAsync(mac, from, to, limit, offset, ct);
@@ -102,13 +105,16 @@ public class MeasurementsController : ControllerBase
             return BadRequest(new { errors = new { deviceUsersId = "Required" } });
 
         var currentUserId = GetCurrentUserId();
-        if (currentUserId == null) return Unauthorized();
+        if (currentUserId == null)
+            return Unauthorized();
 
         if (!IsAdmin())
         {
             var link = await _measurementService.GetLinkByIdAsync(deviceUsersId, ct);
-            if (link == null) return NotFound(new { error = "Link not found." });
-            if (link.UserId != currentUserId) return Forbid();
+            if (link == null)
+                return NotFound(new { error = "Link not found." });
+            if (link.UserId != currentUserId)
+                return Forbid();
         }
 
         var (total, items) = await _measurementService.GetByLinkAsync(deviceUsersId, limit, offset, ct);
@@ -131,19 +137,23 @@ public class MeasurementsController : ControllerBase
     public async Task<IActionResult> GetLatestByDevice(string deviceId, CancellationToken ct)
     {
         var currentUserId = GetCurrentUserId();
-        if (currentUserId == null) return Unauthorized();
+        if (currentUserId == null)
+            return Unauthorized();
 
         var mac = MeasurementService.NormalizeMac(deviceId);
 
         if (!IsAdmin())
         {
             var device = await _measurementService.GetDeviceByMacAsync(mac, ct);
-            if (device == null) return NotFound(new { error = "Device not found." });
-            if (device.UserId != currentUserId) return Forbid();
+            if (device == null)
+                return NotFound(new { error = "Device not found." });
+            if (device.UserId != currentUserId)
+                return Forbid();
         }
 
         var dto = await _measurementService.GetLatestByDeviceAsync(mac, ct);
-        if (dto == null) return NotFound(new { error = "No measurements yet." });
+        if (dto == null)
+            return NotFound(new { error = "No measurements yet." });
 
         return Ok(new { data = dto });
     }
@@ -159,8 +169,10 @@ public class MeasurementsController : ControllerBase
         CancellationToken ct = default)
     {
         var currentUserId = GetCurrentUserId();
-        if (currentUserId == null) return Unauthorized();
-        if (currentUserId != userId && !IsAdmin()) return Forbid();
+        if (currentUserId == null)
+            return Unauthorized();
+        if (currentUserId != userId && !IsAdmin())
+            return Forbid();
 
         var (total, items) = await _measurementService.GetByUserAsync(userId, from, to, limit, offset, ct);
         return Ok(new { total, limit, offset, from, to, data = items });
