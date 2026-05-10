@@ -44,6 +44,7 @@ public sealed class TestApiFactory : IAsyncDisposable
         builder.Services.AddSingleton<JwtService>();
         builder.Services.AddSingleton<PasswordHashingService>();
         builder.Services.AddScoped<UserEmailService>();
+        builder.Services.AddScoped<BreedResolver>();
         builder.Services.AddScoped<ShelterService>();
         builder.Services.AddSingleton<IRedisService, FakeRedisService>();
         builder.Services.AddDbContext<AppDbContext>(options =>
