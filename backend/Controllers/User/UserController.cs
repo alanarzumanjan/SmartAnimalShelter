@@ -1,10 +1,7 @@
 using System.Security.Claims;
-using Data;
 using Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Models;
 using Services;
 
 namespace Controllers;
@@ -13,22 +10,15 @@ namespace Controllers;
 [Route("users")]
 public class UsersController : ControllerBase
 {
-    private readonly AppDbContext db;
-    private readonly PasswordHashingService _passwordHashingService;
-    private readonly UserEmailService _userEmailService;
-    private readonly ILogger<UsersController> _logger;
+    private readonly UserService _userService;
 
-    public UsersController(
-        AppDbContext context,
-        PasswordHashingService passwordHashingService,
-        UserEmailService userEmailService,
-        ILogger<UsersController> logger)
+    public UsersController(UserService userService)
     {
-        db = context;
-        _passwordHashingService = passwordHashingService;
-        _userEmailService = userEmailService;
-        _logger = logger;
+        _userService = userService;
     }
+
+    private Guid? GetCurrentUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
 
     [HttpGet]
     [Authorize(Roles = "admin")]
@@ -38,243 +28,96 @@ public class UsersController : ControllerBase
         [FromQuery] string? email,
         [FromQuery] string? sort = "name",
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 50)
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
     {
-        if (page <= 0)
-            page = 1;
-        if (pageSize <= 0 || pageSize > 200)
-            pageSize = 50;
-
-        var query = db.Users.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(role) && Enum.TryParse<UserRole>(role, out var roleEnum))
-            query = query.Where(u => u.Role == roleEnum);
-
-        if (!string.IsNullOrWhiteSpace(name))
-            query = query.Where(u => u.Username != null && u.Username.ToLower().Contains(name.ToLower()));
-
-        // Note: email filtering on encrypted values must remain client-side or use a hash index.
-        // For exam/demo purposes we materialize after role/name filter to keep it safe,
-        // but we add pagination to prevent OOM on large tables.
-        var totalCount = await query.CountAsync();
-
-        var usersPage = await query
-            .OrderBy(u => u.Username)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        if (!string.IsNullOrWhiteSpace(email))
-            usersPage = usersPage
-                .Where(u => EncryptionService.EmailMatchesEncryptedValue(u.Email, email))
-                .ToList();
-
-        foreach (var user in usersPage)
-        {
-            if (!string.IsNullOrWhiteSpace(user.Email))
-            {
-                try
-                { user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email; }
-                catch { }
-            }
-
-            if (!string.IsNullOrWhiteSpace(user.Phone))
-            {
-                try
-                { user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone; }
-                catch { }
-            }
-        }
-
-        usersPage = sort switch
-        {
-            "created" => usersPage.OrderByDescending(u => u.CreatedAt).ToList(),
-            "email" => usersPage.OrderBy(u => u.Email ?? string.Empty).ToList(),
-            _ => usersPage.OrderBy(u => u.Username).ToList()
-        };
-
-        _logger.LogInformation("> Admin fetched {Count} users (page {Page}, size {PageSize}, total {Total})", usersPage.Count, page, pageSize, totalCount);
-
+        var result = await _userService.GetAllAsync(role, name, email, sort, page, pageSize, ct);
         return Ok(new
         {
-            currentPage = page,
-            pageSize,
-            totalCount,
-            totalPages = (int)Math.Ceiling(totalCount / (double)pageSize),
-            users = usersPage
+            result.CurrentPage,
+            result.PageSize,
+            result.TotalCount,
+            result.TotalPages,
+            users = result.Items
         });
-    }
-
-    [HttpPatch("{id}")]
-    [Authorize]
-    public async Task<IActionResult> Patch(Guid id, [FromBody] UserUpdateDto dto)
-    {
-        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
-            return Unauthorized();
-
-        if (currentUserId != id && !User.IsInRole("admin"))
-            return Forbid();
-
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
-        if (user == null)
-            return NotFound("User not found.");
-
-        if (!string.IsNullOrWhiteSpace(dto.email))
-        {
-            var trimmedEmail = dto.email.Trim();
-            string? encryptedEmail = EncryptionService.Encrypt(trimmedEmail);
-            bool emailExists = await _userEmailService.EmailExistsAsync(trimmedEmail, id);
-            if (emailExists)
-                return BadRequest("Email is already taken.");
-
-            user.Email = encryptedEmail ?? user.Email;
-        }
-
-        if (!string.IsNullOrWhiteSpace(dto.name))
-            user.Username = dto.name;
-
-        if (!string.IsNullOrWhiteSpace(dto.phone))
-        {
-            string? encryptedPhone = EncryptionService.Encrypt(dto.phone);
-            user.Phone = encryptedPhone ?? user.Phone;
-        }
-
-        if (dto.address != null)
-            user.Address = dto.address;
-
-        if (!string.IsNullOrWhiteSpace(dto.role) && Enum.TryParse<UserRole>(dto.role, out var roleEnum))
-            user.Role = roleEnum;
-
-        using var transaction = await db.Database.BeginTransactionAsync();
-        await db.SaveChangesAsync();
-        await transaction.CommitAsync();
-
-        return Ok("User updated.");
     }
 
     [HttpGet("{id}")]
     [Authorize]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
-        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
-            return Unauthorized();
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+        if (currentUserId != id && !User.IsInRole("admin")) return Forbid();
 
-        if (currentUserId != id && !User.IsInRole("admin"))
-            return Forbid();
-
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Id == id);
-        if (user == null)
-            return NotFound("User not found.");
-
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(user.Email))
-                user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email;
-        }
-        catch { }
-
-        try
-        {
-            if (!string.IsNullOrWhiteSpace(user.Phone))
-                user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone;
-        }
-        catch { }
-
-        return Ok(user);
-    }
-
-    [HttpDelete("{id}")]
-    [Authorize]
-    public async Task<IActionResult> Delete(Guid id)
-    {
-        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
-            return Unauthorized();
-
-        if (currentUserId != id && !User.IsInRole("admin"))
-            return Forbid();
-
-        var user = await db.Users.FindAsync(id);
-        if (user == null)
-            return NotFound("User not found.");
-
-        using var transaction = await db.Database.BeginTransactionAsync();
-        db.Users.Remove(user);
-        await db.SaveChangesAsync();
-        await transaction.CommitAsync();
-
-        return Ok(new { message = "User deleted." });
-    }
-
-    [HttpDelete("all")]
-    [Authorize(Roles = "admin")]
-    public async Task<IActionResult> DeleteAll()
-    {
-        using var transaction = await db.Database.BeginTransactionAsync();
-
-        var users = await db.Users.ToListAsync();
-        if (users.Count == 0)
-            return Ok(new { message = "No users to delete.", deletedCount = 0 });
-
-        db.Users.RemoveRange(users);
-        await db.SaveChangesAsync();
-        await transaction.CommitAsync();
-
-        return Ok(new { message = "All users deleted.", deletedCount = users.Count });
+        var user = await _userService.GetByIdAsync(id, ct);
+        return user == null ? NotFound(new { error = "User not found." }) : Ok(user);
     }
 
     [HttpGet("me")]
     [Authorize]
-    public async Task<IActionResult> GetCurrentUser()
+    public async Task<IActionResult> GetCurrentUser(CancellationToken ct)
     {
-        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(userIdValue) || !Guid.TryParse(userIdValue, out var userId))
-            return Unauthorized();
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
-        var user = await db.Users.FindAsync(userId);
-        if (user == null)
-            return NotFound();
+        var user = await _userService.GetByIdAsync(userId.Value, ct);
+        return user == null ? NotFound() : Ok(user);
+    }
 
-        try
-        { if (!string.IsNullOrWhiteSpace(user.Email)) user.Email = EncryptionService.Decrypt(user.Email) ?? user.Email; }
-        catch { }
-        try
-        { if (!string.IsNullOrWhiteSpace(user.Phone)) user.Phone = EncryptionService.Decrypt(user.Phone) ?? user.Phone; }
-        catch { }
+    [HttpPatch("{id}")]
+    [Authorize]
+    public async Task<IActionResult> Patch(Guid id, [FromBody] UserUpdateDto dto, CancellationToken ct)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+        if (currentUserId != id && !User.IsInRole("admin")) return Forbid();
 
-        return Ok(user);
+        var result = await _userService.UpdateAsync(id, dto, ct);
+        return result switch
+        {
+            UserService.UpdateResult.NotFound => NotFound(new { error = "User not found." }),
+            UserService.UpdateResult.EmailTaken => BadRequest(new { error = "Email is already taken." }),
+            _ => Ok(new { message = "User updated." })
+        };
     }
 
     [HttpPatch("{id}/password")]
     [Authorize]
-    public async Task<IActionResult> UpdatePassword(Guid id, [FromBody] PasswordUpdateDto dto)
+    public async Task<IActionResult> UpdatePassword(Guid id, [FromBody] PasswordUpdateDto dto, CancellationToken ct)
     {
-        var user = await db.Users.FindAsync(id);
-        if (user == null)
-            return NotFound();
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+        if (currentUserId != id && !User.IsInRole("admin")) return Forbid();
 
-        var currentUserIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (string.IsNullOrWhiteSpace(currentUserIdValue) || !Guid.TryParse(currentUserIdValue, out var currentUserId))
-            return Unauthorized();
+        var result = await _userService.UpdatePasswordAsync(id, dto, ct);
+        return result switch
+        {
+            UserService.PasswordUpdateResult.NotFound => NotFound(),
+            UserService.PasswordUpdateResult.MissingCurrent => BadRequest(new { error = "Current password is required." }),
+            UserService.PasswordUpdateResult.MissingNew => BadRequest(new { error = "New password is required." }),
+            UserService.PasswordUpdateResult.WrongCurrent => BadRequest(new { error = "Current password is incorrect." }),
+            _ => Ok(new { message = "Password updated" })
+        };
+    }
 
-        if (currentUserId != user.Id && !User.IsInRole("admin"))
-            return Forbid();
+    [HttpDelete("{id}")]
+    [Authorize]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+        if (currentUserId != id && !User.IsInRole("admin")) return Forbid();
 
-        if (string.IsNullOrWhiteSpace(dto.CurrentPassword))
-            return BadRequest("Current password is required.");
+        var deleted = await _userService.DeleteAsync(id, ct);
+        return deleted ? Ok(new { message = "User deleted." }) : NotFound(new { error = "User not found." });
+    }
 
-        if (string.IsNullOrWhiteSpace(dto.NewPassword))
-            return BadRequest("New password is required.");
-
-        // Verify current password
-        if (!_passwordHashingService.VerifyPassword(dto.CurrentPassword, user.PasswordHash))
-            return BadRequest("Current password is incorrect.");
-
-        user.PasswordHash = _passwordHashingService.HashPassword(dto.NewPassword);
-        await db.SaveChangesAsync();
-
-        return Ok(new { message = "Password updated" });
+    [HttpDelete("all")]
+    [Authorize(Roles = "admin")]
+    public async Task<IActionResult> DeleteAll(CancellationToken ct)
+    {
+        var count = await _userService.DeleteAllAsync(ct);
+        return Ok(new { message = "All users deleted.", deletedCount = count });
     }
 }
