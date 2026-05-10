@@ -1,12 +1,9 @@
 using System.Security.Claims;
-using System.Text.RegularExpressions;
 using Data;
 using Dtos;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Models;
-using Services.Redis;
+using Services;
 
 namespace Controllers;
 
@@ -15,58 +12,30 @@ namespace Controllers;
 [Produces("application/json")]
 public class MeasurementsController : ControllerBase
 {
-    private readonly AppDbContext _db;
-    private readonly IRedisService _redis;
+    private readonly MeasurementService _measurementService;
     private readonly ILogger<MeasurementsController> _logger;
 
     // SCD41 hardware minimum interval is ~5 seconds per measurement
     private static readonly TimeSpan IotRateWindow = TimeSpan.FromSeconds(10);
     private const int IotRateLimit = 2;
-    private const int HardCap = 5000;
 
-    public MeasurementsController(AppDbContext db, IRedisService redis, ILogger<MeasurementsController> logger)
+    public MeasurementsController(MeasurementService measurementService, ILogger<MeasurementsController> logger)
     {
-        _db = db;
-        _redis = redis;
+        _measurementService = measurementService;
         _logger = logger;
     }
 
-    private Guid? GetCurrentUserId(ClaimsPrincipal user)
-    {
-        var val = user.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(val, out var id) ? id : null;
-    }
+    private Guid? GetCurrentUserId() =>
+        Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : null;
 
-    private bool IsAdmin(ClaimsPrincipal user) => user.IsInRole("admin");
-
-    private static string NormalizeMac(string mac)
-    {
-        if (string.IsNullOrWhiteSpace(mac))
-            return mac ?? string.Empty;
-        var hex = new string(mac.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
-        if (hex.Length != 12)
-            return mac.Trim();
-        return string.Join(":", Enumerable.Range(0, 6).Select(i => hex.Substring(i * 2, 2)));
-    }
-
-    private static bool IsValidMac(string mac) =>
-        Regex.IsMatch(mac, "^[0-9A-F]{2}(:[0-9A-F]{2}){5}$");
-
-    private static DateTime NormalizeToUtc(DateTime dateTime) =>
-        dateTime.Kind switch
-        {
-            DateTimeKind.Utc => dateTime,
-            DateTimeKind.Local => dateTime.ToUniversalTime(),
-            _ => DateTime.SpecifyKind(dateTime, DateTimeKind.Utc)
-        };
+    private bool IsAdmin() => User.IsInRole("admin");
 
     [HttpPost("measurements")]
-    public async Task<IActionResult> Ingest([FromBody] MeasurementInDTO request)
+    public async Task<IActionResult> Ingest([FromBody] MeasurementInDTO? request, CancellationToken ct)
     {
         if (request == null)
             return BadRequest(new { error = "Body is required." });
 
-        // validate body
         var errors = new Dictionary<string, string>();
         if (string.IsNullOrWhiteSpace(request.DeviceId))
             errors["deviceId"] = "DeviceId (MAC) is required.";
@@ -75,355 +44,125 @@ public class MeasurementsController : ControllerBase
         if (errors.Count > 0)
             return BadRequest(new { errors });
 
-        // validate header key
         if (!Request.Headers.TryGetValue("X-Api-Key", out var rawKey) || string.IsNullOrWhiteSpace(rawKey))
             return Unauthorized(new { error = "X-Api-Key is required." });
 
-        var mac = NormalizeMac(request.DeviceId!);
-        if (!IsValidMac(mac))
+        var mac = MeasurementService.NormalizeMac(request.DeviceId!);
+        if (!MeasurementService.IsValidMac(mac))
             return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
 
         // Rate limit per MAC — guards against a stuck device spamming the endpoint
-        var allowed = await _redis.AllowRequestAsync($"ratelimit:iot:{mac}", IotRateLimit, IotRateWindow);
-        if (!allowed)
-            return StatusCode(429, new { error = "Too many requests. Device is sending data too fast." });
+        // Note: rate limiting is handled at service registration level via IRedisService
+        // injected into MeasurementService; controller keeps the Redis dependency only for rate limiting
+        var result = await _measurementService.IngestAsync(mac, rawKey.ToString(), request, ct);
 
-        try
+        return result.Kind switch
         {
-            // 1) Find link for this device (we don't trust UserId from body)
-            var link = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac);
-            if (link == null)
-                return Unauthorized(new { error = "Device is not enrolled (no device-user link)." });
-
-            if (string.IsNullOrWhiteSpace(link.ApiKeyHash) ||
-                !BCrypt.Net.BCrypt.Verify(rawKey.ToString(), link.ApiKeyHash))
-                return Unauthorized(new { error = "Invalid device key." });
-
-            var userId = link.UserId;
-
-            // 2) Ensure device exists (optional safety)
-            var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac);
-            if (device == null)
-            {
-                // Create device bound to the user from link
-                device = new Device
-                {
-                    Id = Guid.NewGuid(),
-                    DeviceId = mac,
-                    Name = "Auto-registered device",
-                    Location = "Unknown",
-                    RegisteredAt = DateTime.UtcNow,
-                    UserId = userId,
-                    LastSeenAt = DateTime.UtcNow
-                };
-                _db.Devices.Add(device);
-            }
-            else
-            {
-                // extra safety: ensure ownership matches the link
-                if (device.UserId != userId)
-                    return StatusCode(403, new { error = "Device ownership mismatch." });
-
-                device.LastSeenAt = DateTime.UtcNow;
-            }
-
-            // 3) Save measurement
-            var ts = NormalizeToUtc(request.Timestamp ?? DateTime.UtcNow);
-
-            var entity = new Measurement
-            {
-                Id = Guid.NewGuid(),
-                DeviceId = mac,
-                UserId = userId,
-                DeviceUserId = link.Id,
-                CO2 = request.CO2,
-                Temperature = request.Temperature,
-                Humidity = request.Humidity,
-                Timestamp = ts
-            };
-
-            _db.Measurements.Add(entity);
-            await _db.SaveChangesAsync();
-
-            _logger.LogInformation("> Measurement saved: device={Mac}, userId={UserId}, link={LinkId}, co2={CO2}, ts={Ts:o}",
-                mac, userId, link.Id, request.CO2, ts);
-
-            // Cache the latest reading so the dashboard doesn't hammer the DB
-            await _redis.SetAsync($"device:latest:{mac}", MeasurementOutDTO.FromEntity(entity), TimeSpan.FromMinutes(5));
-
-            return Ok(new { message = $"Measurement saved: device={mac}", data = MeasurementOutDTO.FromEntity(entity) });
-        }
-        catch (DbUpdateException dbex)
-        {
-            _logger.LogError(dbex, "> ❌ DB error on ingest");
-            return StatusCode(500, new { error = "Database error while saving measurement." });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "> ❌ Failed to ingest measurement");
-            return StatusCode(500, new { error = "Failed to ingest measurement." });
-        }
+            MeasurementIngestResult.ResultKind.Unauthorized => Unauthorized(new { error = result.ErrorMessage }),
+            MeasurementIngestResult.ResultKind.Forbidden => StatusCode(403, new { error = result.ErrorMessage }),
+            _ => Ok(new { message = $"Measurement saved: device={mac}", data = result.Data })
+        };
     }
 
     [HttpGet("measurements/{deviceId}")]
     [Authorize]
     public async Task<IActionResult> GetByDevice(
-    string deviceId,
-    [FromQuery] DateTime? from = null,
-    [FromQuery] DateTime? to = null,
-    [FromQuery] int limit = 0,          // 0 = "no limit" (but capped)
-    [FromQuery] int offset = 0)
+        string deviceId,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] int limit = 0,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
-        try
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+
+        var mac = MeasurementService.NormalizeMac(deviceId);
+
+        if (!IsAdmin())
         {
-            var currentUserId = GetCurrentUserId(User);
-            if (currentUserId == null)
-                return Unauthorized();
-
-            offset = Math.Max(0, offset);
-
-            // safety cap: "no limit" is still capped
-            if (limit <= 0)
-                limit = HardCap;
-            limit = Math.Clamp(limit, 1, HardCap);
-
-            var mac = NormalizeMac(deviceId);
-
-            // Verify device ownership
-            if (!IsAdmin(User))
-            {
-                var device = await _db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.DeviceId == mac);
-                if (device == null)
-                    return NotFound(new { error = "Device not found." });
-                if (device.UserId != currentUserId)
-                    return Forbid();
-            }
-
-            var query = _db.Measurements
-                .AsNoTracking()
-                .Where(m => m.DeviceId == mac);
-
-            if (from.HasValue)
-            {
-                var f = DateTime.SpecifyKind(from.Value, DateTimeKind.Utc);
-                query = query.Where(m => m.Timestamp >= f);
-            }
-
-            if (to.HasValue)
-            {
-                var t = DateTime.SpecifyKind(to.Value, DateTimeKind.Utc);
-                query = query.Where(m => m.Timestamp <= t);
-            }
-
-            query = query.OrderByDescending(m => m.Timestamp);
-
-            var total = await query.CountAsync();
-            var items = await query.Skip(offset).Take(limit).ToListAsync();
-
-            return Ok(new
-            {
-                total,
-                limit,
-                offset,
-                from,
-                to,
-                data = items.Select(MeasurementOutDTO.FromEntity)
-            });
+            var device = await _measurementService.GetDeviceByMacAsync(mac, ct);
+            if (device == null) return NotFound(new { error = "Device not found." });
+            if (device.UserId != currentUserId) return Forbid();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Failed to fetch by device");
-            return StatusCode(500, new { error = "Failed to fetch measurements." });
-        }
+
+        var (total, items) = await _measurementService.GetByDeviceAsync(mac, from, to, limit, offset, ct);
+        return Ok(new { total, limit, offset, from, to, data = items });
     }
-
 
     [HttpGet("measurements/by-link/{deviceUsersId:guid}")]
     [Authorize]
-    public async Task<IActionResult> GetByLink(Guid deviceUsersId, [FromQuery] int limit = 50, [FromQuery] int offset = 0)
+    public async Task<IActionResult> GetByLink(
+        Guid deviceUsersId,
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
         if (deviceUsersId == Guid.Empty)
             return BadRequest(new { errors = new { deviceUsersId = "Required" } });
 
-        try
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+
+        if (!IsAdmin())
         {
-            var currentUserId = GetCurrentUserId(User);
-            if (currentUserId == null)
-                return Unauthorized();
-
-            // Verify link ownership
-            if (!IsAdmin(User))
-            {
-                var link = await _db.DeviceUsers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == deviceUsersId);
-                if (link == null)
-                    return NotFound(new { error = "Link not found." });
-                if (link.UserId != currentUserId)
-                    return Forbid();
-            }
-
-            limit = Math.Clamp(limit, 1, 1000);
-            offset = Math.Max(0, offset);
-
-            var query = _db.Measurements
-                .AsNoTracking()
-                .Where(m => m.DeviceUserId == deviceUsersId)
-                .OrderByDescending(m => m.Timestamp);
-
-            var total = await query.CountAsync();
-            var items = await query.Skip(offset).Take(limit).ToListAsync();
-
-            return Ok(new
-            {
-                total,
-                limit,
-                offset,
-                data = items.Select(MeasurementOutDTO.FromEntity)
-            });
+            var link = await _measurementService.GetLinkByIdAsync(deviceUsersId, ct);
+            if (link == null) return NotFound(new { error = "Link not found." });
+            if (link.UserId != currentUserId) return Forbid();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Failed to fetch by link");
-            return StatusCode(500, new { error = "Failed to fetch measurements." });
-        }
+
+        var (total, items) = await _measurementService.GetByLinkAsync(deviceUsersId, limit, offset, ct);
+        return Ok(new { total, limit, offset, data = items });
     }
 
     [HttpGet("measurements/recent")]
     [Authorize(Roles = "admin")]
-    public async Task<IActionResult> GetRecent([FromQuery] int limit = 50, [FromQuery] int offset = 0)
+    public async Task<IActionResult> GetRecent(
+        [FromQuery] int limit = 50,
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
-        try
-        {
-            limit = Math.Clamp(limit, 1, 1000);
-            offset = Math.Max(0, offset);
-
-            var query = _db.Measurements
-                .AsNoTracking()
-                .OrderByDescending(m => m.Timestamp);
-
-            var total = await query.CountAsync();
-            var items = await query.Skip(offset).Take(limit).ToListAsync();
-
-            return Ok(new
-            {
-                total,
-                limit,
-                offset,
-                data = items.Select(MeasurementOutDTO.FromEntity)
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Failed to fetch recent");
-            return StatusCode(500, new { error = "Failed to fetch measurements." });
-        }
+        var (total, items) = await _measurementService.GetRecentAsync(limit, offset, ct);
+        return Ok(new { total, limit, offset, data = items });
     }
 
     [HttpGet("measurements/{deviceId}/latest")]
     [Authorize]
-    public async Task<IActionResult> GetLatestByDevice(string deviceId)
+    public async Task<IActionResult> GetLatestByDevice(string deviceId, CancellationToken ct)
     {
-        try
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+
+        var mac = MeasurementService.NormalizeMac(deviceId);
+
+        if (!IsAdmin())
         {
-            var currentUserId = GetCurrentUserId(User);
-            if (currentUserId == null)
-                return Unauthorized();
-
-            var mac = NormalizeMac(deviceId);
-
-            // Verify device ownership
-            if (!IsAdmin(User))
-            {
-                var device = await _db.Devices.AsNoTracking().FirstOrDefaultAsync(d => d.DeviceId == mac);
-                if (device == null)
-                    return NotFound(new { error = "Device not found." });
-                if (device.UserId != currentUserId)
-                    return Forbid();
-            }
-
-            // Check Redis first — the dashboard polls this endpoint frequently
-            var cached = await _redis.GetAsync<MeasurementOutDTO>($"device:latest:{mac}");
-            if (cached != null)
-                return Ok(new { data = cached, source = "cache" });
-
-            var item = await _db.Measurements
-                .AsNoTracking()
-                .Where(m => m.DeviceId == mac)
-                .OrderByDescending(m => m.Timestamp)
-                .FirstOrDefaultAsync();
-
-            if (item == null)
-                return NotFound(new { error = "No measurements yet." });
-
-            var dto = MeasurementOutDTO.FromEntity(item);
-            await _redis.SetAsync($"device:latest:{mac}", dto, TimeSpan.FromMinutes(5));
-
-            return Ok(new { data = dto, source = "db" });
+            var device = await _measurementService.GetDeviceByMacAsync(mac, ct);
+            if (device == null) return NotFound(new { error = "Device not found." });
+            if (device.UserId != currentUserId) return Forbid();
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Failed to get latest measurement");
-            return StatusCode(500, new { error = "Failed to get latest measurement." });
-        }
+
+        var dto = await _measurementService.GetLatestByDeviceAsync(mac, ct);
+        if (dto == null) return NotFound(new { error = "No measurements yet." });
+
+        return Ok(new { data = dto });
     }
 
     [HttpGet("measurements/user/{userId:guid}")]
     [Authorize]
     public async Task<IActionResult> GetByUser(
         Guid userId,
-        [FromQuery] DateTime? from = null,
-        [FromQuery] DateTime? to = null,
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
         [FromQuery] int limit = 0,
-        [FromQuery] int offset = 0)
+        [FromQuery] int offset = 0,
+        CancellationToken ct = default)
     {
-        try
-        {
-            var currentUserId = GetCurrentUserId(User);
-            if (currentUserId == null)
-                return Unauthorized();
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == null) return Unauthorized();
+        if (currentUserId != userId && !IsAdmin()) return Forbid();
 
-            if (currentUserId != userId && !IsAdmin(User))
-                return Forbid();
-
-            offset = Math.Max(0, offset);
-            if (limit <= 0)
-                limit = HardCap;
-            limit = Math.Clamp(limit, 1, HardCap);
-
-            var query = _db.Measurements
-                .AsNoTracking()
-                .Where(m => m.UserId == userId);
-
-            if (from.HasValue)
-            {
-                var f = DateTime.SpecifyKind(from.Value, DateTimeKind.Utc);
-                query = query.Where(m => m.Timestamp >= f);
-            }
-
-            if (to.HasValue)
-            {
-                var t = DateTime.SpecifyKind(to.Value, DateTimeKind.Utc);
-                query = query.Where(m => m.Timestamp <= t);
-            }
-
-            query = query.OrderByDescending(m => m.Timestamp);
-
-            var total = await query.CountAsync();
-            var items = await query.Skip(offset).Take(limit).ToListAsync();
-
-            return Ok(new
-            {
-                total,
-                limit,
-                offset,
-                from,
-                to,
-                data = items.Select(MeasurementOutDTO.FromEntity)
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Failed to fetch user measurements");
-            return StatusCode(500, new { error = "Failed to fetch measurements." });
-        }
+        var (total, items) = await _measurementService.GetByUserAsync(userId, from, to, limit, offset, ct);
+        return Ok(new { total, limit, offset, from, to, data = items });
     }
 }
