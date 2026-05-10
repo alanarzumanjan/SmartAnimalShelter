@@ -20,7 +20,7 @@ public class AdoptionController : ControllerBase
 
     [HttpGet("user/{userId}")]
     [Authorize]
-    public async Task<IActionResult> GetUserAdoptions(Guid userId)
+    public async Task<IActionResult> GetUserAdoptions(Guid userId, CancellationToken ct)
     {
         var requestingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var requestingRole = User.FindFirstValue(ClaimTypes.Role);
@@ -28,45 +28,37 @@ public class AdoptionController : ControllerBase
         if (!Guid.TryParse(requestingUserId, out var currentUserId))
             return Unauthorized();
 
-        // Only the owner or admin/shelter can view adoption requests
         if (currentUserId != userId && requestingRole != nameof(UserRole.admin) && requestingRole != nameof(UserRole.shelter))
             return Forbid();
 
         var adoptions = await _db.AdoptionRequests
-            .Include(a => a.Pet)
-            .ThenInclude(p => p.Species)
+            .Include(a => a.Pet).ThenInclude(p => p.Species)
             .Where(a => a.UserId == userId)
             .OrderByDescending(a => a.CreatedAt)
             .Select(a => new
             {
-                a.Id,
-                a.PetId,
+                a.Id, a.PetId,
                 petName = a.Pet.Name,
-                a.UserId,
-                a.Message,
-                a.Status,
-                a.CreatedAt
+                a.UserId, a.Message, a.Status, a.CreatedAt
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return Ok(new { data = adoptions });
     }
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateAdoptionRequest([FromBody] CreateAdoptionRequestDto dto)
+    public async Task<IActionResult> CreateAdoptionRequest([FromBody] CreateAdoptionRequestDto dto, CancellationToken ct)
     {
         var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrWhiteSpace(userIdValue) || !Guid.TryParse(userIdValue, out var userId))
             return Unauthorized();
 
-        var pet = await _db.Pets.FindAsync(dto.PetId);
-        if (pet == null)
-            return NotFound("Pet not found.");
+        var pet = await _db.Pets.FindAsync([dto.PetId], ct);
+        if (pet == null) return NotFound("Pet not found.");
 
-        // Check if user already has a pending request for this pet
         var existing = await _db.AdoptionRequests
-            .FirstOrDefaultAsync(a => a.UserId == userId && a.PetId == dto.PetId && a.Status == AdoptionRequestStatus.pending);
+            .FirstOrDefaultAsync(a => a.UserId == userId && a.PetId == dto.PetId && a.Status == AdoptionRequestStatus.pending, ct);
 
         if (existing != null)
             return BadRequest("You already have a pending request for this pet.");
@@ -80,20 +72,19 @@ public class AdoptionController : ControllerBase
         };
 
         _db.AdoptionRequests.Add(adoption);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         return Ok(new { message = "Adoption request submitted", data = adoption.Id });
     }
 
     [HttpPatch("{id}/status")]
     [Authorize(Roles = "shelter,admin")]
-    public async Task<IActionResult> UpdateAdoptionStatus(Guid id, [FromBody] UpdateAdoptionStatusDto dto)
+    public async Task<IActionResult> UpdateAdoptionStatus(Guid id, [FromBody] UpdateAdoptionStatusDto dto, CancellationToken ct)
     {
         var adoption = await _db.AdoptionRequests
             .Include(a => a.Pet)
-            .FirstOrDefaultAsync(a => a.Id == id);
-        if (adoption == null)
-            return NotFound("Adoption request not found.");
+            .FirstOrDefaultAsync(a => a.Id == id, ct);
+        if (adoption == null) return NotFound("Adoption request not found.");
 
         var requestingUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var requestingRole = User.FindFirstValue(ClaimTypes.Role);
@@ -103,14 +94,14 @@ public class AdoptionController : ControllerBase
             if (!Guid.TryParse(requestingUserId, out var currentUserId))
                 return Unauthorized();
 
-            var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.OwnerId == currentUserId);
+            var shelter = await _db.Shelters.FirstOrDefaultAsync(s => s.OwnerId == currentUserId, ct);
             if (shelter == null || adoption.Pet.ShelterId != shelter.Id)
                 return Forbid();
         }
 
         if (Enum.TryParse<AdoptionRequestStatus>(dto.Status, true, out var newStatus))
             adoption.Status = newStatus;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         return Ok(new { message = "Adoption status updated" });
     }
