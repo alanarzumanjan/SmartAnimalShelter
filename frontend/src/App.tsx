@@ -1,6 +1,8 @@
-import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Provider, useSelector } from "react-redux";
+import { setNavigator } from "@/services/navigator";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { store } from "@/store/store";
 import type { RootState } from "@/store/store";
 import { Toaster } from "react-hot-toast";
@@ -48,108 +50,39 @@ function ProtectedRoute({
 
 function AppRoutes() {
   const { theme } = useTheme();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setNavigator(navigate);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-slate-900 dark:text-slate-100">
       <Header />
       <main className="relative flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/animals" element={<AnimalsPage />} />
-          <Route path="/animals/:animalId" element={<AnimalDetailsPage />} />
-          <Route
-            path="/animals/create"
-            element={
-              <ProtectedRoute>
-                <CreateAnimalPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/animals/:animalId/edit"
-            element={
-              <ProtectedRoute>
-                <EditAnimalPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/adoption" element={<AdoptionFormPage />} />
-          <Route path="/shelters/:shelterId" element={<ShelterPage />} />
-
-          <Route
-            path="/shelter"
-            element={
-              <ProtectedRoute>
-                <ShelterManagementPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/enclosures/:enclosureId"
-            element={
-              <ProtectedRoute>
-                <EnclosurePage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/devices/:deviceId"
-            element={
-              <ProtectedRoute>
-                <DeviceDetailPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/history"
-            element={
-              <ProtectedRoute>
-                <HistoryPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/chats"
-            element={
-              <ProtectedRoute>
-                <ChatPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/chat"
-            element={<Navigate to="/dashboard/chats" replace />}
-          />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requireAdmin>
-                <AdminPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <ProfilePage />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/animals" element={<AnimalsPage />} />
+            <Route path="/animals/:animalId" element={<AnimalDetailsPage />} />
+            <Route path="/animals/create" element={<ProtectedRoute><CreateAnimalPage /></ProtectedRoute>} />
+            <Route path="/animals/:animalId/edit" element={<ProtectedRoute><EditAnimalPage /></ProtectedRoute>} />
+            <Route path="/adoption" element={<AdoptionFormPage />} />
+            <Route path="/shelters/:shelterId" element={<ShelterPage />} />
+            <Route path="/shelter" element={<ProtectedRoute><ShelterManagementPage /></ProtectedRoute>} />
+            <Route path="/enclosures/:enclosureId" element={<ProtectedRoute><EnclosurePage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/dashboard/devices/:deviceId" element={<ProtectedRoute><DeviceDetailPage /></ProtectedRoute>} />
+            <Route path="/dashboard/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+            <Route path="/dashboard/chats" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+            <Route path="/dashboard/chat" element={<Navigate to="/dashboard/chats" replace />} />
+            <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
       <Footer />
       <Toaster
@@ -182,12 +115,14 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <ThemeProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </ThemeProvider>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <ThemeProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </ThemeProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }
