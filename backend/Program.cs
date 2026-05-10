@@ -138,6 +138,9 @@ var redisMultiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
 builder.Services.AddSingleton<IRedisService, RedisService>();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -179,6 +182,7 @@ builder.Logging.SetMinimumLevel(LogLevel.Information);
 var app = builder.Build();
 
 app.UseCors("FrontendOnly");
+app.UseExceptionHandler();
 
 // Auto migrate and seed species
 using (var scope = app.Services.CreateScope())
