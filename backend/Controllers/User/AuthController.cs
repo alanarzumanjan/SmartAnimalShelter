@@ -85,11 +85,10 @@ public class AuthController : ControllerBase
             if (encryptedEmail == null)
                 return BadRequest("Email encryption failed. Email is empty or invalid.");
 
-            if (await db.Users.AnyAsync(u => u.Username == user.name))
-                return BadRequest("Username already exists.");
-
-            if (await _userEmailService.EmailExistsAsync(trimmedEmail))
-                return BadRequest("Email already exists.");
+            var usernameExists = await db.Users.AnyAsync(u => u.Username == user.name);
+            var emailExists = await _userEmailService.EmailExistsAsync(trimmedEmail);
+            if (usernameExists || emailExists)
+                return BadRequest(new { error = "Username or email already in use." });
 
             // Validate and default role
             var allowedRoles = new[] { nameof(UserRole.user), nameof(UserRole.shelter) };
@@ -133,7 +132,6 @@ public class AuthController : ControllerBase
             {
                 await _shelterService.EnsureUserShelterAsync(newUser.Id, null);
                 _logger.LogInformation("> Auto-created shelter for new user {UserId} with role {Role}", newUser.Id, role);
-                Console.WriteLine($"> Auto-created shelter for new user {newUser.Id} with role {role}");
             }
 
             await transaction.CommitAsync();
@@ -154,7 +152,6 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "> [Register] Exception");
-            Console.WriteLine($"> [Register] Exception: {ex}");
             return Problem("Error: " + ex.Message);
         }
     }
@@ -189,8 +186,6 @@ public class AuthController : ControllerBase
             if (user == null)
             {
                 _logger.LogWarning("> ❌ User not found for email {Email}", loginRequest.email);
-                var logMessage = "> ❌ User not found";
-                Console.WriteLine(logMessage);
                 return Unauthorized("Incorrect email or password.");
             }
 
@@ -199,8 +194,6 @@ public class AuthController : ControllerBase
             if (!isPasswordCorrect)
             {
                 _logger.LogWarning("> ❌ Incorrect password for user {UserId}", user.Id);
-                var logMessage = "> ❌ Incorrect password";
-                Console.WriteLine(logMessage);
                 return Unauthorized("Incorrect email or password.");
             }
 
@@ -218,8 +211,6 @@ public class AuthController : ControllerBase
             });
 
             _logger.LogInformation("> ✅ Login success: {Username}, Role: {Role}", user.Username, user.Role);
-            var logMessage2 = $"> ✅ Login success: {user.Username}, Role: {user.Role}";
-            Console.WriteLine(logMessage2);
 
             string? decryptedEmail = null;
             string? decryptedPhone = null;
@@ -250,8 +241,6 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "> ❌ Login error");
-            var logMessage3 = $"> ❌ Login error: {ex}";
-            Console.WriteLine(logMessage3);
             return Problem("Error: " + ex.Message);
         }
     }
