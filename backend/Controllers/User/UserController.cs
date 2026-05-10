@@ -94,7 +94,6 @@ public class UsersController : ControllerBase
         };
 
         _logger.LogInformation("> Admin fetched {Count} users (page {Page}, size {PageSize}, total {Total})", usersPage.Count, page, pageSize, totalCount);
-        Console.WriteLine($"> Admin fetched {usersPage.Count} users (page {page}, size {pageSize}, total {totalCount})");
 
         return Ok(new
         {
