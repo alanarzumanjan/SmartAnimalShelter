@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Encodings.Web;
 using Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -88,7 +89,7 @@ public class ChatHub : Hub
             RoomId = roomId,
             SenderId = user.Id,
             SenderName = user.Username,
-            Text = text.Trim(),
+            Text = HtmlEncoder.Default.Encode(text.Trim()),
             CreatedAt = DateTime.UtcNow,
         };
 
