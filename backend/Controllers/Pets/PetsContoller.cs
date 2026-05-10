@@ -15,12 +15,14 @@ public class PetsController : ControllerBase
 {
     private readonly AppDbContext _db;
     private readonly ShelterService _shelterService;
+    private readonly BreedResolver _breedResolver;
     private readonly ILogger<PetsController> _logger;
 
-    public PetsController(AppDbContext db, ShelterService shelterService, ILogger<PetsController> logger)
+    public PetsController(AppDbContext db, ShelterService shelterService, BreedResolver breedResolver, ILogger<PetsController> logger)
     {
         _db = db;
         _shelterService = shelterService;
+        _breedResolver = breedResolver;
         _logger = logger;
     }
 
@@ -162,14 +164,12 @@ public class PetsController : ControllerBase
 
         var shelter = await _shelterService.EnsureUserShelterAsync(userId.Value, dto.shelterId);
         _logger.LogInformation("> Ensured shelter {ShelterId} for pet creation by user {UserId}", shelter.Id, userId);
-        Console.WriteLine($"> Ensured shelter {shelter.Id} for pet creation by user {userId}");
 
         // Resolve breed: prefer breedName, fallback to breedId, or create default
-        var breedResolver = new BreedResolver(_db);
         int breedId;
         if (!string.IsNullOrWhiteSpace(dto.breedName))
         {
-            breedId = await breedResolver.ResolveBreedIdAsync(dto.breedName, dto.speciesId);
+            breedId = await _breedResolver.ResolveBreedIdAsync(dto.breedName, dto.speciesId);
         }
         else if (dto.breedId.HasValue && dto.breedId.Value > 0)
         {
@@ -177,8 +177,7 @@ public class PetsController : ControllerBase
         }
         else
         {
-            // Create a default breed for the species
-            breedId = await breedResolver.ResolveBreedIdAsync("Mixed", dto.speciesId);
+            breedId = await _breedResolver.ResolveBreedIdAsync("Mixed", dto.speciesId);
         }
 
         var newPet = new Pet
@@ -346,8 +345,7 @@ public class PetsController : ControllerBase
         if (string.IsNullOrWhiteSpace(breedName))
             return BadRequest("Breed name is required.");
 
-        var breedResolver = new BreedResolver(_db);
-        int breedId = await breedResolver.ResolveBreedIdAsync(breedName, pet.SpeciesId);
+        int breedId = await _breedResolver.ResolveBreedIdAsync(breedName, pet.SpeciesId);
 
         pet.BreedId = breedId;
         await _db.SaveChangesAsync();
