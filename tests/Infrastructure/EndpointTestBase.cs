@@ -33,6 +33,16 @@ public abstract class EndpointTestBase : IAsyncLifetime
         client.DefaultRequestHeaders.Add("Cookie", cookie);
     }
 
+    protected static async Task SetCsrfTokenAsync(HttpClient client)
+    {
+        var response = await client.GetAsync("/csrf-token");
+        if (response.Headers.TryGetValues("X-CSRF-TOKEN", out var values))
+        {
+            client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+            client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", values.First());
+        }
+    }
+
     protected HttpClient CreateClient() => Factory.CreateClient();
 
     protected HttpClient CreateAuthenticatedClient(Guid userId, UserRole role) =>

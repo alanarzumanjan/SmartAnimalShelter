@@ -30,6 +30,7 @@ public class AuthController : ControllerBase
     private readonly ShelterService _shelterService;
     private readonly ILogger<AuthController> _logger;
     private readonly IAntiforgery _antiforgery;
+    private readonly bool _isProduction;
 
     private static readonly TimeSpan AuthRateWindow = TimeSpan.FromMinutes(15);
     private static readonly int AuthRateLimit =
@@ -44,7 +45,8 @@ public class AuthController : ControllerBase
         IRedisService redis,
         ShelterService shelterService,
         ILogger<AuthController> logger,
-        IAntiforgery antiforgery)
+        IAntiforgery antiforgery,
+        IWebHostEnvironment env)
     {
         this.db = db;
         _jwtService = jwtService;
@@ -55,6 +57,7 @@ public class AuthController : ControllerBase
         _shelterService = shelterService;
         _logger = logger;
         _antiforgery = antiforgery;
+        _isProduction = env.IsProduction();
     }
 
     [HttpGet("csrf-token")]
@@ -130,7 +133,7 @@ public class AuthController : ControllerBase
             Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = _isProduction,
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(7),
                 Path = "/"
@@ -216,7 +219,7 @@ public class AuthController : ControllerBase
             Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = _isProduction,
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(7),
                 Path = "/"
@@ -258,7 +261,6 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("refresh")]
-    [ValidateAntiForgeryToken]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> RefreshToken(CancellationToken ct)
@@ -310,7 +312,7 @@ public class AuthController : ControllerBase
             Response.Cookies.Append("refresh_token", newRefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = _isProduction,
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(_settings.RefreshTokenExpireDays),
                 Path = "/"
@@ -326,7 +328,6 @@ public class AuthController : ControllerBase
 
     [HttpPost("logout")]
     [Authorize]
-    [ValidateAntiForgeryToken]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
@@ -348,7 +349,7 @@ public class AuthController : ControllerBase
         {
             Path = "/",
             HttpOnly = true,
-            Secure = true,
+            Secure = _isProduction,
             SameSite = SameSiteMode.Lax
         });
 
