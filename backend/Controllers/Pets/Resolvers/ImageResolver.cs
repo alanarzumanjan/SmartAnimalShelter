@@ -26,7 +26,6 @@ namespace ImageFetchers
 
             if (string.IsNullOrEmpty(imgElement))
             {
-                Console.WriteLine("⚠️ No image found on the page.");
                 return null;
             }
 
@@ -42,9 +41,8 @@ namespace ImageFetchers
                 var imageBytes = await _httpClient.GetByteArrayAsync(imageUrl);
                 return await _mongoService.SaveImageAsync(imageBytes);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"⚠️ Failed to fetch image: {imgElement} | {ex.Message}");
                 return null;
             }
         }
