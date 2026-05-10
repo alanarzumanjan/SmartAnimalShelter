@@ -179,6 +179,51 @@ public class UnitTests
     }
 }
 
+public class RateLimitingTests
+{
+    [Fact]
+    public async Task AllowRequestAsync_UnderLimit_ReturnsTrue()
+    {
+        var redis = new tests.Infrastructure.FakeRedisService();
+
+        var result = await redis.AllowRequestAsync("ratelimit:test:1", 5, TimeSpan.FromMinutes(1));
+
+        Assert.True(result);
+    }
+
+    [Fact]
+    public async Task AllowRequestAsync_OverLimit_ReturnsFalse()
+    {
+        var redis = new tests.Infrastructure.FakeRedisService();
+        var key = "ratelimit:test:2";
+
+        for (var i = 0; i < 3; i++)
+            await redis.AllowRequestAsync(key, 3, TimeSpan.FromMinutes(1));
+
+        var result = await redis.AllowRequestAsync(key, 3, TimeSpan.FromMinutes(1));
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task AllowRequestAsync_AfterWindowExpires_AllowsAgain()
+    {
+        var redis = new tests.Infrastructure.FakeRedisService();
+        var key = "ratelimit:test:3";
+
+        // Fill up the limit with a very short window
+        for (var i = 0; i < 3; i++)
+            await redis.AllowRequestAsync(key, 3, TimeSpan.FromMilliseconds(50));
+
+        // Wait for window to expire
+        await Task.Delay(100);
+
+        var result = await redis.AllowRequestAsync(key, 3, TimeSpan.FromMilliseconds(50));
+
+        Assert.True(result);
+    }
+}
+
 public class EncryptionServiceTests : IDisposable
 {
     private readonly string? _originalKey;
