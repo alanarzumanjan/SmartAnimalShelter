@@ -73,7 +73,7 @@ public class AuthTests : EndpointTestBase
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Username already exists", body);
+        Assert.Contains("Username or email already in use", body);
     }
 
     [Fact]
