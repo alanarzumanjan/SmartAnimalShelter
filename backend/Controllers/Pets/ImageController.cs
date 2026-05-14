@@ -69,8 +69,7 @@ namespace Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ MongoDB image upload error: {ex.Message}");
-                return StatusCode(500, $"MongoDB error: {ex.Message}");
+                throw new InvalidOperationException($"MongoDB image upload error: {ex.Message}", ex);
             }
         }
 
@@ -93,8 +92,7 @@ namespace Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ MongoDB image download error: {ex.Message}");
-                return StatusCode(500, $"MongoDB error: {ex.Message}");
+                throw new InvalidOperationException($"MongoDB image download error: {ex.Message}", ex);
             }
         }
     }

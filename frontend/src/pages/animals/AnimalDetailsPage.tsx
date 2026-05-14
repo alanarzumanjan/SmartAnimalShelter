@@ -101,7 +101,12 @@ const AnimalDetailsPage: React.FC = () => {
     );
   }
 
-  const chatLink = `/dashboard/chats?recipientId=${animal.shelterOwnerId ?? ""}&recipientName=${encodeURIComponent(animal.shelterName ?? "Shelter")}&message=${encodeURIComponent(`Hi! I'm interested in adopting ${animal.name} (${animal.species}). Could you tell me more?`)}`;
+  const chatParams = new URLSearchParams({
+    recipientId: animal.shelterOwnerId ?? "",
+    recipientName: animal.shelterName ?? "Shelter",
+    message: `Hi! I'm interested in adopting ${animal.name} (${animal.species}). Could you tell me more?`,
+  });
+  const chatLink = `/dashboard/chats?${chatParams.toString()}`;
 
   function boolBadge(val: boolean | null | undefined) {
     if (val === true)

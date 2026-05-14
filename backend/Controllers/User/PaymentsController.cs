@@ -71,7 +71,6 @@ public class PaymentsController : ControllerBase
         catch (StripeException ex)
         {
             _logger.LogError(ex, "❌ Stripe checkout error");
-            Console.WriteLine($"❌ Stripe checkout error: {ex}");
             return StatusCode(StatusCodes.Status502BadGateway, new
             {
                 error = ex.StripeError?.Message ?? "Failed to create Stripe Checkout session."
@@ -100,7 +99,6 @@ public class PaymentsController : ControllerBase
         catch (StripeException ex)
         {
             _logger.LogError(ex, "❌ Stripe status lookup error");
-            Console.WriteLine($"❌ Stripe status lookup error: {ex}");
             return StatusCode(StatusCodes.Status502BadGateway, new
             {
                 error = ex.StripeError?.Message ?? "Failed to fetch Stripe Checkout session."
@@ -127,7 +125,6 @@ public class PaymentsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Webhook signature verification failed");
-            Console.WriteLine($"❌ Webhook signature verification failed: {ex.Message}");
             return BadRequest(new { error = "Webhook signature verification failed." });
         }
 
@@ -149,7 +146,6 @@ public class PaymentsController : ControllerBase
 
                 default:
                     _logger.LogWarning("⚠️ Unhandled Stripe event type: {Type}", stripeEvent.Type);
-                    Console.WriteLine($"⚠️ Unhandled Stripe event type: {stripeEvent.Type}");
                     break;
             }
 
@@ -158,7 +154,6 @@ public class PaymentsController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Webhook handler failed");
-            Console.WriteLine($"❌ Webhook handler failed: {ex.Message}\n{ex}");
             return StatusCode(StatusCodes.Status500InternalServerError, new { error = "Webhook handler failed." });
         }
     }
@@ -200,17 +195,14 @@ public class PaymentsController : ControllerBase
         if (session == null)
         {
             _logger.LogWarning("⚠️ Session object was null in checkout.session.completed event");
-            Console.WriteLine("⚠️ Session object was null in checkout.session.completed event");
             return;
         }
 
         _logger.LogInformation("✅ Checkout session completed: {SessionId}, PaymentStatus: {PaymentStatus}", session.Id, session.PaymentStatus);
-        Console.WriteLine($"✅ Checkout session completed: {session.Id}, PaymentStatus: {session.PaymentStatus}");
 
         if (session.PaymentStatus != "paid")
         {
             _logger.LogWarning("⚠️ Session {SessionId} completed but payment status is {PaymentStatus}", session.Id, session.PaymentStatus);
-            Console.WriteLine($"⚠️ Session {session.Id} completed but payment status is {session.PaymentStatus}");
             return;
         }
 
@@ -218,7 +210,6 @@ public class PaymentsController : ControllerBase
         if (string.IsNullOrWhiteSpace(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
         {
             _logger.LogWarning("⚠️ No userId in metadata for session {SessionId}. Order not created.", session.Id);
-            Console.WriteLine($"⚠️ No userId in metadata for session {session.Id}. Order not created.");
             return;
         }
 
@@ -237,12 +228,10 @@ public class PaymentsController : ControllerBase
         if (existingOrder != null)
         {
             _logger.LogInformation("ℹ️ Order already exists for session {SessionId}: {OrderId}", session.Id, existingOrder.Id);
-            Console.WriteLine($"ℹ️ Order already exists for session {session.Id}: {existingOrder.Id}");
             if (existingOrder.Status != OrderStatus.paid)
             {
                 await _orderService.MarkOrderAsPaidAsync(session.Id, session.PaymentIntentId, cancellationToken);
                 _logger.LogInformation("✅ Order {OrderId} marked as paid", existingOrder.Id);
-                Console.WriteLine($"✅ Order {existingOrder.Id} marked as paid");
             }
             return;
         }
@@ -269,7 +258,6 @@ public class PaymentsController : ControllerBase
         await _orderService.MarkOrderAsPaidAsync(session.Id, session.PaymentIntentId, cancellationToken);
 
         _logger.LogInformation("✅ Order created and marked as paid: {OrderId} for user {UserId}", order.Id, userId);
-        Console.WriteLine($"✅ Order created and marked as paid: {order.Id} for user {userId}");
     }
 
     private async Task HandleCheckoutSessionExpiredAsync(Event stripeEvent, CancellationToken cancellationToken)
@@ -279,15 +267,22 @@ public class PaymentsController : ControllerBase
             return;
 
         _logger.LogInformation("⏰ Checkout session expired: {SessionId}", session.Id);
-        Console.WriteLine($"⏰ Checkout session expired: {session.Id}");
 
         var order = await _orderService.GetOrderByStripeSessionIdAsync(session.Id, cancellationToken);
-        if (order != null && order.Status == OrderStatus.pending)
+        if (order == null)
         {
-            await _orderService.MarkOrderAsFailedAsync(session.Id, cancellationToken);
-            _logger.LogInformation("❌ Order {OrderId} marked as failed (session expired)", order.Id);
-            Console.WriteLine($"❌ Order {order.Id} marked as failed (session expired)");
+            _logger.LogInformation("ℹ️ No order found for expired session {SessionId}, skipping.", session.Id);
+            return;
         }
+
+        if (order.Status != OrderStatus.pending)
+        {
+            _logger.LogInformation("ℹ️ Order {OrderId} already in terminal status {Status}, skipping expired event.", order.Id, order.Status);
+            return;
+        }
+
+        await _orderService.MarkOrderAsFailedAsync(session.Id, cancellationToken);
+        _logger.LogInformation("❌ Order {OrderId} marked as failed (session expired)", order.Id);
     }
 
     private async Task HandleCheckoutSessionPaymentFailedAsync(Event stripeEvent, CancellationToken cancellationToken)
@@ -297,15 +292,22 @@ public class PaymentsController : ControllerBase
             return;
 
         _logger.LogWarning("❌ Checkout session payment failed: {SessionId}", session.Id);
-        Console.WriteLine($"❌ Checkout session payment failed: {session.Id}");
 
         var order = await _orderService.GetOrderByStripeSessionIdAsync(session.Id, cancellationToken);
-        if (order != null && order.Status == OrderStatus.pending)
+        if (order == null)
         {
-            await _orderService.MarkOrderAsFailedAsync(session.Id, cancellationToken);
-            _logger.LogInformation("❌ Order {OrderId} marked as failed (payment failed)", order.Id);
-            Console.WriteLine($"❌ Order {order.Id} marked as failed (payment failed)");
+            _logger.LogInformation("ℹ️ No order found for failed session {SessionId}, skipping.", session.Id);
+            return;
         }
+
+        if (order.Status != OrderStatus.pending)
+        {
+            _logger.LogInformation("ℹ️ Order {OrderId} already in terminal status {Status}, skipping payment_failed event.", order.Id, order.Status);
+            return;
+        }
+
+        await _orderService.MarkOrderAsFailedAsync(session.Id, cancellationToken);
+        _logger.LogInformation("❌ Order {OrderId} marked as failed (payment failed)", order.Id);
     }
 }
 

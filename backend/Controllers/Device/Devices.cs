@@ -64,7 +64,7 @@ public class DevicesController : ControllerBase
         Regex.IsMatch(mac, "^[0-9A-F]{2}(:[0-9A-F]{2}){5}$");
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] DeviceRegisterDTO request)
+    public async Task<IActionResult> Register([FromBody] DeviceRegisterDTO request, CancellationToken ct)
     {
         if (request is null)
             return BadRequest(new { error = "Body is required." });
@@ -84,14 +84,14 @@ public class DevicesController : ControllerBase
 
         try
         {
-            if (await _db.Devices.AnyAsync(d => d.DeviceId == mac))
+            if (await _db.Devices.AnyAsync(d => d.DeviceId == mac, ct))
                 return Conflict(new { error = "Device with this MAC is already registered." });
 
             if (!string.IsNullOrEmpty(name))
             {
                 var existsName = await _db.Devices
                     .AnyAsync(d => d.UserId == currentUserId.Value && d.Name != null &&
-                                   d.Name.ToLower() == name.ToLower());
+                                   d.Name.ToLower() == name.ToLower(), ct);
                 if (existsName)
                     return Conflict(new { error = "Device with this name already exists for this user." });
             }
@@ -100,7 +100,7 @@ public class DevicesController : ControllerBase
             {
                 var existsLocation = await _db.Devices
                     .AnyAsync(d => d.UserId == currentUserId.Value && d.Location != null &&
-                                   d.Location.ToLower() == location.ToLower());
+                                   d.Location.ToLower() == location.ToLower(), ct);
                 if (existsLocation)
                     return Conflict(new { error = "Device with this location already exists for this user." });
             }
@@ -116,29 +116,26 @@ public class DevicesController : ControllerBase
             };
 
             _db.Devices.Add(device);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
 
             var message = $"> Device '{device.DeviceId}' registered for user {device.UserId}";
             _logger.LogInformation(message);
-            Console.WriteLine(message);
             return Ok(new { message, data = DeviceOutDTO.FromEntity(device) });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Failed to register device");
-            Console.WriteLine($"❌ Failed to register device: {ex.Message}");
             return StatusCode(500, new { error = "Failed to register device." });
         }
     }
 
     [HttpGet("user/{userId:guid}")]
-    public async Task<IActionResult> GetByUser(Guid userId)
+    public async Task<IActionResult> GetByUser(Guid userId, CancellationToken ct)
     {
         var currentUserId = GetCurrentUserId();
         if (currentUserId is null)
             return Unauthorized(new { error = "Invalid user token." });
 
-        // Users can only see their own devices; admins can see any user's devices
         if (userId != currentUserId.Value && !IsAdmin())
             return Forbid();
 
@@ -148,11 +145,10 @@ public class DevicesController : ControllerBase
                 .AsNoTracking()
                 .Where(d => d.UserId == userId)
                 .OrderByDescending(d => d.RegisteredAt)
-                .ToListAsync();
+                .ToListAsync(ct);
 
             var message = $"> Fetched {devices.Count} devices for user {userId}";
             _logger.LogInformation(message);
-            Console.WriteLine(message);
 
             var data = devices.Select(d => DeviceOutDTO.FromEntity(d)).ToList();
             return Ok(new { message, data });
@@ -160,13 +156,12 @@ public class DevicesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Failed to get devices");
-            Console.WriteLine($"❌ Failed to get devices: {ex.Message}");
             return StatusCode(500, new { error = "Failed to get devices." });
         }
     }
 
     [HttpGet("id/{deviceId}")]
-    public async Task<IActionResult> GetOne(string deviceId)
+    public async Task<IActionResult> GetOne(string deviceId, CancellationToken ct)
     {
         var currentUserId = GetCurrentUserId();
         if (currentUserId is null)
@@ -184,29 +179,26 @@ public class DevicesController : ControllerBase
             var device = await _db.Devices
                 .AsNoTracking()
                 .Include(d => d.Enclosure)
-                .FirstOrDefaultAsync(d => d.DeviceId == mac);
+                .FirstOrDefaultAsync(d => d.DeviceId == mac, ct);
             if (device is null)
                 return NotFound(new { error = "Device not found." });
 
-            // Users can only access their own devices; admins can access any
             if (device.UserId != currentUserId.Value && !IsAdmin())
                 return Forbid();
 
             var message = $"> Device '{device.DeviceId}' fetched.";
             _logger.LogInformation(message);
-            Console.WriteLine(message);
             return Ok(new { message, data = DeviceOutDTO.FromEntity(device, device.Enclosure?.Name) });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Failed to fetch device");
-            Console.WriteLine($"❌ Failed to fetch device: {ex.Message}");
             return StatusCode(500, new { error = "Failed to fetch device." });
         }
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(string id, [FromBody] UpdateDeviceDto? dto)
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateDeviceDto? dto, CancellationToken ct)
     {
         var currentUserId = GetCurrentUserId();
         if (currentUserId is null)
@@ -222,11 +214,10 @@ public class DevicesController : ControllerBase
         if (dto is null)
             return BadRequest(new { error = "Body is required." });
 
-        var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac);
+        var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac, ct);
         if (device is null)
             return NotFound(new { error = "Device not found." });
 
-        // Users can only update their own devices; admins can update any
         if (device.UserId != currentUserId.Value && !IsAdmin())
             return Forbid();
 
@@ -237,19 +228,17 @@ public class DevicesController : ControllerBase
 
         try
         {
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
             return Ok(new { message = "Device updated.", data = DeviceOutDTO.FromEntity(device) });
         }
         catch (DbUpdateException ex)
         {
             _logger.LogError(ex, "❌ Update failed (DB)");
-            Console.WriteLine($"❌ Update failed (DB): {ex.InnerException?.Message ?? ex.Message}");
             return Conflict(new { error = "Update failed: duplicate name/location (unique constraint)." });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Update failed");
-            Console.WriteLine($"❌ Update failed: {ex.Message}");
             return StatusCode(500, new { error = "Failed to update device." });
         }
     }

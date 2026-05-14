@@ -49,7 +49,7 @@ public class DeviceUsersController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] DeviceLoginRequest req)
+    public async Task<IActionResult> Login([FromBody] DeviceLoginRequest req, CancellationToken ct)
     {
         if (req is null)
             return BadRequest(new { error = "Body is required." });
@@ -64,12 +64,12 @@ public class DeviceUsersController : ControllerBase
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
             return BadRequest(new { error = "Email and password are required." });
 
-        var user = await _userEmailService.FindByEmailAsync(email);
+        var user = await _userEmailService.FindByEmailAsync(email, cancellationToken: ct);
 
         if (user?.PasswordHash == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
             return Unauthorized(new { error = "Invalid credentials." });
 
-        var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac);
+        var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac, ct);
         if (device == null)
         {
             device = new Device
@@ -82,7 +82,7 @@ public class DeviceUsersController : ControllerBase
                 UserId = user.Id
             };
             _db.Devices.Add(device);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
         }
         else
         {
@@ -90,10 +90,10 @@ public class DeviceUsersController : ControllerBase
                 return StatusCode(403, new { error = "Device is owned by another user." });
 
             device.LastSeenAt = UtcNow();
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
         }
 
-        var link = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac && x.UserId == user.Id);
+        var link = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac && x.UserId == user.Id, ct);
 
         if (link == null || string.IsNullOrWhiteSpace(link.ApiKeyHash))
         {
@@ -117,7 +117,7 @@ public class DeviceUsersController : ControllerBase
                 link.ApiKeyHash = hash;
             }
 
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
 
             return Ok(new DeviceLoginResponse
             {
@@ -142,7 +142,7 @@ public class DeviceUsersController : ControllerBase
 
     [HttpPost("enroll")]
     [Authorize]
-    public async Task<IActionResult> Enroll([FromBody] DeviceUsersEnrollRequest req)
+    public async Task<IActionResult> Enroll([FromBody] DeviceUsersEnrollRequest req, CancellationToken ct)
     {
         if (req is null)
             return BadRequest(new { error = "Body is required." });
@@ -155,7 +155,6 @@ public class DeviceUsersController : ControllerBase
         if (currentUserId is null)
             return Unauthorized(new { error = "Invalid user token." });
 
-        // Users can only enroll themselves; admins can enroll anyone
         if (req.UserId != currentUserId.Value && !IsAdmin())
             return Forbid();
 
@@ -163,7 +162,7 @@ public class DeviceUsersController : ControllerBase
         if (!IsValidMac(mac))
             return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
 
-        var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac);
+        var device = await _db.Devices.FirstOrDefaultAsync(d => d.DeviceId == mac, ct);
         if (device == null)
         {
             device = new Device
@@ -176,16 +175,15 @@ public class DeviceUsersController : ControllerBase
                 UserId = req.UserId
             };
             _db.Devices.Add(device);
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
         }
         else
         {
-            // If device exists, user must own it (or be admin) to enroll another user to it
             if (device.UserId != currentUserId.Value && !IsAdmin())
                 return Forbid();
         }
 
-        var existing = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac && x.UserId == req.UserId);
+        var existing = await _db.DeviceUsers.FirstOrDefaultAsync(x => x.DeviceId == mac && x.UserId == req.UserId, ct);
         if (existing != null)
             return Conflict(new { error = "Already enrolled for this user." });
 
@@ -202,7 +200,7 @@ public class DeviceUsersController : ControllerBase
         };
 
         _db.DeviceUsers.Add(du);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         return Ok(new DeviceUsersEnrollResponse { DeviceUsersId = du.Id, DeviceKey = rawKey });
     }

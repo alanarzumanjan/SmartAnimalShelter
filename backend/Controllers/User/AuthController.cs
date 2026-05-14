@@ -4,6 +4,7 @@ using System.Text;
 using Config;
 using Data;
 using Dtos;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,8 @@ public class AuthController : ControllerBase
     private readonly IRedisService _redis;
     private readonly ShelterService _shelterService;
     private readonly ILogger<AuthController> _logger;
+    private readonly IAntiforgery _antiforgery;
+    private readonly bool _isProduction;
 
     private static readonly TimeSpan AuthRateWindow = TimeSpan.FromMinutes(15);
     private static readonly int AuthRateLimit =
@@ -41,7 +44,9 @@ public class AuthController : ControllerBase
         UserEmailService userEmailService,
         IRedisService redis,
         ShelterService shelterService,
-        ILogger<AuthController> logger)
+        ILogger<AuthController> logger,
+        IAntiforgery antiforgery,
+        IWebHostEnvironment env)
     {
         this.db = db;
         _jwtService = jwtService;
@@ -51,13 +56,24 @@ public class AuthController : ControllerBase
         _redis = redis;
         _shelterService = shelterService;
         _logger = logger;
+        _antiforgery = antiforgery;
+        _isProduction = env.IsProduction();
+    }
+
+    [HttpGet("csrf-token")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public IActionResult GetCsrfToken()
+    {
+        var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+        Response.Headers["X-CSRF-TOKEN"] = tokens.RequestToken;
+        return NoContent();
     }
 
     [HttpPost("register")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status429TooManyRequests)]
-    public async Task<IActionResult> Register([FromBody] UserRegisterDto user)
+    public async Task<IActionResult> Register([FromBody] UserRegisterDto user, CancellationToken ct)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         if (!await _redis.AllowRequestAsync($"ratelimit:auth:{ip}", AuthRateLimit, AuthRateWindow))
@@ -85,11 +101,10 @@ public class AuthController : ControllerBase
             if (encryptedEmail == null)
                 return BadRequest("Email encryption failed. Email is empty or invalid.");
 
-            if (await db.Users.AnyAsync(u => u.Username == user.name))
-                return BadRequest("Username already exists.");
-
-            if (await _userEmailService.EmailExistsAsync(trimmedEmail))
-                return BadRequest("Email already exists.");
+            var usernameExists = await db.Users.AnyAsync(u => u.Username == user.name, ct);
+            var emailExists = await _userEmailService.EmailExistsAsync(trimmedEmail);
+            if (usernameExists || emailExists)
+                return BadRequest(new { error = "Username or email already in use." });
 
             // Validate and default role
             var allowedRoles = new[] { nameof(UserRole.user), nameof(UserRole.shelter) };
@@ -118,25 +133,23 @@ public class AuthController : ControllerBase
             Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = _isProduction,
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(7),
                 Path = "/"
             });
 
-            using var transaction = await db.Database.BeginTransactionAsync();
-            await db.Users.AddAsync(newUser);
-            await db.SaveChangesAsync();
+            using var transaction = await db.Database.BeginTransactionAsync(ct);
+            await db.Users.AddAsync(newUser, ct);
+            await db.SaveChangesAsync(ct);
 
-            // Auto-create a Shelter for shelter and veterinarian role users
             if (role == UserRole.shelter)
             {
                 await _shelterService.EnsureUserShelterAsync(newUser.Id, null);
                 _logger.LogInformation("> Auto-created shelter for new user {UserId} with role {Role}", newUser.Id, role);
-                Console.WriteLine($"> Auto-created shelter for new user {newUser.Id} with role {role}");
             }
 
-            await transaction.CommitAsync();
+            await transaction.CommitAsync(ct);
 
             return Ok(new
             {
@@ -154,7 +167,6 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "> [Register] Exception");
-            Console.WriteLine($"> [Register] Exception: {ex}");
             return Problem("Error: " + ex.Message);
         }
     }
@@ -164,7 +176,7 @@ public class AuthController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(object), StatusCodes.Status429TooManyRequests)]
-    public async Task<IActionResult> Login([FromBody] UserLoginDto loginRequest)
+    public async Task<IActionResult> Login([FromBody] UserLoginDto loginRequest, CancellationToken ct)
     {
         var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         if (!await _redis.AllowRequestAsync($"ratelimit:auth:{ip}", AuthRateLimit, AuthRateWindow))
@@ -184,13 +196,11 @@ public class AuthController : ControllerBase
 
         try
         {
-            var user = await _userEmailService.FindByEmailAsync(loginRequest.email);
+            var user = await _userEmailService.FindByEmailAsync(loginRequest.email, cancellationToken: ct);
 
             if (user == null)
             {
                 _logger.LogWarning("> ❌ User not found for email {Email}", loginRequest.email);
-                var logMessage = "> ❌ User not found";
-                Console.WriteLine(logMessage);
                 return Unauthorized("Incorrect email or password.");
             }
 
@@ -199,8 +209,6 @@ public class AuthController : ControllerBase
             if (!isPasswordCorrect)
             {
                 _logger.LogWarning("> ❌ Incorrect password for user {UserId}", user.Id);
-                var logMessage = "> ❌ Incorrect password";
-                Console.WriteLine(logMessage);
                 return Unauthorized("Incorrect email or password.");
             }
 
@@ -211,15 +219,13 @@ public class AuthController : ControllerBase
             Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = _isProduction,
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(7),
                 Path = "/"
             });
 
             _logger.LogInformation("> ✅ Login success: {Username}, Role: {Role}", user.Username, user.Role);
-            var logMessage2 = $"> ✅ Login success: {user.Username}, Role: {user.Role}";
-            Console.WriteLine(logMessage2);
 
             string? decryptedEmail = null;
             string? decryptedPhone = null;
@@ -250,8 +256,6 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "> ❌ Login error");
-            var logMessage3 = $"> ❌ Login error: {ex}";
-            Console.WriteLine(logMessage3);
             return Problem("Error: " + ex.Message);
         }
     }
@@ -259,7 +263,7 @@ public class AuthController : ControllerBase
     [HttpPost("refresh")]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> RefreshToken()
+    public async Task<IActionResult> RefreshToken(CancellationToken ct)
     {
         var refreshToken = Request.Cookies["refresh_token"];
         if (string.IsNullOrWhiteSpace(refreshToken))
@@ -294,7 +298,7 @@ public class AuthController : ControllerBase
             if (!Guid.TryParse(userIdStr, out var userId))
                 return Unauthorized(new { error = "Invalid user ID in token." });
 
-            var user = await db.Users.FindAsync(userId);
+            var user = await db.Users.FindAsync([userId], ct);
             if (user == null)
                 return Unauthorized(new { error = "User not found." });
 
@@ -308,7 +312,7 @@ public class AuthController : ControllerBase
             Response.Cookies.Append("refresh_token", newRefreshToken, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = _isProduction,
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTimeOffset.UtcNow.AddDays(_settings.RefreshTokenExpireDays),
                 Path = "/"
@@ -325,7 +329,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     [Authorize]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
-    public async Task<IActionResult> Logout()
+    public async Task<IActionResult> Logout(CancellationToken ct)
     {
         var refreshToken = Request.Cookies["refresh_token"];
         if (!string.IsNullOrWhiteSpace(refreshToken))
@@ -345,7 +349,7 @@ public class AuthController : ControllerBase
         {
             Path = "/",
             HttpOnly = true,
-            Secure = true,
+            Secure = _isProduction,
             SameSite = SameSiteMode.Lax
         });
 

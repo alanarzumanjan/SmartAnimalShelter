@@ -138,6 +138,19 @@ var redisMultiplexer = ConnectionMultiplexer.Connect(redisConnectionString);
 builder.Services.AddSingleton<IConnectionMultiplexer>(redisMultiplexer);
 builder.Services.AddSingleton<IRedisService, RedisService>();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+
+// Antiforgery — protects cookie-based endpoints (/refresh, /logout)
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.Name = "csrf_token";
+    options.Cookie.HttpOnly = false; // JS must read it to send in header
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
+
 // Controllers
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -155,8 +168,9 @@ builder.Services.AddScoped<GenderResolver>();
 builder.Services.AddSingleton<MongoService>();
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<ImageFetcher>();
-builder.Services.AddScoped<UserEmailService>();
 builder.Services.AddScoped<ShelterService>();
+builder.Services.AddScoped<MeasurementService>();
+builder.Services.AddScoped<UserService>();
 
 // CORS
 var frontendOrigin = Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_PORT") ?? "http://localhost:5173";
@@ -179,6 +193,8 @@ builder.Logging.SetMinimumLevel(LogLevel.Information);
 var app = builder.Build();
 
 app.UseCors("FrontendOnly");
+app.UseExceptionHandler();
+app.UseAntiforgery();
 
 // Auto migrate and seed species
 using (var scope = app.Services.CreateScope())

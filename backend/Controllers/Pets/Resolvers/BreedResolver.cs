@@ -1,14 +1,17 @@
 using Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Models;
 
 public class BreedResolver
 {
     private readonly AppDbContext _db;
+    private readonly ILogger<BreedResolver> _logger;
 
-    public BreedResolver(AppDbContext db)
+    public BreedResolver(AppDbContext db, ILogger<BreedResolver> logger)
     {
         _db = db;
+        _logger = logger;
     }
 
     public async Task<int> ResolveBreedIdAsync(string? breedName, int speciesId)
@@ -35,7 +38,7 @@ public class BreedResolver
         }
         catch (Exception ex)
         {
-            Console.WriteLine("❌ Breed resolution error: " + ex.Message);
+            _logger.LogWarning(ex, "❌ Breed resolution error, falling back to Unknown");
             return await GetOrCreateBreedAsync("Unknown", speciesId);
         }
     }

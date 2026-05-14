@@ -79,10 +79,8 @@ public sealed class OrderService
         var order = await _dbContext.Orders
             .FirstOrDefaultAsync(o => o.StripeSessionId == stripeSessionId, cancellationToken);
 
-        if (order == null)
-        {
-            throw new InvalidOperationException($"Order with Stripe session {stripeSessionId} not found.");
-        }
+        if (order == null || order.Status == OrderStatus.failed)
+            return;
 
         order.Status = OrderStatus.failed;
         order.UpdatedAt = DateTime.UtcNow;

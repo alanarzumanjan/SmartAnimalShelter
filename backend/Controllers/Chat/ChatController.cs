@@ -25,7 +25,7 @@ public class ChatController : ControllerBase
     }
 
     [HttpGet("rooms")]
-    public async Task<IActionResult> GetRooms()
+    public async Task<IActionResult> GetRooms(CancellationToken ct)
     {
         var userId = GetUserId();
         if (userId == null)
@@ -34,20 +34,20 @@ public class ChatController : ControllerBase
         var roomIds = await _db.ChatRoomMembers
             .Where(m => m.UserId == userId)
             .Select(m => m.RoomId)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         if (roomIds.Count == 0)
             return Ok(new List<object>());
 
         var allMembers = await _db.ChatRoomMembers
             .Where(m => roomIds.Contains(m.RoomId) && m.UserId != userId)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var recipientIds = allMembers.Select(m => m.UserId).Distinct().ToList();
         var recipients = await _db.Users
             .Where(u => recipientIds.Contains(u.Id))
             .Select(u => new { u.Id, u.Username })
-            .ToDictionaryAsync(u => u.Id);
+            .ToDictionaryAsync(u => u.Id, ct);
 
         var recipientByRoom = allMembers
             .GroupBy(m => m.RoomId)
@@ -60,7 +60,7 @@ public class ChatController : ControllerBase
         var messages = await _db.ChatMessages
             .Where(m => roomIds.Contains(m.RoomId))
             .OrderByDescending(m => m.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var rooms = messages
             .GroupBy(m => m.RoomId)
@@ -94,7 +94,7 @@ public class ChatController : ControllerBase
     }
 
     [HttpGet("rooms/{roomId}/messages")]
-    public async Task<IActionResult> GetMessages(string roomId, [FromQuery] int limit = 50)
+    public async Task<IActionResult> GetMessages(string roomId, [FromQuery] int limit = 50, CancellationToken ct = default)
     {
         var messages = await _db.ChatMessages
             .Where(m => m.RoomId == roomId)
@@ -110,32 +110,30 @@ public class ChatController : ControllerBase
                 m.Text,
                 m.CreatedAt,
             })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return Ok(messages);
     }
 
     [HttpPost("rooms/{roomId}/join")]
-    public async Task<IActionResult> JoinRoom(string roomId, [FromBody] JoinRoomDto? dto)
+    public async Task<IActionResult> JoinRoom(string roomId, [FromBody] JoinRoomDto? dto, CancellationToken ct)
     {
         var userId = GetUserId();
         if (userId == null)
             return Unauthorized();
 
-        // Add current user as member
-        await EnsureMember(roomId, userId.Value);
+        await EnsureMember(roomId, userId.Value, ct);
 
-        // Also add recipient if provided (so they see the room in their list)
         if (dto?.RecipientId != null)
-            await EnsureMember(roomId, dto.RecipientId.Value);
+            await EnsureMember(roomId, dto.RecipientId.Value, ct);
 
         return Ok();
     }
 
-    private async Task EnsureMember(string roomId, Guid userId)
+    private async Task EnsureMember(string roomId, Guid userId, CancellationToken ct = default)
     {
         var exists = await _db.ChatRoomMembers
-            .AnyAsync(m => m.RoomId == roomId && m.UserId == userId);
+            .AnyAsync(m => m.RoomId == roomId && m.UserId == userId, ct);
 
         if (!exists)
         {
@@ -144,7 +142,7 @@ public class ChatController : ControllerBase
                 RoomId = roomId,
                 UserId = userId,
             });
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
         }
     }
 }
