@@ -5,15 +5,15 @@ namespace Services;
 
 public static class PetCompatibilityScorer
 {
-    private const int WeightHousing    = 25;
-    private const int WeightKids       = 20;
-    private const int WeightDogs       = 20;
-    private const int WeightCats       = 20;
-    private const int WeightEnergy     = 15;
+    private const int WeightHousing = 25;
+    private const int WeightKids = 20;
+    private const int WeightDogs = 20;
+    private const int WeightCats = 20;
+    private const int WeightEnergy = 15;
     private const int WeightExperience = 10;
-    private const int WeightSize       = 10;
-    private const int WeightTrained    =  5;
-    private const int MaxRawScore      = WeightHousing + WeightKids + WeightDogs +
+    private const int WeightSize = 10;
+    private const int WeightTrained = 5;
+    private const int MaxRawScore = WeightHousing + WeightKids + WeightDogs +
                                          WeightCats + WeightEnergy + WeightExperience +
                                          WeightSize + WeightTrained; // 125
 
@@ -22,16 +22,16 @@ public static class PetCompatibilityScorer
     // Exact match → full weight; one step away → half; opposite → 0.
     private static readonly Dictionary<string, int> EnergyRank = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["low"]    = 0,
+        ["low"] = 0,
         ["medium"] = 1,
-        ["high"]   = 2,
+        ["high"] = 2,
     };
 
     private static readonly Dictionary<string, int> SizeRank = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["small"]  = 0,
+        ["small"] = 0,
         ["medium"] = 1,
-        ["large"]  = 2,
+        ["large"] = 2,
     };
 
     public static (int Score, List<string> Reasons) Score(Pet pet, MatchRequestDto prefs)
@@ -97,25 +97,28 @@ public static class PetCompatibilityScorer
         if (string.IsNullOrWhiteSpace(requirement))
             return WeightHousing; // unknown - no constraint, full points
 
-        var req  = requirement.ToLowerInvariant().Trim();
+        var req = requirement.ToLowerInvariant().Trim();
         var pref = preference.ToLowerInvariant().Trim();
 
         bool compatible = req switch
         {
-            "apartment"       => pref == "apartment",
-            "house"           => pref is "house" or "house_with_yard",
+            "apartment" => pref == "apartment",
+            "house" => pref is "house" or "house_with_yard",
             "house_with_yard" => pref == "house_with_yard",
-            _                 => true
+            _ => true
         };
 
-        if (compatible) { reasons.Add("Suits your home type"); return WeightHousing; }
+        if (compatible)
+        { reasons.Add("Suits your home type"); return WeightHousing; }
         return 0;
     }
 
     private static int ScoreBoolean(bool? trait, int weight, string label, List<string> reasons)
     {
-        if (trait == true)  { reasons.Add(label); return weight; }
-        if (trait == null)  return PartialCredit;
+        if (trait == true)
+        { reasons.Add(label); return weight; }
+        if (trait == null)
+            return PartialCredit;
         return 0;
     }
 
@@ -133,8 +136,10 @@ public static class PetCompatibilityScorer
             return weight / 2;
 
         int diff = Math.Abs(petRank - prefRank);
-        if (diff == 0) { reasons.Add(matchLabel); return weight; }
-        if (diff == 1) return weight / 2;
+        if (diff == 0)
+        { reasons.Add(matchLabel); return weight; }
+        if (diff == 1)
+            return weight / 2;
         return 0;
     }
 
@@ -143,7 +148,7 @@ public static class PetCompatibilityScorer
         if (string.IsNullOrWhiteSpace(petLevel))
             return WeightExperience; // unknown - no constraint
 
-        var pet     = petLevel.ToLowerInvariant().Trim();
+        var pet = petLevel.ToLowerInvariant().Trim();
         var adopter = adopterLevel.ToLowerInvariant().Trim();
 
         // Experienced adopter can handle any pet
@@ -168,28 +173,28 @@ public static class PetCompatibilityScorer
 
     private static MatchedPetDto BuildDto(Pet pet, int score, List<string> reasons) => new()
     {
-        Id                  = pet.Id,
-        Name                = pet.Name,
-        Age                 = pet.Age,
-        Color               = pet.Color,
-        Size                = pet.Size,
-        Description         = pet.Description,
-        ImageUrl            = pet.ImageUrl,
-        EnergyLevel         = pet.EnergyLevel,
-        HousingRequirement  = pet.HousingRequirement,
-        GoodWithKids        = pet.GoodWithKids,
-        GoodWithDogs        = pet.GoodWithDogs,
-        GoodWithCats        = pet.GoodWithCats,
-        IsNeutered          = pet.IsNeutered,
-        IsHouseTrained      = pet.IsHouseTrained,
-        ExperienceLevel     = pet.ExperienceLevel,
-        SpeciesName         = pet.Species?.Name,
-        BreedName           = pet.Breed?.Name,
-        GenderName          = pet.Gender?.Name,
-        StatusName          = pet.Status?.Name,
-        ShelterId           = pet.ShelterId,
-        ShelterName         = pet.Shelter?.Name,
-        CompatibilityScore  = score,
-        MatchReasons        = reasons,
+        Id = pet.Id,
+        Name = pet.Name,
+        Age = pet.Age,
+        Color = pet.Color,
+        Size = pet.Size,
+        Description = pet.Description,
+        ImageUrl = pet.ImageUrl,
+        EnergyLevel = pet.EnergyLevel,
+        HousingRequirement = pet.HousingRequirement,
+        GoodWithKids = pet.GoodWithKids,
+        GoodWithDogs = pet.GoodWithDogs,
+        GoodWithCats = pet.GoodWithCats,
+        IsNeutered = pet.IsNeutered,
+        IsHouseTrained = pet.IsHouseTrained,
+        ExperienceLevel = pet.ExperienceLevel,
+        SpeciesName = pet.Species?.Name,
+        BreedName = pet.Breed?.Name,
+        GenderName = pet.Gender?.Name,
+        StatusName = pet.Status?.Name,
+        ShelterId = pet.ShelterId,
+        ShelterName = pet.Shelter?.Name,
+        CompatibilityScore = score,
+        MatchReasons = reasons,
     };
 }

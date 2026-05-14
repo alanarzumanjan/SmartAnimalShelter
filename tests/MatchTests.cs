@@ -15,28 +15,28 @@ public class CompatibilityScorerTests
         bool? goodWithDogs = null,
         bool? goodWithCats = null,
         string? energy = null) => new()
-    {
-        Id = Guid.NewGuid(),
-        Name = "TestPet",
-        SpeciesId = 1,
-        StatusId = 1,
-        ShelterId = Guid.NewGuid(),
-        HousingRequirement = housing,
-        GoodWithKids = goodWithKids,
-        GoodWithDogs = goodWithDogs,
-        GoodWithCats = goodWithCats,
-        EnergyLevel = energy,
-    };
+        {
+            Id = Guid.NewGuid(),
+            Name = "TestPet",
+            SpeciesId = 1,
+            StatusId = 1,
+            ShelterId = Guid.NewGuid(),
+            HousingRequirement = housing,
+            GoodWithKids = goodWithKids,
+            GoodWithDogs = goodWithDogs,
+            GoodWithCats = goodWithCats,
+            EnergyLevel = energy,
+        };
 
     private static MatchRequestDto DefaultPrefs() => new()
     {
-        HousingType       = "apartment",
-        HasKids           = false,
-        HasDogs           = false,
-        HasCats           = false,
-        EnergyPreference  = "medium",
-        ExperienceLevel   = "first_time",
-        SizePreference    = "any",
+        HousingType = "apartment",
+        HasKids = false,
+        HasDogs = false,
+        HasCats = false,
+        EnergyPreference = "medium",
+        ExperienceLevel = "first_time",
+        SizePreference = "any",
         NeedsHouseTrained = false,
     };
 
@@ -49,13 +49,13 @@ public class CompatibilityScorerTests
         pet.IsHouseTrained = true;
         var prefs = new MatchRequestDto
         {
-            HousingType       = "apartment",
-            HasKids           = true,
-            HasDogs           = true,
-            HasCats           = true,
-            EnergyPreference  = "medium",
-            ExperienceLevel   = "first_time",
-            SizePreference    = "medium",
+            HousingType = "apartment",
+            HasKids = true,
+            HasDogs = true,
+            HasCats = true,
+            EnergyPreference = "medium",
+            ExperienceLevel = "first_time",
+            SizePreference = "medium",
             NeedsHouseTrained = true,
         };
 
@@ -81,9 +81,14 @@ public class CompatibilityScorerTests
         var pet = MakePet(housing: "house_with_yard", goodWithKids: false, goodWithDogs: false, goodWithCats: false, energy: "high");
         var prefs = new MatchRequestDto
         {
-            HousingType = "apartment", HasKids = true, HasDogs = true, HasCats = true,
-            EnergyPreference = "low", ExperienceLevel = "first_time",
-            SizePreference = "any", NeedsHouseTrained = false,
+            HousingType = "apartment",
+            HasKids = true,
+            HasDogs = true,
+            HasCats = true,
+            EnergyPreference = "low",
+            ExperienceLevel = "first_time",
+            SizePreference = "any",
+            NeedsHouseTrained = false,
         };
 
         var (score, _) = PetCompatibilityScorer.Score(pet, prefs);
@@ -115,9 +120,14 @@ public class CompatibilityScorerTests
         var pet = MakePet(goodWithKids: null, goodWithDogs: null, goodWithCats: null);
         var prefs = new MatchRequestDto
         {
-            HousingType = "apartment", HasKids = true, HasDogs = true, HasCats = true,
-            EnergyPreference = "medium", ExperienceLevel = "first_time",
-            SizePreference = "any", NeedsHouseTrained = false,
+            HousingType = "apartment",
+            HasKids = true,
+            HasDogs = true,
+            HasCats = true,
+            EnergyPreference = "medium",
+            ExperienceLevel = "first_time",
+            SizePreference = "any",
+            NeedsHouseTrained = false,
         };
 
         var (score, _) = PetCompatibilityScorer.Score(pet, prefs);
@@ -157,8 +167,10 @@ public class CompatibilityScorerTests
         var pet = MakePet(energy: "low");
         var prefs = new MatchRequestDto
         {
-            HousingType = "apartment", EnergyPreference = "medium",
-            ExperienceLevel = "first_time", SizePreference = "any",
+            HousingType = "apartment",
+            EnergyPreference = "medium",
+            ExperienceLevel = "first_time",
+            SizePreference = "any",
         };
 
         var (score, _) = PetCompatibilityScorer.Score(pet, prefs);
@@ -174,8 +186,10 @@ public class CompatibilityScorerTests
         var pet = MakePet(energy: "high");
         var prefs = new MatchRequestDto
         {
-            HousingType = "apartment", EnergyPreference = "low",
-            ExperienceLevel = "first_time", SizePreference = "any",
+            HousingType = "apartment",
+            EnergyPreference = "low",
+            ExperienceLevel = "first_time",
+            SizePreference = "any",
         };
 
         var (score, _) = PetCompatibilityScorer.Score(pet, prefs);
@@ -242,8 +256,10 @@ public class CompatibilityScorerTests
         pet.ExperienceLevel = "experienced";
         var prefs = new MatchRequestDto
         {
-            HousingType = "apartment", EnergyPreference = "medium",
-            ExperienceLevel = "experienced", SizePreference = "any",
+            HousingType = "apartment",
+            EnergyPreference = "medium",
+            ExperienceLevel = "experienced",
+            SizePreference = "any",
         };
 
         var (_, reasons) = PetCompatibilityScorer.Score(pet, prefs);
@@ -258,8 +274,10 @@ public class CompatibilityScorerTests
         pet.Size = "small";
         var prefs = new MatchRequestDto
         {
-            HousingType = "apartment", EnergyPreference = "medium",
-            ExperienceLevel = "first_time", SizePreference = "small",
+            HousingType = "apartment",
+            EnergyPreference = "medium",
+            ExperienceLevel = "first_time",
+            SizePreference = "small",
         };
 
         var (_, reasons) = PetCompatibilityScorer.Score(pet, prefs);
@@ -286,16 +304,18 @@ public class CompatibilityScorerTests
     [Fact]
     public void Score_HouseTrained_WhenRequired_GivesBonus()
     {
-        var petTrained   = MakePet(); petTrained.IsHouseTrained = true;
+        var petTrained = MakePet(); petTrained.IsHouseTrained = true;
         var petUntrained = MakePet(); petUntrained.IsHouseTrained = false;
         var prefs = new MatchRequestDto
         {
-            HousingType = "apartment", EnergyPreference = "medium",
-            ExperienceLevel = "first_time", SizePreference = "any",
+            HousingType = "apartment",
+            EnergyPreference = "medium",
+            ExperienceLevel = "first_time",
+            SizePreference = "any",
             NeedsHouseTrained = true,
         };
 
-        var (scoreTrained,   _) = PetCompatibilityScorer.Score(petTrained,   prefs);
+        var (scoreTrained, _) = PetCompatibilityScorer.Score(petTrained, prefs);
         var (scoreUntrained, _) = PetCompatibilityScorer.Score(petUntrained, prefs);
 
         Assert.True(scoreTrained > scoreUntrained);
@@ -309,7 +329,7 @@ public class MatchEndpointTests : EndpointTestBase
     [Fact]
     public async Task Match_WithValidPreferences_Returns200AndSortedPets()
     {
-        var ownerId   = await Factory.SeedUserAsync("matchowner", "matchowner@test.com", "SecurePass123!", UserRole.shelter);
+        var ownerId = await Factory.SeedUserAsync("matchowner", "matchowner@test.com", "SecurePass123!", UserRole.shelter);
         var shelterId = await Factory.SeedShelterAsync(ownerId);
         await Factory.SeedPetAsync(shelterId, "BestMatch");
         await Factory.SeedPetAsync(shelterId, "OtherPet");
@@ -317,13 +337,13 @@ public class MatchEndpointTests : EndpointTestBase
         var client = CreateClient();
         var response = await client.PostAsJsonAsync("/pets/match", new
         {
-            housingType       = "apartment",
-            hasKids           = false,
-            hasDogs           = false,
-            hasCats           = false,
-            energyPreference  = "medium",
-            experienceLevel   = "first_time",
-            sizePreference    = "any",
+            housingType = "apartment",
+            hasKids = false,
+            hasDogs = false,
+            hasCats = false,
+            energyPreference = "medium",
+            experienceLevel = "first_time",
+            sizePreference = "any",
             needsHouseTrained = false,
         });
 
@@ -348,13 +368,13 @@ public class MatchEndpointTests : EndpointTestBase
         var client = CreateClient();
         var response = await client.PostAsJsonAsync("/pets/match", new
         {
-            housingType       = "castle",
-            hasKids           = false,
-            hasDogs           = false,
-            hasCats           = false,
-            energyPreference  = "medium",
-            experienceLevel   = "first_time",
-            sizePreference    = "any",
+            housingType = "castle",
+            hasKids = false,
+            hasDogs = false,
+            hasCats = false,
+            energyPreference = "medium",
+            experienceLevel = "first_time",
+            sizePreference = "any",
             needsHouseTrained = false,
         });
 
@@ -367,13 +387,13 @@ public class MatchEndpointTests : EndpointTestBase
         var client = CreateClient();
         var response = await client.PostAsJsonAsync("/pets/match", new
         {
-            housingType       = "apartment",
-            hasKids           = false,
-            hasDogs           = false,
-            hasCats           = false,
-            energyPreference  = "extreme",
-            experienceLevel   = "first_time",
-            sizePreference    = "any",
+            housingType = "apartment",
+            hasKids = false,
+            hasDogs = false,
+            hasCats = false,
+            energyPreference = "extreme",
+            experienceLevel = "first_time",
+            sizePreference = "any",
             needsHouseTrained = false,
         });
 
@@ -383,20 +403,20 @@ public class MatchEndpointTests : EndpointTestBase
     [Fact]
     public async Task Match_ResponseContainsCompatibilityScoreAndReasons()
     {
-        var ownerId   = await Factory.SeedUserAsync("scorechecker", "scorechecker@test.com", "SecurePass123!", UserRole.shelter);
+        var ownerId = await Factory.SeedUserAsync("scorechecker", "scorechecker@test.com", "SecurePass123!", UserRole.shelter);
         var shelterId = await Factory.SeedShelterAsync(ownerId);
         await Factory.SeedPetAsync(shelterId, "ScorePet");
 
         var client = CreateClient();
         var response = await client.PostAsJsonAsync("/pets/match", new
         {
-            housingType       = "apartment",
-            hasKids           = false,
-            hasDogs           = false,
-            hasCats           = false,
-            energyPreference  = "medium",
-            experienceLevel   = "first_time",
-            sizePreference    = "any",
+            housingType = "apartment",
+            hasKids = false,
+            hasDogs = false,
+            hasCats = false,
+            energyPreference = "medium",
+            experienceLevel = "first_time",
+            sizePreference = "any",
             needsHouseTrained = false,
         });
 

@@ -69,7 +69,10 @@ function Dropdown({
         <div className="absolute left-0 top-full mt-1.5 z-50 min-w-[160px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           <button
             type="button"
-            onClick={() => { onChange(""); setOpen(false); }}
+            onClick={() => {
+              onChange("");
+              setOpen(false);
+            }}
             className={`w-full text-left px-3.5 py-2 text-sm transition-colors ${
               !value
                 ? "text-slate-900 font-medium dark:text-white"
@@ -82,7 +85,10 @@ function Dropdown({
             <button
               key={opt}
               type="button"
-              onClick={() => { onChange(opt); setOpen(false); }}
+              onClick={() => {
+                onChange(opt);
+                setOpen(false);
+              }}
               className={`w-full text-left px-3.5 py-2 text-sm transition-colors ${
                 value === opt
                   ? "text-slate-900 font-medium dark:text-white"
@@ -145,7 +151,11 @@ export default function AnimalsPage() {
     try {
       const { data } = await api.post("/pets/match", prefs);
       const results: MatchResult[] = (data.pets ?? []).map(
-        (p: { id: string; compatibilityScore: number; matchReasons: string[] }) => ({
+        (p: {
+          id: string;
+          compatibilityScore: number;
+          matchReasons: string[];
+        }) => ({
           id: p.id,
           compatibilityScore: p.compatibilityScore,
           matchReasons: p.matchReasons ?? [],
@@ -164,7 +174,6 @@ export default function AnimalsPage() {
     setMatchResults(null);
     setCompatibilityMode("all");
   }
-
 
   const scoreMap = useMemo(() => {
     if (!matchResults) return null;
@@ -220,9 +229,8 @@ export default function AnimalsPage() {
   const [compatibilityMode, setCompatibilityMode] = useState<
     "all" | "compatible"
   >("all");
-  const [compatibilityThreshold, setCompatibilityThreshold] = useState<
-    number
-  >(70);
+  const [compatibilityThreshold, setCompatibilityThreshold] =
+    useState<number>(70);
 
   const requireMatchForCompatibility = true;
 
@@ -243,9 +251,13 @@ export default function AnimalsPage() {
     });
 
     return list;
-  }, [compatibilityMode, compatibilityThreshold, filtered, scoreMap, requireMatchForCompatibility]);
-
-
+  }, [
+    compatibilityMode,
+    compatibilityThreshold,
+    filtered,
+    scoreMap,
+    requireMatchForCompatibility,
+  ]);
 
   return (
     <div className="py-8 space-y-6">
@@ -300,10 +312,14 @@ export default function AnimalsPage() {
                       All
                     </button>
                     <div className="hidden sm:flex items-center gap-2 rounded-2xl bg-slate-100/80 p-3 dark:bg-slate-800/80">
-                      <p className="text-sm text-slate-600 dark:text-slate-300">Threshold</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-300">
+                        Threshold
+                      </p>
                       <select
                         value={compatibilityThreshold}
-                        onChange={(e) => setCompatibilityThreshold(Number(e.target.value))}
+                        onChange={(e) =>
+                          setCompatibilityThreshold(Number(e.target.value))
+                        }
                         disabled={compatibilityMode !== "compatible"}
                         className="text-sm rounded-full border border-slate-200 bg-white px-3 py-1 dark:border-slate-700 dark:bg-slate-900/50"
                       >
@@ -337,7 +353,9 @@ export default function AnimalsPage() {
               )}
 
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Showing</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Showing
+                </p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white">
                   {compatibilityMode === "compatible"
                     ? filteredWithCompatibility.length
@@ -398,7 +416,11 @@ export default function AnimalsPage() {
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
               <button
                 type="button"
-                onClick={() => { setStatus(""); setSpecies(""); setShelter(""); }}
+                onClick={() => {
+                  setStatus("");
+                  setSpecies("");
+                  setShelter("");
+                }}
                 className="text-sm text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
               >
                 Reset
@@ -449,7 +471,9 @@ export default function AnimalsPage() {
             Shelters haven't added any animals yet.
           </p>
         </div>
-      ) : (compatibilityMode === "compatible" ? filteredWithCompatibility.length : filtered.length) === 0 ? (
+      ) : (compatibilityMode === "compatible"
+          ? filteredWithCompatibility.length
+          : filtered.length) === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-500">
           No animals match the selected filters.
         </div>
@@ -461,8 +485,10 @@ export default function AnimalsPage() {
               : "flex flex-col gap-3"
           }
         >
-          {(compatibilityMode === "compatible" ? filteredWithCompatibility : filtered).map((animal) => (
-
+          {(compatibilityMode === "compatible"
+            ? filteredWithCompatibility
+            : filtered
+          ).map((animal) => (
             <AnimalCard
               key={animal.id}
               id={animal.id}

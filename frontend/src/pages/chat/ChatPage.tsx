@@ -74,7 +74,13 @@ export default function ChatPage() {
 
   const pendingMessageRef = useRef("");
   const initialMessageAppliedRef = useRef(false);
-  const switchRoomRef = useRef<(roomId: string, recipient?: string, recipientName?: string) => Promise<void>>(() => Promise.resolve());
+  const switchRoomRef = useRef<
+    (
+      roomId: string,
+      recipient?: string,
+      recipientName?: string,
+    ) => Promise<void>
+  >(() => Promise.resolve());
 
   const userId = user?.id ?? null;
 
@@ -266,7 +272,7 @@ export default function ChatPage() {
       void switchRoomRef.current(roomId, recipientId, recipientName);
     }, 0);
     return () => window.clearTimeout(timeoutId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipientId, userId]);
 
   // Auto-open first room if no recipientId in URL

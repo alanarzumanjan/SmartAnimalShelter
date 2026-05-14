@@ -50,9 +50,13 @@ export default function AnimalCard({
   matchReasons = [],
 }: AnimalCardProps) {
   const scoreColor =
-    compatibilityScore === undefined ? "" :
-    compatibilityScore >= 80 ? "bg-green-500" :
-    compatibilityScore >= 50 ? "bg-yellow-400" : "bg-red-400";
+    compatibilityScore === undefined
+      ? ""
+      : compatibilityScore >= 80
+        ? "bg-green-500"
+        : compatibilityScore >= 50
+          ? "bg-yellow-400"
+          : "bg-red-400";
   const { user, isAuthenticated } = useSelector(
     (state: RootState) => state.auth,
   );
@@ -99,7 +103,9 @@ export default function AnimalCard({
               {status}
             </span>
             {compatibilityScore !== undefined && (
-              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold text-white ${scoreColor}`}>
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-xs font-semibold text-white ${scoreColor}`}
+              >
                 {compatibilityScore}% match
               </span>
             )}
@@ -203,8 +209,12 @@ export default function AnimalCard({
       {compatibilityScore !== undefined && (
         <div className="mb-4">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Match</span>
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{compatibilityScore}%</span>
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              Match
+            </span>
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-200">
+              {compatibilityScore}%
+            </span>
           </div>
           <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800">
             <div
@@ -215,7 +225,10 @@ export default function AnimalCard({
           {matchReasons.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {matchReasons.map((r) => (
-                <span key={r} className="text-xs px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-300">
+                <span
+                  key={r}
+                  className="text-xs px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 dark:bg-primary-500/10 dark:text-primary-300"
+                >
                   {r}
                 </span>
               ))}

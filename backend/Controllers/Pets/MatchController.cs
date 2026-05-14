@@ -24,7 +24,7 @@ public class MatchController : ControllerBase
     public async Task<IActionResult> Match([FromBody] MatchRequestDto dto, CancellationToken ct)
     {
         var validHousing = new[] { "apartment", "house", "house_with_yard" };
-        var validEnergy  = new[] { "low", "medium", "high" };
+        var validEnergy = new[] { "low", "medium", "high" };
 
         if (!validHousing.Contains(dto.HousingType?.ToLowerInvariant()))
             return BadRequest(new { error = "HousingType must be: apartment | house | house_with_yard" });

@@ -25,10 +25,17 @@ type PillGroupProps<T extends string> = {
   onChange: (v: T) => void;
 };
 
-function PillGroup<T extends string>({ label, options, value, onChange }: PillGroupProps<T>) {
+function PillGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: PillGroupProps<T>) {
   return (
     <div>
-      <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">{label}</p>
+      <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+        {label}
+      </p>
       <div className="flex flex-wrap gap-2">
         {options.map((opt) => (
           <button
@@ -92,7 +99,9 @@ export default function MatchModal({ onClose, onSubmit, isLoading }: Props) {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary-600" />
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Find your match</h2>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              Find your match
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -183,7 +192,9 @@ export default function MatchModal({ onClose, onSubmit, isLoading }: Props) {
             <TogglePill
               label="✅ Already house trained"
               value={prefs.needsHouseTrained}
-              onChange={(v) => setPrefs((p) => ({ ...p, needsHouseTrained: v }))}
+              onChange={(v) =>
+                setPrefs((p) => ({ ...p, needsHouseTrained: v }))
+              }
             />
           </div>
         </div>
