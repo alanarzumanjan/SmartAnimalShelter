@@ -73,6 +73,8 @@ export default function ChatPage() {
   const initialMessage = searchParams.get("message") || "";
 
   const pendingMessageRef = useRef("");
+  const initialMessageAppliedRef = useRef(false);
+  const switchRoomRef = useRef<(roomId: string, recipient?: string, recipientName?: string) => Promise<void>>(() => Promise.resolve());
 
   const userId = user?.id ?? null;
 
@@ -146,45 +148,45 @@ export default function ChatPage() {
       setMessages([]);
       prevRoomRef.current = roomId;
 
-      // Only join existing rooms (those already in apiRooms), not new ones
+      // Always try to join and load — apiRooms may not be populated yet (race on mount)
       const isExisting = apiRooms.some((r) => r.roomId === roomId);
-      if (isExisting) {
-        try {
-          await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
-            recipientId: recipient || null,
-          });
-        } catch {
-          /* ignore */
-        }
-        try {
-          await joinRoom(roomId);
-        } catch {
-          /* ignore */
-        }
-        await loadMessages(roomId);
-      } else {
-        // New room — defer join until first message is sent
+      try {
+        await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
+          recipientId: recipient || null,
+        });
+      } catch {
+        /* ignore — room may not exist yet for brand new DMs */
+      }
+      try {
+        await joinRoom(roomId);
+      } catch {
+        /* ignore */
+      }
+
+      // Load history if room exists on server (join succeeded = room exists)
+      // For brand new rooms with no history, loadMessages returns empty array
+      await loadMessages(roomId);
+
+      if (!isExisting) {
+        // New room — defer backend room creation until first message is sent
         pendingRecipientRef.current = {
           roomId,
           recipientId: recipient || null,
         };
-        try {
-          await joinRoom(roomId);
-        } catch {
-          /* ignore */
-        }
       }
 
       // Apply pre-filled message from URL (e.g. coming from animal page)
       if (pendingMessageRef.current) {
         setInput(pendingMessageRef.current);
         pendingMessageRef.current = "";
+        initialMessageAppliedRef.current = true;
       }
     },
     [loadMessages, apiRooms],
   );
 
-  // SignalR connect + message handler
+  // Keep ref always pointing to latest switchRoom to avoid stale closure in useEffect
+  switchRoomRef.current = switchRoom;
   useEffect(() => {
     let cancelled = false;
 
@@ -253,16 +255,19 @@ export default function ChatPage() {
       .catch(() => {});
   }, []);
 
-  // Open DM room from URL
+  // Open DM room from URL — runs only when recipientId/userId change, not on every switchRoom recreate
   useEffect(() => {
     if (!recipientId || !userId) return;
-    pendingMessageRef.current = initialMessage;
+    if (!initialMessageAppliedRef.current) {
+      pendingMessageRef.current = initialMessage;
+    }
     const roomId = dmRoomId(userId, recipientId);
     const timeoutId = window.setTimeout(() => {
-      void switchRoom(roomId, recipientId, recipientName);
+      void switchRoomRef.current(roomId, recipientId, recipientName);
     }, 0);
     return () => window.clearTimeout(timeoutId);
-  }, [initialMessage, recipientId, recipientName, switchRoom, userId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipientId, userId]);
 
   // Auto-open first room if no recipientId in URL
   useEffect(() => {
@@ -315,10 +320,10 @@ export default function ChatPage() {
       }
       await sendMessage(activeRoom, text);
     } catch {
-      setConnected(false);
-      // Remove optimistic message on failure
+      // Remove optimistic message on failure but do NOT restore input —
+      // the message was already cleared intentionally and restoring it
+      // causes the "text stays in input" bug when SignalR briefly lags.
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
-      setInput(text);
     }
   }
 
