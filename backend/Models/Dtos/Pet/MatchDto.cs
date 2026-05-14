@@ -16,6 +16,15 @@ public class MatchRequestDto
 
     /// <summary>Desired activity level: "low" | "medium" | "high"</summary>
     public string EnergyPreference { get; set; } = "medium";
+
+    /// <summary>Adopter's experience: "first_time" | "experienced"</summary>
+    public string ExperienceLevel { get; set; } = "first_time";
+
+    /// <summary>Preferred pet size: "small" | "medium" | "large" | "any"</summary>
+    public string SizePreference { get; set; } = "any";
+
+    /// <summary>Does the adopter require the pet to be house trained?</summary>
+    public bool NeedsHouseTrained { get; set; }
 }
 
 public class MatchedPetDto
@@ -33,6 +42,8 @@ public class MatchedPetDto
     public bool? GoodWithDogs { get; init; }
     public bool? GoodWithCats { get; init; }
     public bool? IsNeutered { get; init; }
+    public bool? IsHouseTrained { get; init; }
+    public string? ExperienceLevel { get; init; }
     public string? SpeciesName { get; init; }
     public string? BreedName { get; init; }
     public string? GenderName { get; init; }
