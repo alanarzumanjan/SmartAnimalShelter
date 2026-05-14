@@ -73,7 +73,7 @@ public class AuthTests : EndpointTestBase
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
 
         var body = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Username already exists", body);
+        Assert.Contains("Username or email already in use", body);
     }
 
     [Fact]
@@ -129,6 +129,7 @@ public class AuthTests : EndpointTestBase
 
         var refreshClient = CreateClient();
         SetCookie(refreshClient, refreshCookie!);
+        await SetCsrfTokenAsync(refreshClient);
 
         var response = await refreshClient.PostAsync("/refresh", JsonContent.Create(new { }));
 
@@ -144,6 +145,7 @@ public class AuthTests : EndpointTestBase
         // First seed a user and get authenticated client with JWT token
         var userId = await Factory.SeedUserAsync("logoutuser", "logout@test.com", "SecurePass123!");
         var client = CreateAuthenticatedClient(userId, UserRole.user);
+        await SetCsrfTokenAsync(client);
 
         var response = await client.PostAsync("/logout", JsonContent.Create(new { }));
 

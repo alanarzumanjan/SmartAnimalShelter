@@ -66,67 +66,35 @@ public class SheltersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
         if (page < 1)
             page = 1;
-
-        // Default to 10 items per page if invalid
         if (pageSize < 1)
             pageSize = 10;
-
-        // Cap the page size to avoid abuse or performance issues
         if (pageSize > 100)
             pageSize = 100;
 
-        int totalCount = await db.Shelters.CountAsync();
-
-        // Calculate how many total pages there are
+        int totalCount = await db.Shelters.CountAsync(ct);
         int totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
-
-        // Determine how many items to skip
         int skipCount = (page - 1) * pageSize;
 
         if (skipCount >= totalCount && totalCount > 0)
-        {
-            return NotFound(new
-            {
-                message = "Page not found.",
-                currentPage = page,
-                totalPages = totalPages
-            });
-        }
+            return NotFound(new { message = "Page not found.", currentPage = page, totalPages });
 
-        // Get the paginated data from the database
-        List<Shelter> shelters = await db.Shelters
-            .Skip(skipCount)
-            .Take(pageSize)
-            .ToListAsync();
+        List<Shelter> shelters = await db.Shelters.Skip(skipCount).Take(pageSize).ToListAsync(ct);
 
-        // Decrypt
         foreach (var shelter in shelters)
-        {
             if (!string.IsNullOrWhiteSpace(shelter.Email))
                 shelter.Email = EncryptionService.Decrypt(shelter.Email);
-        }
-        return Ok(new
-        {
-            currentPage = page,
-            pageSize = pageSize,
-            totalCount = totalCount,
-            totalPages = totalPages,
-            shelters = shelters
-        });
+
+        return Ok(new { currentPage = page, pageSize, totalCount, totalPages, shelters });
     }
 
-
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
-        Shelter? shelter = await db.Shelters
-            .Include(s => s.Owner)
-            .FirstOrDefaultAsync(s => s.Id == id);
-
+        Shelter? shelter = await db.Shelters.Include(s => s.Owner).FirstOrDefaultAsync(s => s.Id == id, ct);
         if (shelter == null)
             return NotFound("Shelter not found.");
 
@@ -150,11 +118,10 @@ public class SheltersController : ControllerBase
 
     [Authorize(Roles = "shelter")]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ShelterCreateDto dto)
+    public async Task<IActionResult> Create([FromBody] ShelterCreateDto dto, CancellationToken ct)
     {
         ShelterValidator validator = new ShelterValidator();
         Dictionary<string, string> errors = validator.Validate(dto);
-
         if (errors.Count > 0)
             return BadRequest(new { errors });
 
@@ -176,30 +143,21 @@ public class SheltersController : ControllerBase
                 CreatedAt = DateTime.UtcNow
             };
 
-            // Create Shelter Transaction
-            using var transaction = await db.Database.BeginTransactionAsync();
-            await db.Shelters.AddAsync(newShelter);
-            await db.SaveChangesAsync();
-            await transaction.CommitAsync();
+            using var transaction = await db.Database.BeginTransactionAsync(ct);
+            await db.Shelters.AddAsync(newShelter, ct);
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
 
-            return Ok(ToShelterResponse(
-                newShelter,
-                addressOverride: newShelter.Address,
-                phoneOverride: newShelter.Phone,
-                emailOverride: dto.email
-            ));
+            return Ok(ToShelterResponse(newShelter, newShelter.Address, newShelter.Phone, dto.email));
         }
-        catch (Exception ex)
-        {
-            return Problem("Error: " + ex.Message);
-        }
+        catch (Exception ex) { return Problem("Error: " + ex.Message); }
     }
 
     [Authorize(Roles = "shelter")]
     [HttpPatch("{id}")]
-    public async Task<IActionResult> Patch(Guid id, [FromBody] ShelterUpdateDto dto)
+    public async Task<IActionResult> Patch(Guid id, [FromBody] ShelterUpdateDto dto, CancellationToken ct)
     {
-        Shelter? shelter = await db.Shelters.FindAsync(id);
+        Shelter? shelter = await db.Shelters.FindAsync([id], ct);
         if (shelter == null)
             return NotFound("Shelter not found.");
 
@@ -209,7 +167,6 @@ public class SheltersController : ControllerBase
 
         ShelterValidator validator = new ShelterValidator();
         Dictionary<string, string> errors = validator.ValidatePatch(dto);
-
         if (errors.Count > 0)
             return BadRequest(new { errors });
 
@@ -226,24 +183,20 @@ public class SheltersController : ControllerBase
             if (dto.description != null)
                 shelter.Description = dto.description;
 
-            // Transaction
-            using var transaction = await db.Database.BeginTransactionAsync();
-            await db.SaveChangesAsync();
-            await transaction.CommitAsync();
+            using var transaction = await db.Database.BeginTransactionAsync(ct);
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
 
             return Ok(ToShelterResponse(shelter));
         }
-        catch (Exception ex)
-        {
-            return Problem("Error: " + ex.Message);
-        }
+        catch (Exception ex) { return Problem("Error: " + ex.Message); }
     }
 
     [Authorize(Roles = "shelter")]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
-        Shelter? shelter = await db.Shelters.FindAsync(id);
+        Shelter? shelter = await db.Shelters.FindAsync([id], ct);
         if (shelter == null)
             return NotFound("Shelter not found.");
 
@@ -253,17 +206,12 @@ public class SheltersController : ControllerBase
 
         try
         {
-            // Transaction
-            using var transaction = await db.Database.BeginTransactionAsync();
+            using var transaction = await db.Database.BeginTransactionAsync(ct);
             db.Shelters.Remove(shelter);
-            await db.SaveChangesAsync();
-            await transaction.CommitAsync();
-
+            await db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
             return Ok(new { message = "Shelter deleted." });
         }
-        catch (Exception ex)
-        {
-            return Problem("Error: " + ex.Message);
-        }
+        catch (Exception ex) { return Problem("Error: " + ex.Message); }
     }
 }

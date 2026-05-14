@@ -17,33 +17,23 @@ public class CatalogController : ControllerBase
     }
 
     [HttpGet("species")]
-    public async Task<IActionResult> GetSpecies()
+    public async Task<IActionResult> GetSpecies(CancellationToken ct)
     {
-        var species = await _db.Species
-            .Include(s => s.Breeds)
-            .OrderBy(s => s.Name)
-            .ToListAsync();
-
+        var species = await _db.Species.Include(s => s.Breeds).OrderBy(s => s.Name).ToListAsync(ct);
         return Ok(species);
     }
 
     [HttpGet("genders")]
-    public async Task<IActionResult> GetGenders()
+    public async Task<IActionResult> GetGenders(CancellationToken ct)
     {
-        var genders = await _db.Genders
-            .OrderBy(g => g.Id)
-            .ToListAsync();
-
+        var genders = await _db.Genders.OrderBy(g => g.Id).ToListAsync(ct);
         return Ok(genders);
     }
 
     [HttpGet("statuses")]
-    public async Task<IActionResult> GetStatuses()
+    public async Task<IActionResult> GetStatuses(CancellationToken ct)
     {
-        var statuses = await _db.AdoptionStatuses
-            .OrderBy(s => s.Id)
-            .ToListAsync();
-
+        var statuses = await _db.AdoptionStatuses.OrderBy(s => s.Id).ToListAsync(ct);
         return Ok(statuses);
     }
 }

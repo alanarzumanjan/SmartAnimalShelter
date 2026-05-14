@@ -44,8 +44,10 @@ public sealed class TestApiFactory : IAsyncDisposable
         builder.Services.AddSingleton<JwtService>();
         builder.Services.AddSingleton<PasswordHashingService>();
         builder.Services.AddScoped<UserEmailService>();
+        builder.Services.AddScoped<BreedResolver>();
         builder.Services.AddScoped<ShelterService>();
         builder.Services.AddSingleton<IRedisService, FakeRedisService>();
+        builder.Services.AddScoped<UserService>();
         builder.Services.AddDbContext<AppDbContext>(options =>
             options.UseInMemoryDatabase(_databaseName)
                 .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning)));
@@ -72,7 +74,11 @@ public sealed class TestApiFactory : IAsyncDisposable
         });
 
         builder.Services.AddAuthorization();
-        builder.Services.AddControllers()
+        builder.Services.AddAntiforgery(options =>
+        {
+            options.HeaderName = "X-CSRF-TOKEN";
+        });
+        builder.Services.AddMvc()
             .AddApplicationPart(typeof(AuthController).Assembly)
             .AddJsonOptions(options =>
             {
