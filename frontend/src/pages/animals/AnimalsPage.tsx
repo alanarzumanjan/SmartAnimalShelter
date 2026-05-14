@@ -7,9 +7,12 @@ import {
   ChevronDown,
   LayoutGrid,
   List,
+  Sparkles,
+  X,
 } from "lucide-react";
 
 import AnimalCard from "./AnimalCard";
+import MatchModal, { type MatchPreferences } from "./MatchModal";
 import api from "@/services/api";
 import { type AnimalItem, type AnimalStatus, mapAnimal } from "./animalCatalog";
 import { Button } from "@/components/ui/Button";
@@ -66,10 +69,7 @@ function Dropdown({
         <div className="absolute left-0 top-full mt-1.5 z-50 min-w-[160px] rounded-xl border border-slate-200 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-slate-900">
           <button
             type="button"
-            onClick={() => {
-              onChange("");
-              setOpen(false);
-            }}
+            onClick={() => { onChange(""); setOpen(false); }}
             className={`w-full text-left px-3.5 py-2 text-sm transition-colors ${
               !value
                 ? "text-slate-900 font-medium dark:text-white"
@@ -82,10 +82,7 @@ function Dropdown({
             <button
               key={opt}
               type="button"
-              onClick={() => {
-                onChange(opt);
-                setOpen(false);
-              }}
+              onClick={() => { onChange(opt); setOpen(false); }}
               className={`w-full text-left px-3.5 py-2 text-sm transition-colors ${
                 value === opt
                   ? "text-slate-900 font-medium dark:text-white"
@@ -101,6 +98,12 @@ function Dropdown({
   );
 }
 
+interface MatchResult {
+  id: string;
+  compatibilityScore: number;
+  matchReasons: string[];
+}
+
 export default function AnimalsPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useSelector(
@@ -113,6 +116,10 @@ export default function AnimalsPage() {
   const [shelter, setShelter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchLoading, setMatchLoading] = useState(false);
+  const [matchResults, setMatchResults] = useState<MatchResult[] | null>(null);
 
   const canCreate = isAuthenticated && user?.role === "shelter";
 
@@ -133,6 +140,37 @@ export default function AnimalsPage() {
     load();
   }, []);
 
+  async function handleMatch(prefs: MatchPreferences) {
+    setMatchLoading(true);
+    try {
+      const { data } = await api.post("/pets/match", prefs);
+      const results: MatchResult[] = (data.pets ?? []).map(
+        (p: { id: string; compatibilityScore: number; matchReasons: string[] }) => ({
+          id: p.id,
+          compatibilityScore: p.compatibilityScore,
+          matchReasons: p.matchReasons ?? [],
+        }),
+      );
+      setMatchResults(results);
+      setShowMatchModal(false);
+    } catch {
+      setMatchResults(null);
+    } finally {
+      setMatchLoading(false);
+    }
+  }
+
+  function resetMatch() {
+    setMatchResults(null);
+    setCompatibilityMode("all");
+  }
+
+
+  const scoreMap = useMemo(() => {
+    if (!matchResults) return null;
+    return new Map(matchResults.map((r) => [r.id, r]));
+  }, [matchResults]);
+
   const speciesOptions = useMemo(
     () => [...new Set(animals.map((a) => a.species).filter(Boolean))].sort(),
     [animals],
@@ -146,20 +184,28 @@ export default function AnimalsPage() {
     [animals],
   );
 
-  const filtered = useMemo(
-    () =>
-      animals.filter(
-        (a) =>
-          (user?.role !== "shelter" ||
-            a.status !== "Adopted" ||
-            a.shelterOwnerId === user?.id) &&
-          (user?.role === "shelter" || a.status !== "Adopted") &&
-          (!status || a.status === status) &&
-          (!species || a.species === species) &&
-          (!shelter || a.shelterName === shelter),
-      ),
-    [animals, status, species, shelter, user?.role, user?.id],
-  );
+  const filtered = useMemo(() => {
+    let list = animals.filter(
+      (a) =>
+        (user?.role !== "shelter" ||
+          a.status !== "Adopted" ||
+          a.shelterOwnerId === user?.id) &&
+        (user?.role === "shelter" || a.status !== "Adopted") &&
+        (!status || a.status === status) &&
+        (!species || a.species === species) &&
+        (!shelter || a.shelterName === shelter),
+    );
+
+    if (scoreMap) {
+      list = [...list].sort((a, b) => {
+        const sa = scoreMap.get(a.id)?.compatibilityScore ?? 0;
+        const sb = scoreMap.get(b.id)?.compatibilityScore ?? 0;
+        return sb - sa;
+      });
+    }
+
+    return list;
+  }, [animals, status, species, shelter, user?.role, user?.id, scoreMap]);
 
   const visibleStatusOptions = useMemo(
     () =>
@@ -170,6 +216,36 @@ export default function AnimalsPage() {
   );
 
   const hasFilters = speciesOptions.length > 0 || shelterOptions.length > 0;
+
+  const [compatibilityMode, setCompatibilityMode] = useState<
+    "all" | "compatible"
+  >("all");
+  const [compatibilityThreshold, setCompatibilityThreshold] = useState<
+    number
+  >(70);
+
+  const requireMatchForCompatibility = true;
+
+  const filteredWithCompatibility = useMemo(() => {
+    if (compatibilityMode !== "compatible") return filtered;
+
+    const list = filtered.filter((a) => {
+      const s = scoreMap?.get(a.id)?.compatibilityScore;
+
+      // If we require an actual match entry, hide pets without score.
+      if (requireMatchForCompatibility) {
+        return typeof s === "number" && s >= compatibilityThreshold;
+      }
+
+      // Otherwise, treat missing score as 0.
+      const score = typeof s === "number" ? s : 0;
+      return score >= compatibilityThreshold;
+    });
+
+    return list;
+  }, [compatibilityMode, compatibilityThreshold, filtered, scoreMap, requireMatchForCompatibility]);
+
+
 
   return (
     <div className="py-8 space-y-6">
@@ -196,13 +272,76 @@ export default function AnimalsPage() {
                 Add Animal
               </Button>
             )}
-            <div className="grid grid-cols-1 gap-3 min-w-[100px]">
+
+            <div className="flex items-center gap-3">
+              {matchResults ? (
+                <>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCompatibilityMode("compatible")}
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                        compatibilityMode === "compatible"
+                          ? "bg-primary-600 text-white"
+                          : "bg-white text-slate-600 border border-slate-200 hover:border-primary-300 dark:bg-slate-800/80 dark:text-slate-200"
+                      }`}
+                    >
+                      Only compatible
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCompatibilityMode("all")}
+                      className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors ${
+                        compatibilityMode === "all"
+                          ? "bg-primary-600 text-white"
+                          : "bg-white text-slate-600 border border-slate-200 hover:border-primary-300 dark:bg-slate-800/80 dark:text-slate-200"
+                      }`}
+                    >
+                      All
+                    </button>
+                    <div className="hidden sm:flex items-center gap-2 rounded-2xl bg-slate-100/80 p-3 dark:bg-slate-800/80">
+                      <p className="text-sm text-slate-600 dark:text-slate-300">Threshold</p>
+                      <select
+                        value={compatibilityThreshold}
+                        onChange={(e) => setCompatibilityThreshold(Number(e.target.value))}
+                        disabled={compatibilityMode !== "compatible"}
+                        className="text-sm rounded-full border border-slate-200 bg-white px-3 py-1 dark:border-slate-700 dark:bg-slate-900/50"
+                      >
+                        {[50, 60, 70, 80, 90].map((t) => (
+                          <option key={t} value={t}>
+                            {t}%
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={resetMatch}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-300 text-sm font-medium text-slate-600 hover:border-slate-500 transition-colors dark:border-slate-600 dark:text-slate-300"
+                  >
+                    <X className="w-4 h-4" />
+                    Reset match
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowMatchModal(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary-600 text-white text-sm font-semibold hover:bg-primary-700 transition-colors"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Find my match
+                </button>
+              )}
+
               <div className="rounded-2xl bg-slate-100/80 p-4 dark:bg-slate-800/80">
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Showing
-                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Showing</p>
                 <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                  {filtered.length}
+                  {compatibilityMode === "compatible"
+                    ? filteredWithCompatibility.length
+                    : filtered.length}
                 </p>
               </div>
             </div>
@@ -213,7 +352,6 @@ export default function AnimalsPage() {
       {/* Filter bar */}
       {hasFilters && (
         <div className="flex flex-wrap items-center gap-2">
-          {/* Status pills */}
           {visibleStatusOptions.length > 1 && (
             <div className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-1.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
               {visibleStatusOptions.map((opt) => (
@@ -233,7 +371,6 @@ export default function AnimalsPage() {
             </div>
           )}
 
-          {/* Divider */}
           {(speciesOptions.length > 0 || shelterOptions.length > 0) && (
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
           )}
@@ -261,11 +398,7 @@ export default function AnimalsPage() {
               <div className="h-6 w-px bg-slate-200 dark:bg-slate-700" />
               <button
                 type="button"
-                onClick={() => {
-                  setStatus("");
-                  setSpecies("");
-                  setShelter("");
-                }}
+                onClick={() => { setStatus(""); setSpecies(""); setShelter(""); }}
                 className="text-sm text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
               >
                 Reset
@@ -316,7 +449,7 @@ export default function AnimalsPage() {
             Shelters haven't added any animals yet.
           </p>
         </div>
-      ) : filtered.length === 0 ? (
+      ) : (compatibilityMode === "compatible" ? filteredWithCompatibility.length : filtered.length) === 0 ? (
         <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/60 p-12 text-center text-slate-400 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-500">
           No animals match the selected filters.
         </div>
@@ -328,7 +461,8 @@ export default function AnimalsPage() {
               : "flex flex-col gap-3"
           }
         >
-          {filtered.map((animal) => (
+          {(compatibilityMode === "compatible" ? filteredWithCompatibility : filtered).map((animal) => (
+
             <AnimalCard
               key={animal.id}
               id={animal.id}
@@ -344,9 +478,19 @@ export default function AnimalsPage() {
               shelterId={animal.shelterId}
               shelterOwnerId={animal.shelterOwnerId}
               viewMode={viewMode}
+              compatibilityScore={scoreMap?.get(animal.id)?.compatibilityScore}
+              matchReasons={scoreMap?.get(animal.id)?.matchReasons}
             />
           ))}
         </section>
+      )}
+
+      {showMatchModal && (
+        <MatchModal
+          onClose={() => setShowMatchModal(false)}
+          onSubmit={handleMatch}
+          isLoading={matchLoading}
+        />
       )}
     </div>
   );
