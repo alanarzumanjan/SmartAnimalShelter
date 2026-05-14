@@ -17,10 +17,7 @@ public class MatchController : ControllerBase
         _db = db;
     }
 
-    /// <summary>
-    /// Returns available pets sorted by compatibility score (descending).
-    /// Uses PetCompatibilityScorer — O(n log n) weighted linear scoring algorithm.
-    /// </summary>
+
     [HttpPost]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
