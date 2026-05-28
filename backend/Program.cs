@@ -103,13 +103,26 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = builder.Environment.IsProduction();
+    // Security: do NOT accept JWT from query string for SignalR.
+    // If a client sends access_token in URL, treat it as unauthorized.
+    // SignalR: do NOT accept JWT from URL query (prevents token leakage).
+    // Since the negotiate request currently only reliably carries cookies,
+    // extract the token from cookie for SignalR endpoints.
     options.Events = new JwtBearerEvents
     {
-        OnMessageReceived = ctx =>
+        OnMessageReceived = context =>
         {
-            var token = ctx.Request.Query["access_token"];
-            if (!string.IsNullOrEmpty(token) && ctx.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
-                ctx.Token = token;
+            if (context.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
+            {
+                // Your app uses refresh_token cookie; reuse it for SignalR auth.
+                if (context.Request.Cookies.TryGetValue("refresh_token", out var cookieToken) &&
+                    !string.IsNullOrWhiteSpace(cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+            }
+
+            // Intentionally ignore access_token from query string.
             return Task.CompletedTask;
         }
     };
@@ -148,7 +161,7 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.Name = "csrf_token";
     options.Cookie.HttpOnly = false; // JS must read it to send in header
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 // Controllers

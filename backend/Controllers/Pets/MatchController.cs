@@ -40,7 +40,7 @@ public class MatchController : ControllerBase
             .Include(p => p.Gender)
             .Include(p => p.Status)
             .Include(p => p.Shelter)
-            .Where(p => p.Status != null && p.Status.Name == "available")
+            .Where(p => p.Status != null && p.Status.Name != null && p.Status.Name.Trim() == "available")
             .ToListAsync(ct);
 
         // O(n log n) — score and sort
