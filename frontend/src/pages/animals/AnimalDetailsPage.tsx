@@ -67,8 +67,6 @@ const AnimalDetailsPage: React.FC = () => {
     }
   };
 
-  // Veterinarians and shelter users can manage all pets
-  // Users can manage their own pets (backend enforces ownership)
   const isAuthorized =
     isAuthenticated &&
     user?.role === "shelter" &&
@@ -267,9 +265,6 @@ const AnimalDetailsPage: React.FC = () => {
                   <MessageSquare className="w-4 h-4" />
                   Chat
                 </Button>
-              </Link>
-              <Link to="/adoption">
-                <Button variant="secondary">Adoption Request</Button>
               </Link>
             </div>
 

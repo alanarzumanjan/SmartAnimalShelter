@@ -91,13 +91,6 @@ export default function LoginPage() {
           />
 
           <div className="flex items-center justify-between text-sm">
-            <label className="flex items-center gap-2 text-slate-600 dark:text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                className="rounded border-slate-300 bg-white text-primary-600 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900"
-              />
-              Remember me
-            </label>
             <a
               href="#"
               className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
@@ -105,6 +98,7 @@ export default function LoginPage() {
               Forgot password?
             </a>
           </div>
+
 
           <Button type="submit" fullWidth isLoading={isLoading}>
             <LogIn className="w-5 h-5" />
