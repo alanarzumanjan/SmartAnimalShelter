@@ -9,6 +9,20 @@ type PetLike = {
   breed?: { name?: string } | null;
 };
 
+type PetApiItem = {
+  id?: string | number | null;
+  Id?: string | number | null;
+  petId?: string | number | null;
+  name?: string | null;
+  Name?: string | null;
+  species?: { name?: string } | null;
+  Species?: { name?: string } | null;
+  breed?: { name?: string } | null;
+  Breed?: { name?: string } | null;
+};
+
+
+
 const AdoptionFormPage: React.FC = () => {
   const [form, setForm] = useState({
 
@@ -44,12 +58,12 @@ const AdoptionFormPage: React.FC = () => {
       const { data } = await api.get("/pets?page=1&pageSize=100");
       const items = data?.pets ?? data?.data?.pets ?? [];
       setPets(
-        (Array.isArray(items) ? items : []).map((p: any) => ({
+        (Array.isArray(items) ? items : []).map((p: PetApiItem): PetLike => ({
           id: String(p.id ?? p.Id ?? p.petId ?? ""),
-          name: p.name ?? p.Name,
+          name: (p.name ?? p.Name) ?? undefined,
           species: p.species ?? p.Species ?? null,
           breed: p.breed ?? p.Breed ?? null,
-        })).filter((p: PetLike) => !!p.id),
+        })).filter((p) => !!p.id),
       );
     } catch {
       // keep form usable even if pets loading fails
