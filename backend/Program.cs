@@ -186,12 +186,19 @@ builder.Services.AddScoped<MeasurementService>();
 builder.Services.AddScoped<UserService>();
 
 // CORS
-var frontendOrigin = Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_PORT") ?? "http://localhost:5173";
+// allow both local dev and prod frontend origin (if used)
+var allowedOriginsRaw = Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_ORIGINS")
+    ?? Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_PORT");
+
+var allowedOrigins = (allowedOriginsRaw ?? "http://localhost:5173")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .ToArray();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendOnly", policy =>
     {
-        policy.WithOrigins(frontendOrigin)
+        policy.WithOrigins(allowedOrigins)
               .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
               .AllowAnyHeader()
               .AllowCredentials();
@@ -265,3 +272,4 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 // Run
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 app.Run($"http://0.0.0.0:{port}");
+

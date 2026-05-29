@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/Button";
 import {
   Heart,
   Wifi,
-  BarChart3,
   ArrowRight,
   MessageSquare,
 } from "lucide-react";
@@ -90,16 +89,6 @@ export default function HomePage() {
           <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
             A shared space for adopters and shelter teams, ready for contextual
             messaging around requests, visits, and future orders.
-          </p>
-        </div>
-        <div className="rounded-[1.75rem] border border-white/70 bg-white/80 p-6 shadow-[0_18px_60px_-30px_rgba(15,23,42,0.22)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_28px_80px_-40px_rgba(2,6,23,0.82)]">
-          <BarChart3 className="mb-4 h-10 w-10 text-amber-500" />
-          <h3 className="mb-2 text-lg font-bold text-slate-900 dark:text-white">
-            Equipment Store
-          </h3>
-          <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
-            A preview of shelter-ready devices and accessories with space for
-            future pricing, stock, ordering, and delivery statuses.
           </p>
         </div>
       </div>
