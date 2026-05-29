@@ -11,11 +11,10 @@ type PetLike = {
 
 const AdoptionFormPage: React.FC = () => {
   const [form, setForm] = useState({
-    // backend DTO fields
+
     animalId: "" as string,
     comment: "",
 
-    // kept for UI compatibility (unused for backend submission)
     name: "",
     phone: "",
     email: "",
