@@ -1,6 +1,6 @@
-using Stripe.Checkout;
-using Stripe;
 using Dtos;
+using Stripe;
+using Stripe.Checkout;
 
 namespace Services.Payments;
 

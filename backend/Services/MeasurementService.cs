@@ -1,9 +1,9 @@
 using System.Text.RegularExpressions;
-using Microsoft.EntityFrameworkCore;
-using Services.Redis;
-using Models;
 using Data;
 using Dtos;
+using Microsoft.EntityFrameworkCore;
+using Models;
+using Services.Redis;
 
 namespace Services;
 

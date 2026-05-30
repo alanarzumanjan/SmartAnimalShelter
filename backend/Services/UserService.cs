@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
-using Models;
 using Data;
 using Dtos;
+using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace Services;
 

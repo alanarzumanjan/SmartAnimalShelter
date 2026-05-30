@@ -119,10 +119,7 @@ export default function AnimalsPage() {
   const [shelter, setShelter] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-
-  const [showMatchModal, setShowMatchModal] = useState(false);
-  const [matchLoading, setMatchLoading] = useState(false);
-  const [matchResults, setMatchResults] = useState<MatchResult[] | null>(null);
+  const [matchResults] = useState<MatchResult[] | null>(null);
 
   const canCreate = isAuthenticated && user?.role === "shelter";
 

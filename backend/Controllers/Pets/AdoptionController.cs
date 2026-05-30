@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Models;
 using Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Models;
 
 namespace Controllers;
 

@@ -1,10 +1,10 @@
+using Dtos;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
-using Services.Payments;
-using Stripe.Checkout;
-using Stripe;
 using Models;
-using Dtos;
+using Services.Payments;
+using Stripe;
+using Stripe.Checkout;
 
 namespace Controllers;
 
