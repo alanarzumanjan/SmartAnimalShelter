@@ -12,7 +12,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// --- Normalized error type ---
+// Normalized error type
 export interface ApiError {
   message: string;
   status: number | null;
@@ -38,7 +38,7 @@ export function toApiError(err: unknown): ApiError {
   return { message: "Unknown error", status: null };
 }
 
-// --- Retry logic ---
+// Retry logic
 const RETRY_STATUSES = new Set([502, 503, 504]);
 const MAX_RETRIES = 2;
 
@@ -101,7 +101,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
     const retryCount: number = originalRequest._retryCount ?? 0;
 
-    // Retry on network errors and 502/503/504 (skip if it's a 401 — handled below)
+    // Retry on network errors and 502/503/504 (skip if it's a 401 handled below)
     if (
       axios.isAxiosError(error) &&
       shouldRetry(error, retryCount) &&

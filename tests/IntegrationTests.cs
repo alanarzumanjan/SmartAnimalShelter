@@ -1,10 +1,10 @@
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using Services;
+using Models;
 using Config;
 using Data;
-using Microsoft.EntityFrameworkCore;
-using Models;
-using Services;
 
 namespace tests;
 

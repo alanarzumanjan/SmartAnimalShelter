@@ -11,7 +11,6 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 1.  **Shelter Management:** Centralized database for animals, staff, and adoption requests.
 2.  **IoT Safety Net:** Real-time monitoring of **CO₂, Temperature, and Humidity** using sensors.
 3.  **Communication:** Built-in real-time chat for adopters and shelter managers.
-4.  **Commerce:** A store to purchase IoT stations, supporting shelter funding.
 
 ---
 
@@ -19,9 +18,7 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 
 ### Shelter Management
 - **Animal Profiles:** Detailed records including medical history, photos, and status (Available, Adopted, Quarantine).
-- **Auto-Parsing:** Integration with external platforms (e.g., ss.lv) to import lost/found pet data.
-- **Role-Based Access Control (RBAC):** Admin, Veterinarian, Shelter, Customer.
-- **Adoption Workflow:** Application tracking and approval system.
+- **Role-Based Access Control (RBAC):** Admin, Shelter, Customer.
 
 ### IoT Environmental Monitoring (SCD41)
 - **High-Precision Sensors:** Uses **Sensirion SCD41** for accurate CO₂, Temperature, and Humidity readings.
@@ -33,11 +30,6 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 - **Direct Communication:** Secure chat between potential adopters and shelter staff.
 - **Technology:** Powered by **SignalR** with **Redis Backplane** for scalability.
 - **Context Aware:** Chats can be linked to specific adoption requests or orders.
-
-### E-Commerce Module
-- **Hardware Store:** Purchase IoT monitoring kits for home or other shelters.
-- **Order Management:** Cart, checkout, and order status tracking.
-- **Inventory System:** Real-time stock management.
 
 ---
 
@@ -81,8 +73,7 @@ Each monitoring station is built using reliable, low-cost components suitable fo
 | Component | Model | Interface |
 |-----------|-------|-----------|
 | **Microcontroller** | ESP32-WROOM-32D | Wi-Fi |
-| **Sensor** | Sensirion SCD41 | I2C (SDA) |
-| **Power** | 5V USB / Li-Ion 18650 | VIN / GND |
+| **Sensor** | SCD41 | I2C (SDA) |
 | **Indicator** | 8 LED Ring, 1 Wifi LED| GPIO |
 
 **Firmware Features:**
@@ -99,8 +90,6 @@ Each monitoring station is built using reliable, low-cost components suitable fo
 
 ### System Architecture
 
-The project follows a **Modular Monolith** architecture with **Polyglot Persistence** and **Defense-in-Depth** security strategy.
-
 <p align="center">
   <img src="docs/system_arhitecture.svg" alt="Smart Shelter IoT System Architecture Diagram" width="700" />
   <br/>
@@ -115,11 +104,10 @@ The project follows a **Modular Monolith** architecture with **Polyglot Persiste
 | **Cloudflare** | CDN / WAF | DDoS protection, SSL termination, content caching |
 | **Nginx** | Reverse Proxy | Serves React static files, proxies API requests to Backend |
 | **Backend .NET** | ASP.NET Core 8 | Main application logic, REST API, business rules |
-| **MQTT Broker** | EMQX / Mosquitto | Async message broker for IoT device communication |
 | **Device IoT** | ESP32 + SCD41 | Environmental sensors (CO₂, Temperature, Humidity) |
-| **Redis** | In-Memory DB | Caching, session storage, rate limiting, real-time state |
-| **MongoDB** | Document DB | IoT telemetry logs (time-series data), Images |
-| **PostgreSQL** | Relational DB | Users, animals, orders, adoption requests (ACID compliance) |
+| **Redis** | In-Memory DB | Caching, session storage, rate limiting|
+| **MongoDB** | Images |
+| **PostgreSQL** | Relational DB | Users, animals, orders, adoption requests (ACID compliance), Telemetry logs |
 | **GitHub** | Version Control | Source code repository |
 | **CI/CD Pipeline** | GitHub Actions | Automated build, test, and deployment |
 | **Docker** | Containerization | Package and deploy all services |

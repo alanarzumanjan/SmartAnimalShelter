@@ -1,27 +1,97 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import api from "@/services/api";
 
+type PetLike = {
+  id: string;
+  name?: string;
+  species?: { name?: string } | null;
+  breed?: { name?: string } | null;
+};
+
+type PetApiItem = {
+  id?: string | number | null;
+  Id?: string | number | null;
+  petId?: string | number | null;
+  name?: string | null;
+  Name?: string | null;
+  species?: { name?: string } | null;
+  Species?: { name?: string } | null;
+  breed?: { name?: string } | null;
+  Breed?: { name?: string } | null;
+};
+
 const AdoptionFormPage: React.FC = () => {
   const [form, setForm] = useState({
+    animalId: "" as string,
+    comment: "",
+
     name: "",
     phone: "",
     email: "",
     animal: "",
-    comment: "",
   });
+
   const [submitted, setSubmitted] = useState(false);
+  const [pets, setPets] = useState<PetLike[]>([]);
+  const [petsLoading, setPetsLoading] = useState(false);
+
+  const petOptionsLabel = useMemo(() => {
+    if (!form.animalId) return "";
+    const pet = pets.find((p) => p.id === form.animalId);
+    return pet?.name ?? pet?.id ?? "";
+  }, [form.animalId, pets]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const loadPets = async () => {
+    setPetsLoading(true);
+    try {
+      const { data } = await api.get("/pets?page=1&pageSize=100");
+      const items = data?.pets ?? data?.data?.pets ?? [];
+      setPets(
+        (Array.isArray(items) ? items : [])
+          .map(
+            (p: PetApiItem): PetLike => ({
+              id: String(p.id ?? p.Id ?? p.petId ?? ""),
+              name: p.name ?? p.Name ?? undefined,
+              species: p.species ?? p.Species ?? null,
+              breed: p.breed ?? p.Breed ?? null,
+            }),
+          )
+          .filter((p) => !!p.id),
+      );
+    } catch {
+      setPets([]);
+    } finally {
+      setPetsLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post("/adoptions", form);
+      // Ensure pets are loaded if user navigated directly
+      if (pets.length === 0) {
+        await loadPets();
+      }
+
+      if (!form.animalId) {
+        alert("Please select an animal to adopt.");
+        return;
+      }
+
+      await api.post("/pets/adoption", {
+        petId: form.animalId,
+        message: form.comment,
+      });
       setSubmitted(true);
     } catch {
       alert("Failed to submit the application. Please try again later.");
@@ -49,6 +119,7 @@ const AdoptionFormPage: React.FC = () => {
         <h1 className="mb-4 text-3xl font-bold text-slate-900 dark:text-white">
           Adoption Request
         </h1>
+
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label className="mb-1 block text-slate-700 dark:text-slate-300">
@@ -63,6 +134,7 @@ const AdoptionFormPage: React.FC = () => {
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
+
           <div>
             <label className="mb-1 block text-slate-700 dark:text-slate-300">
               Phone number
@@ -76,6 +148,7 @@ const AdoptionFormPage: React.FC = () => {
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
+
           <div>
             <label className="mb-1 block text-slate-700 dark:text-slate-300">
               Email
@@ -89,18 +162,45 @@ const AdoptionFormPage: React.FC = () => {
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
+
           <div>
             <label className="mb-1 block text-slate-700 dark:text-slate-300">
-              Animal name (optional)
+              Animal
             </label>
-            <input
-              type="text"
-              name="animal"
-              value={form.animal}
+            <select
+              name="animalId"
+              value={form.animalId}
               onChange={handleChange}
+              required
+              onFocus={async () => {
+                if (pets.length === 0 && !petsLoading) {
+                  await loadPets();
+                }
+              }}
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
-            />
+            >
+              <option value="" disabled>
+                {petsLoading ? "Loading pets..." : "Select a pet"}
+              </option>
+              {pets.map((p) => {
+                const spec = [p.species?.name, p.breed?.name]
+                  .filter(Boolean)
+                  .join(" · ");
+                return (
+                  <option key={p.id} value={p.id}>
+                    {p.name ?? p.id}
+                    {spec ? ` (${spec})` : ""}
+                  </option>
+                );
+              })}
+            </select>
+            {petOptionsLabel ? (
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Selected: {petOptionsLabel}
+              </p>
+            ) : null}
           </div>
+
           <div>
             <label className="mb-1 block text-slate-700 dark:text-slate-300">
               Comment
@@ -113,6 +213,7 @@ const AdoptionFormPage: React.FC = () => {
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
             />
           </div>
+
           <Button type="submit" variant="primary" className="w-full">
             Submit request
           </Button>

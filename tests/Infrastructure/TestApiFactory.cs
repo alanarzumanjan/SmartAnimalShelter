@@ -1,21 +1,21 @@
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Text;
-using Config;
-using Controllers;
-using Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
-using Models;
-using Services;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Hosting;
+using System.Net.Http.Headers;
+using System.Security.Claims;
 using Services.Redis;
+using Controllers;
+using System.Text;
+using Services;
+using Models;
+using Config;
+using Data;
 
 namespace tests.Infrastructure;
 

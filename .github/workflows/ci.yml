@@ -243,6 +243,11 @@ jobs:
           severity: "HIGH,CRITICAL"
           exit-code: "1"
 
+      - name: Install frontend dependencies (needed for Trivy npm library scan)
+        run: |
+          cd frontend
+          npm ci
+
       - name: Run Trivy vulnerability scanner (Frontend)
         uses: aquasecurity/trivy-action@v0.35.0
         with:

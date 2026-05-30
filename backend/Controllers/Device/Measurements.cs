@@ -51,9 +51,6 @@ public class MeasurementsController : ControllerBase
         if (!MeasurementService.IsValidMac(mac))
             return BadRequest(new { error = "Invalid MAC format. Use AA:BB:CC:DD:EE:FF." });
 
-        // Rate limit per MAC — guards against a stuck device spamming the endpoint
-        // Note: rate limiting is handled at service registration level via IRedisService
-        // injected into MeasurementService; controller keeps the Redis dependency only for rate limiting
         var result = await _measurementService.IngestAsync(mac, rawKey.ToString(), request, ct);
 
         return result.Kind switch

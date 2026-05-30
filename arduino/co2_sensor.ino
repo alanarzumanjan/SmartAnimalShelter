@@ -10,7 +10,7 @@ SCD4x scd;
 WebServer server(80);
 Preferences prefs;
 
-// ================== CONFIG ==================
+// Config
 const char* ap_ssid = "CO2-SETUP";
 const char* ap_password = "12345678";
 
@@ -18,14 +18,13 @@ IPAddress apIP(192, 168, 4, 1);
 IPAddress apGW(192, 168, 4, 1);
 IPAddress apSN(255, 255, 255, 0);
 
-// !!! your backend URL
 const char* API_URL = "https://api.alantech.id.lv";
 
 // send interval
 const unsigned long SEND_INTERVAL = 60000; // 60s
 const unsigned long LOGIN_RETRY_MS = 8000;
 
-// ================== PINS / LEDS ==================
+// PINS / LEDS
 int wifi_pin = 15;
 const int leds[8] = {23, 32, 2, 19, 18, 5, 17, 16};
 const int co2_levels[8] = {400, 600, 700, 800, 1000, 1200, 1400, 2000};
@@ -35,14 +34,14 @@ void set_led(int key, bool on);
 void show_co2_Level(int co2);
 void leds_off();
 
-// ================== WIFI STATE ==================
+// WIFI STATE
 String savedSsid = "";
 String savedPass = "";
 bool wifiConnecting = false;
 unsigned long wifiAttemptStart = 0;
 const unsigned long wifiTimeoutMs = 30000;
 
-// ================== DEVICE AUTH STATE ==================
+// DEVICE AUTH STATE
 String deviceMAC = "";
 String savedEmail = "";
 String deviceKey = "";      // X-Api-Key
@@ -52,11 +51,11 @@ bool enrolled = false;
 String pendingEmail = "";
 String pendingPassword = "";
 
-// ================== TIMERS ==================
+// TIMERS
 unsigned long lastSendTime = 0;
 unsigned long lastLoginAttempt = 0;
 
-// ================== HELPERS ==================
+// HELPERS
 String htmlIndex();
 String jsonStatus();
 String jsonScan();
@@ -239,7 +238,7 @@ void setup() {
   pinMode(wifi_pin, OUTPUT);
   digitalWrite(wifi_pin, LOW);
 
-  // IMPORTANT: get MAC after WiFi is up in STA mode
+  // get MAC after WiFi is up in STA mode
   WiFi.mode(WIFI_AP_STA);
   deviceMAC = getStaMac();
   Serial.print("Device MAC: ");
@@ -256,9 +255,9 @@ void setup() {
   if (!apOk) {
     Serial.println("❌ SoftAP start failed!");
   } else {
-    Serial.println("✅ SoftAP started!");
-    Serial.print("📡 AP SSID: "); Serial.println(ap_ssid);
-    Serial.print("🌐 AP IP:   "); Serial.println(WiFi.softAPIP());
+    Serial.println("SoftAP started!");
+    Serial.print("AP SSID: "); Serial.println(ap_ssid);
+    Serial.print("AP IP:   "); Serial.println(WiFi.softAPIP());
   }
 
   if (savedSsid.length() > 0) startWifiConnect(savedSsid, savedPass);
@@ -275,7 +274,7 @@ void setup() {
   server.on("/auth/clear", HTTP_POST, handleAuthClear);
 
   server.begin();
-  Serial.println("✅ HTTP server started (http://192.168.4.1)");
+  Serial.println("HTTP server started (http://192.168.4.1)");
 
   // sensor init
   Wire.begin();
@@ -283,7 +282,7 @@ void setup() {
     Serial.println("❌ SCD41 not detected!");
   } else {
     scd.startPeriodicMeasurement();
-    Serial.println("✅ SCD41 ready");
+    Serial.println("SCD41 ready");
     delay(5000);
   }
 }
@@ -295,7 +294,7 @@ void loop() {
   if (wifiConnecting) {
     if (WiFi.status() == WL_CONNECTED) {
       wifiConnecting = false;
-      Serial.print("✅ Connected! IP: ");
+      Serial.print("Connected! IP: ");
       Serial.println(WiFi.localIP());
       updateWifiLed();
     } else if (millis() - wifiAttemptStart > wifiTimeoutMs) {
@@ -405,7 +404,7 @@ void updateWifiLed() {
   digitalWrite(wifi_pin, WiFi.status() == WL_CONNECTED ? HIGH : LOW);
 }
 
-// ================== AUTH STATE (prefs) ==================
+// AUTH 
 void loadAuthState() {
   prefs.begin("co2", true);
   savedEmail = prefs.getString("email", "");
@@ -427,7 +426,7 @@ void saveAuthState() {
   prefs.putString("deviceKey", deviceKey);
   prefs.putBool("enrolled", enrolled);
   prefs.end();
-  Serial.println("💾 Auth state saved");
+  Serial.println("Auth state saved");
 }
 
 void clearAuthState() {
@@ -444,7 +443,7 @@ void clearAuthState() {
   pendingPassword = "";
 }
 
-// ================== API: LOGIN ==================
+// LOGIN 
 bool apiLogin(const String& email, const String& password) {
   if (WiFi.status() != WL_CONNECTED) return false;
 
@@ -508,7 +507,7 @@ bool apiLogin(const String& email, const String& password) {
   return false;
 }
 
-// ================== API: SEND MEASUREMENT ==================
+// SEND MEASUREMENT
 void sendMeasurement(int co2, float temp, float hum) {
   if (deviceKey.length() == 0) {
     Serial.println("[API] ✗ deviceKey empty, cannot send");
@@ -551,7 +550,7 @@ void sendMeasurement(int co2, float temp, float hum) {
   }
 }
 
-// ================== UI: STATUS JSON ==================
+// STATUS JSON 
 String jsonStatus() {
   wl_status_t s = WiFi.status();
   String st;
@@ -578,7 +577,7 @@ String jsonStatus() {
   return json;
 }
 
-// ================== UI: SCAN JSON ==================
+// SCAN JSON 
 String jsonScan() {
   int n = WiFi.scanNetworks(false, true); // async=false, show_hidden=true
 
@@ -604,7 +603,7 @@ String jsonScan() {
   return json;
 }
 
-// ================== UI: HTML ==================
+// HTML
 String htmlIndex() {
   String presetSsid = escapeHtml(savedSsid);
   String presetEmail = escapeHtml(savedEmail);
@@ -645,7 +644,7 @@ String htmlIndex() {
 <body>
   <div class="wrap">
     <div class="card" style="margin-bottom:16px">
-      <h1>🌱 CO2 Meter Setup</h1>
+      <h1>CO2 Meter Setup</h1>
       <p>Connect to Wi-Fi <b>CO2-SETUP</b> and open <code>http://192.168.4.1</code>.</p>
     </div>
 
@@ -857,7 +856,7 @@ async function clearAuth(){
   return html;
 }
 
-// ================== LEDS ==================
+// LEDS 
 void leds_off(){
   for (int i = 0; i < 8; i++) {
     pinMode(leds[i], OUTPUT);

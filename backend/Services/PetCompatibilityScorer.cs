@@ -19,7 +19,7 @@ public static class PetCompatibilityScorer
 
     private const int PartialCredit = 10;
 
-    // Exact match → full weight; one step away → half; opposite → 0.
+    // Exact match - full weight; one step away - half; opposite - 0.
     private static readonly Dictionary<string, int> EnergyRank = new(StringComparer.OrdinalIgnoreCase)
     {
         ["low"] = 0,
@@ -80,14 +80,14 @@ public static class PetCompatibilityScorer
 
         IEnumerable<Pet> pets, MatchRequestDto prefs)
     {
-        // O(n) — score every pet
+        // O(n) - score every pet
         var scored = pets.Select(pet =>
         {
             var (score, reasons) = Score(pet, prefs);
             return BuildDto(pet, score, reasons);
         });
 
-        // O(n log n) — sort descending by score
+        // O(n log n) - sort descending by score
         return scored.OrderByDescending(p => p.CompatibilityScore).ToList();
     }
 

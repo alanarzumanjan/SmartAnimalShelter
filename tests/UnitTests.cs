@@ -1,10 +1,10 @@
-using Config;
-using Services;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using Microsoft.Extensions.Configuration;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
+using Services;
+using Config;
 using Models;
 
 namespace tests;
@@ -215,7 +215,6 @@ public class RateLimitingTests
         for (var i = 0; i < 3; i++)
             await redis.AllowRequestAsync(key, 3, TimeSpan.FromMilliseconds(50));
 
-        // Wait for window to expire
         await Task.Delay(100);
 
         var result = await redis.AllowRequestAsync(key, 3, TimeSpan.FromMilliseconds(50));

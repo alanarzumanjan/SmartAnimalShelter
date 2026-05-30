@@ -1,5 +1,4 @@
 using Dtos;
-using Dtos.Payments;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Models;

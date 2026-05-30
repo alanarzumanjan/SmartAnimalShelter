@@ -36,7 +36,7 @@ const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined) ||
   "http://localhost:5000";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 function co2Label(co2: number): string {
   if (co2 <= 600) return "Excellent";
@@ -132,8 +132,6 @@ const noticeStyles: Record<
   },
 };
 
-// ── PetCard ───────────────────────────────────────────────────────────────────
-
 function PetCard({
   pet,
   onRemove,
@@ -186,8 +184,6 @@ function PetCard({
     </div>
   );
 }
-
-// ── EnvironmentWidget ─────────────────────────────────────────────────────────
 
 function EnvironmentWidget({
   enc,
@@ -382,7 +378,7 @@ function EnvironmentWidget({
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// Main Page Component
 
 export default function EnclosurePage() {
   const { enclosureId } = useParams<{ enclosureId: string }>();
