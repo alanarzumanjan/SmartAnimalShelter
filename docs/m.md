@@ -15,7 +15,7 @@ C-->D
 end
 
 subgraph IoTFlow["IoT datu plūsma"]
-
+ 
 E[Sensori]
 F[ESP32]
 G[HTTPS]
