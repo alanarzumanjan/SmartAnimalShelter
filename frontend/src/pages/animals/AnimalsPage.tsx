@@ -191,8 +191,6 @@ export default function AnimalsPage() {
 
   const hasFilters = speciesOptions.length > 0 || shelterOptions.length > 0;
 
-  
-
   return (
     <div className="py-8 space-y-6">
       {/* Header */}
@@ -218,7 +216,6 @@ export default function AnimalsPage() {
                 Add Animal
               </Button>
             )}
-
           </div>
         </div>
       </section>

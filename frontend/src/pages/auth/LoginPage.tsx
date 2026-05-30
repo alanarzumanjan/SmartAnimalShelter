@@ -99,7 +99,6 @@ export default function LoginPage() {
             </a>
           </div>
 
-
           <Button type="submit" fullWidth isLoading={isLoading}>
             <LogIn className="w-5 h-5" />
             Sign In

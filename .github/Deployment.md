@@ -2,16 +2,26 @@
 
 ```mermaid
 flowchart LR
-    A[Push/PR] --> B{CI}
-    B --> C[Backend]
-    B --> D[Frontend]
-    B --> E[Security]
+    classDef default stroke:#a259ff,stroke-width:2px,fill:#1a1a2e,color:#ffffff;
+    linkStyle default stroke:#a259ff,stroke-width:2px;
+
+    A[Push/PR main, dev] --> B{CI}
+    B --> C[Backend build, format, test]
+    B --> D[Frontend lint, typecheck, test]
+    B --> E[Security Trivy scan]
+    
     C & D & E --> F{CD}
-    F --> G[Build & Push]
-    G --> H[Deploy]
-    H --> I{Health?}
-    I -->|ok| J[Done]
-    I -->|fail| K[Rollback]
+    F --> G[Build & Push backend image]
+    F --> H[Build & Push frontend image]
+    F --> I[Cleanup old GHCR tags]
+
+    G --> J[Deploy docker compose up]
+    H --> J[Deploy docker compose up]
+    I --> J[Deploy docker compose up]
+    
+    J --> K{Health?}
+    K -->|ok| L[Done]
+    K -->|fail| M[Rollback.sh]
 ```
 
 ## CI — `.github/workflows/ci.yml`

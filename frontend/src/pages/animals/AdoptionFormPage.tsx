@@ -21,11 +21,8 @@ type PetApiItem = {
   Breed?: { name?: string } | null;
 };
 
-
-
 const AdoptionFormPage: React.FC = () => {
   const [form, setForm] = useState({
-
     animalId: "" as string,
     comment: "",
 
@@ -46,7 +43,9 @@ const AdoptionFormPage: React.FC = () => {
   }, [form.animalId, pets]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -58,12 +57,16 @@ const AdoptionFormPage: React.FC = () => {
       const { data } = await api.get("/pets?page=1&pageSize=100");
       const items = data?.pets ?? data?.data?.pets ?? [];
       setPets(
-        (Array.isArray(items) ? items : []).map((p: PetApiItem): PetLike => ({
-          id: String(p.id ?? p.Id ?? p.petId ?? ""),
-          name: (p.name ?? p.Name) ?? undefined,
-          species: p.species ?? p.Species ?? null,
-          breed: p.breed ?? p.Breed ?? null,
-        })).filter((p) => !!p.id),
+        (Array.isArray(items) ? items : [])
+          .map(
+            (p: PetApiItem): PetLike => ({
+              id: String(p.id ?? p.Id ?? p.petId ?? ""),
+              name: p.name ?? p.Name ?? undefined,
+              species: p.species ?? p.Species ?? null,
+              breed: p.breed ?? p.Breed ?? null,
+            }),
+          )
+          .filter((p) => !!p.id),
       );
     } catch {
       setPets([]);
@@ -180,7 +183,9 @@ const AdoptionFormPage: React.FC = () => {
                 {petsLoading ? "Loading pets..." : "Select a pet"}
               </option>
               {pets.map((p) => {
-                const spec = [p.species?.name, p.breed?.name].filter(Boolean).join(" · ");
+                const spec = [p.species?.name, p.breed?.name]
+                  .filter(Boolean)
+                  .join(" · ");
                 return (
                   <option key={p.id} value={p.id}>
                     {p.name ?? p.id}
@@ -219,4 +224,3 @@ const AdoptionFormPage: React.FC = () => {
 };
 
 export default AdoptionFormPage;
-
