@@ -14,7 +14,7 @@ import { formatDateTimeForTimeZone } from "@/services/timezone.service";
 
 const PAGE_SIZE = 30;
 
-// ===== CO2 quality =====
+// CO2 quality
 function co2Quality(co2: number): { title: string; badgeClass: string } {
   if (co2 <= 400)
     return {

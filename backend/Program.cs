@@ -1,18 +1,18 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using StackExchange.Redis;
+using Services.Payments;
+using MongoDB.Driver;
+using Services.Redis;
+using ImageFetchers;
 using System.Text;
+using DotNetEnv;
+using Services;
 using Config;
 using Data;
-using DotNetEnv;
 using Hubs;
-using ImageFetchers;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using MongoDB.Driver;
-using Services;
-using Services.Payments;
-using Services.Redis;
-using StackExchange.Redis;
 
 Console.OutputEncoding = Encoding.UTF8;
 
@@ -21,7 +21,7 @@ var solutionRoot = Directory.GetParent(Directory.GetCurrentDirectory())!.FullNam
 Env.Load(Path.Combine(solutionRoot, ".env"));
 Console.WriteLine("✅ .env loaded from: " + Path.Combine(solutionRoot, ".env"));
 
-// Fail-fast on missing critical security configuration
+// Security configuration
 var encryptionKey = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
 if (string.IsNullOrWhiteSpace(encryptionKey))
 {
@@ -103,18 +103,12 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = builder.Environment.IsProduction();
-    // Security: do NOT accept JWT from query string for SignalR.
-    // If a client sends access_token in URL, treat it as unauthorized.
-    // SignalR: do NOT accept JWT from URL query (prevents token leakage).
-    // Since the negotiate request currently only reliably carries cookies,
-    // extract the token from cookie for SignalR endpoints.
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
         {
             if (context.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
             {
-                // Your app uses refresh_token cookie; reuse it for SignalR auth.
                 if (context.Request.Cookies.TryGetValue("refresh_token", out var cookieToken) &&
                     !string.IsNullOrWhiteSpace(cookieToken))
                 {
@@ -122,7 +116,7 @@ builder.Services.AddAuthentication(options =>
                 }
             }
 
-            // Intentionally ignore access_token from query string.
+            // Intentionally ignore access_token from query string
             return Task.CompletedTask;
         }
     };
@@ -159,7 +153,7 @@ builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
     options.Cookie.Name = "csrf_token";
-    options.Cookie.HttpOnly = false; // JS must read it to send in header
+    options.Cookie.HttpOnly = false;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax;
 });
@@ -186,7 +180,6 @@ builder.Services.AddScoped<MeasurementService>();
 builder.Services.AddScoped<UserService>();
 
 // CORS
-// allow both local dev and prod frontend origin (if used)
 var allowedOriginsRaw = Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_ORIGINS")
     ?? Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_PORT");
 
@@ -266,7 +259,7 @@ app.MapHealthChecks("/health");
 app.MapControllers();
 app.MapHub<ChatHub>("/chatHub");
 
-// PostgreSQL timestamp fix
+// PostgreSQL timestamp
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // Run

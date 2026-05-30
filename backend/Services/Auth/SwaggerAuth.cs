@@ -1,5 +1,5 @@
-using System.Net;
 using System.Text;
+using System.Net;
 
 public class SwaggerAuth
 {

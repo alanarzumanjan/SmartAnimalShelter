@@ -42,7 +42,7 @@ public class UserRegisterValidator : IValidator<UserRegisterDto>
                 errors["username"] = "Username must contain only letters, numbers, and underscores.";
         }
 
-        // Role (optional - defaults to "user")
+        // Role (default = user)
         if (!string.IsNullOrWhiteSpace(user.role))
         {
             var allowedRoles = new[] { "user", "shelter" };

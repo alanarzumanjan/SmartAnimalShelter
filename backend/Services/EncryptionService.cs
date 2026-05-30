@@ -7,10 +7,6 @@ public static class EncryptionService
 {
     private static byte[]? _key;
 
-    /// <summary>
-    /// Initializes the encryption service with a base64-encoded 32-byte key.
-    /// Must be called once before any Encrypt/Decrypt/Hash operations.
-    /// </summary>
     public static void Initialize(string? keyString)
     {
         if (string.IsNullOrWhiteSpace(keyString))
@@ -43,10 +39,6 @@ public static class EncryptionService
     private static byte[] Key => _key ?? throw new InvalidOperationException(
         "EncryptionService has not been initialized. Call EncryptionService.Initialize(key) first.");
 
-    /// <summary>
-    /// Encrypts plaintext using AES-256-GCM with a random 96-bit nonce.
-    /// Returns base64(nonce || tag || ciphertext).
-    /// </summary>
     public static string? Encrypt(string? plainText)
     {
         if (string.IsNullOrWhiteSpace(plainText))
@@ -71,10 +63,6 @@ public static class EncryptionService
         return Convert.ToBase64String(output);
     }
 
-    /// <summary>
-    /// Decrypts base64(nonce || tag || ciphertext) produced by Encrypt.
-    /// Throws CryptographicException on tampered or malformed input.
-    /// </summary>
     public static string? Decrypt(string? cipherText)
     {
         if (string.IsNullOrWhiteSpace(cipherText))
@@ -130,11 +118,6 @@ public static class EncryptionService
         }
     }
 
-    /// <summary>
-    /// Keyed HMAC-SHA256 for deterministic, collision-resistant hash.
-    /// Uses ENCRYPTION_KEY as HMAC key. Suitable for GDPR pseudonymization
-    /// where identical inputs must produce identical outputs.
-    /// </summary>
     public static string Hash(string input)
     {
         using var hmac = new HMACSHA256(Key);

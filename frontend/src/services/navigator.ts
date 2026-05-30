@@ -10,7 +10,7 @@ export function navigateTo(path: string): void {
   if (_navigate) {
     _navigate(path, { replace: true });
   } else {
-    // fallback if called before router mounts (should not happen in practice)
+    // fallback if called before router mounts
     window.location.href = path;
   }
 }

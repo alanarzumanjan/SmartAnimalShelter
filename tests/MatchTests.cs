@@ -1,9 +1,9 @@
-using System.Net;
-using System.Net.Http.Json;
-using Dtos;
-using Models;
-using Services;
 using tests.Infrastructure;
+using System.Net.Http.Json;
+using System.Net;
+using Services;
+using Models;
+using Dtos;
 
 namespace tests;
 
@@ -75,9 +75,6 @@ public class CompatibilityScorerTests
     [Fact]
     public void Score_HousingMismatch_WithAllConstraints_ReturnsLowScore()
     {
-        // housing=0, kids=0, dogs=0, cats=0, energy=0(high vs low)
-        // experience=0(first_time adopter + no pet level set = null → full=10), size=10(any), trained=5
-        // raw = 0+0+0+0+0+10+10+5 = 25 → round(25/125*100) = 20
         var pet = MakePet(housing: "house_with_yard", goodWithKids: false, goodWithDogs: false, goodWithCats: false, energy: "high");
         var prefs = new MatchRequestDto
         {
@@ -99,24 +96,16 @@ public class CompatibilityScorerTests
     [Fact]
     public void Score_NoConstraintsFromAdopter_ReturnsHighScore()
     {
-        // No kids/dogs/cats constraints, size=any, no house trained req
-        // housing=25, kids=20, dogs=20, cats=20, energy=7(low vs medium adjacent)
-        // experience=10(null→full), size=10(any), trained=5
-        // raw = 25+20+20+20+7+10+10+5 = 117 → round(117/125*100) = 94
         var pet = MakePet(housing: "apartment", energy: "low");
         var prefs = DefaultPrefs();
 
         var (score, _) = PetCompatibilityScorer.Score(pet, prefs);
-
         Assert.Equal(94, score);
     }
 
     [Fact]
     public void Score_NullTraits_GivePartialCredit()
     {
-        // housing=25(null→full), kids=10(partial), dogs=10(partial), cats=10(partial)
-        // energy=7(null→half), experience=10(null→full), size=10(any), trained=5
-        // raw = 25+10+10+10+7+10+10+5 = 87 → round(87/125*100) = 70
         var pet = MakePet(goodWithKids: null, goodWithDogs: null, goodWithCats: null);
         var prefs = new MatchRequestDto
         {
@@ -162,8 +151,6 @@ public class CompatibilityScorerTests
     [Fact]
     public void Score_EnergyAdjacentLevel_GivesHalfPoints()
     {
-        // low vs medium → diff=1 → 7 pts (half of 15)
-        // raw = 25+20+20+20+7+10+10+5 = 117 → round(117/125*100) = 94
         var pet = MakePet(energy: "low");
         var prefs = new MatchRequestDto
         {
@@ -181,8 +168,6 @@ public class CompatibilityScorerTests
     [Fact]
     public void Score_EnergyOpposite_GivesZeroPoints()
     {
-        // high vs low → diff=2 → 0 pts
-        // raw = 25+20+20+20+0+10+10+5 = 110 → round(110/125*100) = 88
         var pet = MakePet(energy: "high");
         var prefs = new MatchRequestDto
         {
@@ -212,8 +197,8 @@ public class CompatibilityScorerTests
         var pets = new List<Pet>
         {
             MakePet(housing: "house_with_yard", goodWithKids: false, energy: "high"), // low score
-            MakePet(housing: "apartment",       goodWithKids: true,  energy: "low"),  // high score
-            MakePet(housing: "apartment",       goodWithKids: null,  energy: "medium"), // mid score
+            MakePet(housing: "apartment", goodWithKids: true,  energy: "low"),  // high score
+            MakePet(housing: "apartment", goodWithKids: null,  energy: "medium"), // mid score
         };
 
         var results = PetCompatibilityScorer.ScoreAndSort(pets, prefs);
@@ -235,8 +220,7 @@ public class CompatibilityScorerTests
     {
         var pet = MakePet();
         pet.ExperienceLevel = "experienced";
-        var prefs = DefaultPrefs();
-        // DefaultPrefs has ExperienceLevel = "first_time"
+        var prefs = DefaultPrefs(); // DefaultPrefs has ExperienceLevel = "first_time"
 
         var (score, reasons) = PetCompatibilityScorer.Score(pet, prefs);
 
@@ -263,7 +247,6 @@ public class CompatibilityScorerTests
         };
 
         var (_, reasons) = PetCompatibilityScorer.Score(pet, prefs);
-
         Assert.Contains("Matches your experience", reasons);
     }
 
@@ -281,7 +264,6 @@ public class CompatibilityScorerTests
         };
 
         var (_, reasons) = PetCompatibilityScorer.Score(pet, prefs);
-
         Assert.Contains("Size matches your preference", reasons);
     }
 
@@ -322,7 +304,7 @@ public class CompatibilityScorerTests
     }
 }
 
-// ── Integration tests for POST /pets/match endpoint ──────────────────────────
+// Integration tests for POST /pets/match endpoint 
 
 public class MatchEndpointTests : EndpointTestBase
 {

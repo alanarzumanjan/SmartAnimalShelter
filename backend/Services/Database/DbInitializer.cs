@@ -1,7 +1,7 @@
-using System.Text.Json;
-using Data;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using Models;
+using Data;
 
 public static class DbInitializer
 {

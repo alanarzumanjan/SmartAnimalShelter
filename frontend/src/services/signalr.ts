@@ -7,15 +7,8 @@ let connectingPromise: Promise<void> | null = null;
 function buildConnection(): signalR.HubConnection {
   return new signalR.HubConnectionBuilder()
     .withUrl(`${config.api.baseUrl}/chatHub`, {
-      // Pass access token via SignalR without putting it into URL query.
-      // JwtBearer on server expects Authorization: Bearer <token>.
       accessTokenFactory: () => {
         const t = localStorage.getItem("access_token") ?? "";
-        // Debug: help determine why Authorization header is missing on /chatHub/negotiate
-        // (do not log token value)
-        const present = !!t;
-        // eslint-disable-next-line no-console
-        console.log("[signalr] accessTokenFactory called, tokenPresent=", present, "len=", t.length);
         return t;
       },
       withCredentials: true,

@@ -1,4 +1,4 @@
-# Production Docker Compose — no external DB ports, stricter security
+# Production Docker Compose - no external DB ports, stricter security
 services:
   postgres:
     image: postgres:16
@@ -16,7 +16,6 @@ services:
       retries: 10
     networks:
       - shelter_network
-    # NO external ports in production
 
   mongodb:
     image: mongo:7
@@ -30,7 +29,6 @@ services:
       retries: 10
     networks:
       - shelter_network
-    # NO external ports in production
 
   redis:
     image: redis:7-alpine
@@ -45,7 +43,6 @@ services:
       retries: 10
     networks:
       - shelter_network
-    # NO external ports in production
 
   backend:
     build:

@@ -137,9 +137,9 @@ export default function RegisterPage() {
                 onChange={(e) => setRole(e.target.value as Role)}
                 className="w-full cursor-pointer appearance-none rounded-xl border border-slate-300 bg-white py-3 pl-10 pr-4 text-slate-900 focus:border-transparent focus:ring-2 focus:ring-primary-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
               >
-                <option value="user">🐾 User — browse and adopt pets</option>
+                <option value="user">User — browse and adopt pets</option>
                 <option value="shelter">
-                  🏠 Shelter — publish profiles and manage animals
+                  Shelter — publish profiles and manage animals
                 </option>
               </select>
             </div>

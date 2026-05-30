@@ -1,18 +1,18 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Antiforgery;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Services.Redis;
 using System.Text;
+using Validation;
+using Services;
+using Models;
 using Config;
 using Data;
 using Dtos;
-using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Models;
-using Services;
-using Services.Redis;
-using Validation;
 
 namespace Controllers;
 

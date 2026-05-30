@@ -1,7 +1,7 @@
-using System.Net;
-using System.Net.Http.Json;
-using Models;
 using tests.Infrastructure;
+using System.Net.Http.Json;
+using System.Net;
+using Models;
 
 namespace tests;
 

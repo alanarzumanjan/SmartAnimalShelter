@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
-using MailKit.Net.Smtp;
 using Microsoft.AspNetCore.Mvc;
+using MailKit.Net.Smtp;
 using MimeKit;
 
 [ApiController]

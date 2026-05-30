@@ -66,7 +66,6 @@ const AdoptionFormPage: React.FC = () => {
         })).filter((p) => !!p.id),
       );
     } catch {
-      // keep form usable even if pets loading fails
       setPets([]);
     } finally {
       setPetsLoading(false);
@@ -86,7 +85,6 @@ const AdoptionFormPage: React.FC = () => {
         return;
       }
 
-      // backend expects: POST /pets/adoption with body { petId, message }
       await api.post("/pets/adoption", {
         petId: form.animalId,
         message: form.comment,
