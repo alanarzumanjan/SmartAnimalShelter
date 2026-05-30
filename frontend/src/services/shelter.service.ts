@@ -121,7 +121,7 @@ export async function resolveOwnedShelterId(
       return canonicalShelterId;
     }
   } catch {
-    // Fall back to shelter metadata if pets cannot be loaded.
+    // Fall back to shelter metadata if pets cannot be loaded
   }
 
   return (

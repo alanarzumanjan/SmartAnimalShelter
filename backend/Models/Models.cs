@@ -270,7 +270,7 @@ public class Pet
     public string? MongoImageId { get; set; }
 
     [MaxLength(100)]
-    public string? Category { get; set; } // "rodents/ferret"
+    public string? Category { get; set; }
 
     [MaxLength(500)]
     public string? ExternalUrl { get; set; }
@@ -409,7 +409,7 @@ public class Measurement
     public double Humidity { get; set; }
 
     [Range(0, 100)]
-    public double? Ammonia { get; set; } // ppm - CRITICAL for animal welfare (waste byproduct)
+    public double? Ammonia { get; set; } // ppm
 
     [Range(0, 10)]
     public double? VOC { get; set; } // mg/m³ - volatile organic compounds
@@ -514,7 +514,6 @@ public class Order
     public User User { get; set; } = null!;
 }
 
-// Chat
 [Index(nameof(RoomId), nameof(CreatedAt))]
 public class ChatMessage
 {

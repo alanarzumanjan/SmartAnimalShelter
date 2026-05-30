@@ -64,9 +64,17 @@ public class AuthController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public IActionResult GetCsrfToken()
     {
-        var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
-        Response.Headers["X-CSRF-TOKEN"] = tokens.RequestToken;
-        return NoContent();
+        try
+        {
+            var tokens = _antiforgery.GetAndStoreTokens(HttpContext);
+            Response.Headers["X-CSRF-TOKEN"] = tokens.RequestToken;
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "> [CSRF] GetCsrfToken failed");
+            return Problem(detail: ex.Message, title: "CSRF token generation failed");
+        }
     }
 
     [HttpPost("register")]

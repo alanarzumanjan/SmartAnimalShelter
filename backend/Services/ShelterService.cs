@@ -15,9 +15,7 @@ public class ShelterService
         _logger = logger;
     }
 
-    /// <summary>
-    /// Ensures a user has a shelter. Auto-creates one if none exists for the given shelterId and owner.
-    /// </summary>
+    // Ensures a user has a shelter. Auto-creates one if none exists for the given shelterId and owner
     public async Task<Shelter> EnsureUserShelterAsync(Guid userId, Guid? requestedShelterId, CancellationToken ct = default)
     {
         // Try to find an existing shelter owned by this user
@@ -31,7 +29,7 @@ public class ShelterService
         if (shelter != null)
             return shelter;
 
-        // Fallback: find any shelter owned by this user
+        // Fallback - find any shelter owned by this user
         shelter = await _db.Shelters
             .FirstOrDefaultAsync(s => s.OwnerId == userId, ct);
 

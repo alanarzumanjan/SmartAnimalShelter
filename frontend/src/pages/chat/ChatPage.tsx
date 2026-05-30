@@ -154,7 +154,7 @@ export default function ChatPage() {
       setMessages([]);
       prevRoomRef.current = roomId;
 
-      // Always try to join and load — apiRooms may not be populated yet (race on mount)
+      // Always try to join and load - apiRooms may not be populated yet (race on mount)
       const isExisting = apiRooms.some((r) => r.roomId === roomId);
       try {
         await api.post(`/chat/rooms/${encodeURIComponent(roomId)}/join`, {
@@ -170,7 +170,6 @@ export default function ChatPage() {
       }
 
       // Load history if room exists on server (join succeeded = room exists)
-      // For brand new rooms with no history, loadMessages returns empty array
       await loadMessages(roomId);
 
       if (!isExisting) {
@@ -261,7 +260,7 @@ export default function ChatPage() {
       .catch(() => {});
   }, []);
 
-  // Open DM room from URL — runs only when recipientId/userId change, not on every switchRoom recreate
+  // Open DM room from URL - runs only when recipientId/userId change, not on every switchRoom recreate
   useEffect(() => {
     if (!recipientId || !userId) return;
     if (!initialMessageAppliedRef.current) {

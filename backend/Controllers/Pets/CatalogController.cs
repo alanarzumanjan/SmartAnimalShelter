@@ -1,7 +1,6 @@
 using Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Models;
 
 namespace Controllers;
 

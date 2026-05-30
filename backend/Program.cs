@@ -21,7 +21,7 @@ var solutionRoot = Directory.GetParent(Directory.GetCurrentDirectory())!.FullNam
 Env.Load(Path.Combine(solutionRoot, ".env"));
 Console.WriteLine("✅ .env loaded from: " + Path.Combine(solutionRoot, ".env"));
 
-// Fail-fast on missing critical security configuration
+// Security configuration
 var encryptionKey = Environment.GetEnvironmentVariable("ENCRYPTION_KEY");
 if (string.IsNullOrWhiteSpace(encryptionKey))
 {
@@ -105,11 +105,18 @@ builder.Services.AddAuthentication(options =>
     options.RequireHttpsMetadata = builder.Environment.IsProduction();
     options.Events = new JwtBearerEvents
     {
-        OnMessageReceived = ctx =>
+        OnMessageReceived = context =>
         {
-            var token = ctx.Request.Query["access_token"];
-            if (!string.IsNullOrEmpty(token) && ctx.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
-                ctx.Token = token;
+            if (context.HttpContext.Request.Path.StartsWithSegments("/chatHub"))
+            {
+                if (context.Request.Cookies.TryGetValue("refresh_token", out var cookieToken) &&
+                    !string.IsNullOrWhiteSpace(cookieToken))
+                {
+                    context.Token = cookieToken;
+                }
+            }
+
+            // Intentionally ignore access_token from query string
             return Task.CompletedTask;
         }
     };
@@ -146,9 +153,9 @@ builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
     options.Cookie.Name = "csrf_token";
-    options.Cookie.HttpOnly = false; // JS must read it to send in header
+    options.Cookie.HttpOnly = false;
     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.SameSite = SameSiteMode.Lax;
 });
 
 // Controllers
@@ -173,7 +180,6 @@ builder.Services.AddScoped<MeasurementService>();
 builder.Services.AddScoped<UserService>();
 
 // CORS
-// allow both local dev and prod frontend origin (if used)
 var allowedOriginsRaw = Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_ORIGINS")
     ?? Environment.GetEnvironmentVariable("ALLOWED_FRONTEND_PORT");
 
@@ -253,7 +259,7 @@ app.MapHealthChecks("/health");
 app.MapControllers();
 app.MapHub<ChatHub>("/chatHub");
 
-// PostgreSQL timestamp fix
+// PostgreSQL timestamp
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 // Run

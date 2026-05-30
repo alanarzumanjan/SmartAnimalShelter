@@ -43,10 +43,10 @@ public sealed class MeasurementService
         _ => DateTime.SpecifyKind(dt, DateTimeKind.Utc)
     };
 
-    /// <summary>
-    /// Verifies device API key, upserts device LastSeenAt, persists measurement, updates Redis cache.
-    /// Returns the saved DTO or throws on auth/ownership failure.
-    /// </summary>
+
+    // Verifies device API key, upserts device LastSeenAt, persists measurement, updates Redis cache.
+    // Returns the saved DTO or throws on auth/ownership failure.
+
     public async Task<MeasurementIngestResult> IngestAsync(
         string mac, string rawApiKey, MeasurementInDTO request, CancellationToken ct = default)
     {
@@ -204,7 +204,7 @@ public sealed class MeasurementService
     }
 }
 
-/// <summary>Result discriminated union for ingest — avoids exceptions for auth failures.</summary>
+// Result discriminated union for ingest - avoids exceptions for auth failures
 public sealed class MeasurementIngestResult
 {
     public enum ResultKind { Success, Unauthorized, Forbidden }

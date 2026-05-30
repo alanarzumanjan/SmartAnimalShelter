@@ -3,12 +3,7 @@ import { Link } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { Button } from "@/components/ui/Button";
-import {
-  Heart,
-  Wifi,
-  ArrowRight,
-  MessageSquare,
-} from "lucide-react";
+import { Heart, Wifi, ArrowRight, MessageSquare } from "lucide-react";
 
 export default function HomePage() {
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);

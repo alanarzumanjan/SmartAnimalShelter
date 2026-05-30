@@ -47,7 +47,7 @@ public class ChatHub : Hub
         await Groups.AddToGroupAsync(Context.ConnectionId, roomId);
         _logger.LogInformation("> User {UserId} joined room {RoomId}", userId, roomId);
 
-        // Register as member if not already (admins joining for support)
+        // Register as member if not already and not admin (admins can join without being members)
         if (!isMember)
         {
             _db.ChatRoomMembers.Add(new ChatRoomMember

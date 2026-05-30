@@ -84,7 +84,7 @@ await tx.CommitAsync();
 Console.WriteLine($"✅ Re-encrypted {updated} users successfully.");
 Console.WriteLine("👉 Now update ENCRYPTION_KEY in backend/.env and restart the backend.");
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// helpers 
 
 static byte[] ParseKey(string b64, string name)
 {
@@ -118,8 +118,8 @@ static string Encrypt(string plainText, byte[] key)
     using var aes = new AesGcm(key, 16);
     aes.Encrypt(nonce, plain, cipher, tag);
     var output = new byte[nonce.Length + tag.Length + cipher.Length];
-    Buffer.BlockCopy(nonce,  0, output, 0,                         nonce.Length);
-    Buffer.BlockCopy(tag,    0, output, nonce.Length,              tag.Length);
+    Buffer.BlockCopy(nonce, 0, output, 0, nonce.Length);
+    Buffer.BlockCopy(tag, 0, output, nonce.Length, tag.Length);
     Buffer.BlockCopy(cipher, 0, output, nonce.Length + tag.Length, cipher.Length);
     return Convert.ToBase64String(output);
 }

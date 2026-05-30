@@ -31,7 +31,7 @@ import {
   getPreferredTimeZone,
 } from "@/services/timezone.service";
 
-// ===== CO2 thresholds =====
+// CO2 thresholds
 const CO2_LEVELS = [400, 600, 700, 800, 1000, 1200, 1400, 2000] as const;
 
 function ledCountForCo2(co2: number): number {
