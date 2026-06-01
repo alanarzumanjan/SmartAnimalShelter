@@ -1,11 +1,20 @@
 # CI/CD
  
 ```mermaid
-%%{init: { 'theme': 'base', 'themeVariables': { 'background': 'transparent' } } }%%
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'canvasBackground': 'transparent',
+    'background': 'transparent',
+    'primaryColor': '#151515',
+    'primaryBorderColor': '#9f08fd',
+    'primaryTextColor': '#ffffff',
+    'lineColor': '#9f08fd',
+    'tertiaryColor': '#151515',
+    'fontSize': '16px'
+  }
+}}%%
 flowchart LR
-    classDef default stroke:#a259ff,stroke-width:2px,fill:#1a1a2e,color:#ffffff;
-    linkStyle default stroke:#a259ff,stroke-width:2px;
-
     A[Push/PR main, dev] --> B{CI}
     B --> C[Backend build, format, test]
     B --> D[Frontend lint, typecheck, test]
@@ -23,6 +32,7 @@ flowchart LR
     J --> K{Health?}
     K -->|ok| L[Done]
     K -->|fail| M[Rollback.sh]
+
 ```
 
 ## CI — `.github/workflows/ci.yml`
