@@ -1,6 +1,7 @@
 # CI/CD
  
 ```mermaid
+%%{init: { 'theme': 'base', 'themeVariables': { 'background': 'transparent' } } }%%
 flowchart LR
     classDef default stroke:#a259ff,stroke-width:2px,fill:#1a1a2e,color:#ffffff;
     linkStyle default stroke:#a259ff,stroke-width:2px;
