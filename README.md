@@ -157,13 +157,13 @@ Security is implemented across multiple layers to ensure data integrity and user
 ## Testing & Quality Assurance
 
 <p align="center"> <img src="docs/images/coverage_report.png" alt="System API documentation first part" width="1000px" /> </p>
-<p>
+
 The project adheres to modern software engineering practices with a robust, automated testing strategy integrated into the CI/CD pipeline. <br>
-1. <b>Framework:</b> xUnit, `WebApplicationFactory` for API integration testing. <br>
-2. <b>Isolation:</b> EF Core InMemory provider and a custom `FakeRedisService` ensure tests are fast, deterministic, and independent of external infrastructure. <br>
-3. <b>Metrics:</b> 73 automated tests with a 100% pass rate (0 failures). <br>
-4. <b>Coverage:</b> Critical modules achieve high coverage (e.g., `JwtService` at 100%, `UserEmailService` at 88.8%, `ShelterService` at 82.5%).
-</p>
+  - **Framework:** xUnit, `WebApplicationFactory` for API integration testing. <br>
+  - **Isolation:** EF Core InMemory provider and a custom `FakeRedisService` ensure tests are fast, deterministic, and independent of external infrastructure. <br>
+  - **Metrics:** 73 automated tests with a 100% pass rate (0 failures). <br>
+  - **Coverage:** Critical modules achieve high coverage (e.g., `JwtService` at 100%, `UserEmailService` at 88.8%, `ShelterService` at 82.5%).
+
 
 ---
 
@@ -173,12 +173,12 @@ The project adheres to modern software engineering practices with a robust, auto
   <img src="docs/images/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" /> <br/>
   <em> CI/CD Piplines diagram</em>
 </p>
-<p>
+
 The project features a fully automated GitHub Actions pipeline: <br>
-1. <b>CI Phase:</b> On every PR/Push, the pipeline runs backend/frontend builds, linting, xUnit tests, and <b>Trivy</b> security scans (blocking on HIGH/CRITICAL vulnerabilities). <br>
-2. <b>CD Phase:</b> Upon success, multi-platform (`amd64`/`arm64`) Docker images are built and pushed to GitHub Container Registry (GHCR) with SBOM generation and build attestations. <br>
-3. <b>Resilience:</b> Includes an automated `rollback.sh` script to instantly revert to the previous stable version if health checks fail post-deployment.
-</p>
+- **CI Phase:** On every PR/Push, the pipeline runs backend/frontend builds, linting, xUnit tests, and **Trivy** security scans (blocking on HIGH/CRITICAL vulnerabilities). <br>
+- **CD Phase:** Upon success, multi-platform (`amd64`/`arm64`) Docker images are built and pushed to GitHub Container Registry (GHCR) with SBOM generation and build attestations. <br>
+- **Resilience:** Includes an automated `rollback.sh` script to instantly revert to the previous stable version if health checks fail post-deployment.
+
 
 ---
 
