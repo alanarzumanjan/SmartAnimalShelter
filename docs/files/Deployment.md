@@ -1,39 +1,4 @@
 # CI/CD
- 
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'canvasBackground': 'transparent',
-    'background': 'transparent',
-    'primaryColor': '#151515',
-    'primaryBorderColor': '#9f08fd',
-    'primaryTextColor': '#ffffff',
-    'lineColor': '#9f08fd',
-    'tertiaryColor': '#151515',
-    'fontSize': '16px'
-  }
-}}%%
-flowchart LR
-    A[Push/PR main, dev] --> B{CI}
-    B --> C[Backend build, format, test]
-    B --> D[Frontend lint, typecheck, test]
-    B --> E[Security Trivy scan]
-    
-    C & D & E --> F{CD}
-    F --> G[Build & Push backend image]
-    F --> H[Build & Push frontend image]
-    F --> I[Cleanup old GHCR tags]
-
-    G --> J[Deploy docker compose up]
-    H --> J[Deploy docker compose up]
-    I --> J[Deploy docker compose up]
-    
-    J --> K{Health?}
-    K -->|ok| L[Done]
-    K -->|fail| M[Rollback.sh]
-
-```
 
 ## CI — `.github/workflows/ci.yml`
 
@@ -136,7 +101,7 @@ Direct links (replace `OWNER/REPO` with your repo):
 - Attestations: `https://github.com/alanarzumanjan/SmartAnimalShelter/attestations`
 
 <p align="center">
-  <img src="../docs/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" />
+  <img src="../docs/images/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" />
   <br/>
   <em> CI/CD Piplines diagram</em>
 </p>

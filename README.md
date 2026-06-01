@@ -45,7 +45,7 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 The database schema is designed to link environmental data with animal welfare records.
 
 <p align="center">
-  <img src="docs/erd.png" alt="Entity Relationship Diagram" width="700" />
+  <img src="docs/images/erd.png" alt="Entity Relationship Diagram" width="700" />
   <br/>
   <em> Entity Relationship Diagram</em>
 </p>
@@ -91,7 +91,7 @@ Each monitoring station is built using reliable, low-cost components suitable fo
 ### System Architecture
 
 <p align="center">
-  <img src="docs/system_arhitecture.svg" alt="Smart Shelter IoT System Architecture Diagram" width="700" />
+  <img src="docs/images/system_arhitecture.svg" alt="Smart Shelter IoT System Architecture Diagram" width="700" />
   <br/>
   <em> System architecture showing data flow, security zones, and CI/CD pipeline</em>
 </p>
@@ -141,10 +141,10 @@ Security is implemented using a **Defense-in-Depth** strategy:
 <table>
   <tr>
     <td valign="top" align="center" style="padding: 10px;">
-      <img src="docs/api_documentation1.png" alt="System API documentation first part" width="500px" />
+      <img src="docs/images/api_documentation1.png" alt="System API documentation first part" width="500px" />
     </td>
     <td valign="top" align="center" style="padding: 10px;">
-      <img src="docs/api_documentation2.png" alt="System API documentation second part" width="500px" />
+      <img src="docs/images/api_documentation2.png" alt="System API documentation second part" width="500px" />
     </td>
   </tr>
 </table>
@@ -158,7 +158,7 @@ Security is implemented using a **Defense-in-Depth** strategy:
 ### CI/CD Piplines diagram
 
 <p align="center">
-  <img src="docs/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" />
+  <img src="docs/images/deployment.png"" alt=" CI/CD Piplines diagram" width="1000" />
   <br/>
   <em> CI/CD Piplines diagram</em>
 </p>
