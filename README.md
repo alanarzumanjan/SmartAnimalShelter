@@ -154,6 +154,7 @@ Security is implemented across multiple layers to ensure data integrity and user
 
 ---
 
+
 ## Testing & Quality Assurance
 
 <p align="center"> <img src="docs/images/coverage_report.png" alt="System API documentation first part" width="1000px" /> </p>
