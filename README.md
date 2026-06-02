@@ -164,7 +164,6 @@ The project adheres to modern software engineering practices with a robust, auto
   - **Metrics:** 73 automated tests with a 100% pass rate (0 failures). <br>
   - **Coverage:** Critical modules achieve high coverage (e.g., `JwtService` at 100%, `UserEmailService` at 88.8%, `ShelterService` at 82.5%).
 
-
 ---
 
 ### CI/CD Piplines diagram
@@ -178,7 +177,6 @@ The project features a fully automated GitHub Actions pipeline: <br>
 - **CI Phase:** On every PR/Push, the pipeline runs backend/frontend builds, linting, xUnit tests, and **Trivy** security scans (blocking on HIGH/CRITICAL vulnerabilities). <br>
 - **CD Phase:** Upon success, multi-platform (`amd64`/`arm64`) Docker images are built and pushed to GitHub Container Registry (GHCR) with SBOM generation and build attestations. <br>
 - **Resilience:** Includes an automated `rollback.sh` script to instantly revert to the previous stable version if health checks fail post-deployment.
-
 
 ---
 
