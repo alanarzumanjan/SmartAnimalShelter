@@ -42,7 +42,7 @@ Traditional animal shelters often struggle with fragmented data and lack of cont
 | -------------- | ------------- | -------------------------------------------------------- |
 | **PostgreSQL** | Relational DB | Users, Animals, Orders, Chat Messages (ACID compliance). |
 | **MongoDB**    | Document DB   | Images.                                                  |
-| **Redis**      | In-Memory DB  | **Caching**, **SignalR Backplane**, **Rate Limiting**.   |
+| **Redis**      | In-Memory DB  | Caching, SignalR Backplane, Rate Limiting.   |
 
 ### Entity Relationship Diagram (ERD)
 
