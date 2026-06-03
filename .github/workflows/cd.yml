@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: 'Deploy after build'
+        description: "Deploy after build"
         required: false
         default: true
         type: boolean
@@ -237,15 +237,15 @@ jobs:
       - name: Delete old package versions
         uses: actions/delete-package-versions@v5
         with:
-          package-name: 'smartanimalshelter/backend'
-          package-type: 'container'
+          package-name: "smartanimalshelter/backend"
+          package-type: "container"
           min-versions-to-keep: 10
           delete-only-untagged-versions: true
 
       - name: Delete old frontend versions
         uses: actions/delete-package-versions@v5
         with:
-          package-name: 'smartanimalshelter/frontend'
-          package-type: 'container'
+          package-name: "smartanimalshelter/frontend"
+          package-type: "container"
           min-versions-to-keep: 10
           delete-only-untagged-versions: true

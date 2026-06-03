@@ -30,11 +30,13 @@
 ## Tests
 
 ### UnitTests (`tests/UnitTests.cs`)
+
 - **PasswordHashingService** — hashing produces non-empty result; correct password verifies, wrong password fails.
 - **JwtService** — token generation produces valid JWT with correct issuer, audience, subject, role claims; generated token passes validation with real key.
 - **JwtSettings** — `FromConfiguration` throws `InvalidOperationException` when key/issuer/audience missing; `FromEnvironmentVariables` reads values correctly.
 
 ### IntegrationTests (`tests/IntegrationTests.cs`)
+
 - **Infrastructure:** Testcontainers Postgres 16 (`shelter_test`); `AppDbContext` can connect, migrations apply cleanly, insert & query user.
 - **Auth flow:** register persists user with hashed password; valid credentials produce a parseable JWT with correct claims; invalid credentials fail verification.
 - **UserEmailService:** `FindByEmail` returns user; `EmailExists` returns true/false correctly.
@@ -70,6 +72,7 @@ Push/PR to `master`. Simple `docker build ./backend` with SHA tag. **Redundant**
 ## Dependabot — `.github/dependabot.yml`
 
 Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per ecosystem:
+
 - **NuGet** (`/backend`)
 - **npm** (`/frontend`)
 - **Docker** (`/`, `/backend`, `/frontend/docker`)
@@ -90,13 +93,14 @@ Weekly grouped updates, target branch `dependabot-updates`, 1 open PR limit per 
 
 After CD completes, artifacts are available in three places:
 
-| What | Where | How to access |
-|------|-------|---------------|
-| **SBOM JSON** | GitHub Actions artifacts | Open the CD run → **Artifacts** → download `backend-sbom` or `frontend-sbom` (contains `.spdx.json`) |
+| What                  | Where                            | How to access                                                                                                     |
+| --------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **SBOM JSON**         | GitHub Actions artifacts         | Open the CD run → **Artifacts** → download `backend-sbom` or `frontend-sbom` (contains `.spdx.json`)              |
 | **Build attestation** | GHCR (GitHub Container Registry) | Open the package page → `ghcr.io/alanarzumanjan/smartanimalshelter/backend` or `/frontend` → **Attestations** tab |
-| **Provenance** | GHCR + Sigstore | `cosign verify-attestation ...` or view in GitHub package UI under "Attestations" |
+| **Provenance**        | GHCR + Sigstore                  | `cosign verify-attestation ...` or view in GitHub package UI under "Attestations"                                 |
 
 Direct links (replace `OWNER/REPO` with your repo):
+
 - Packages: `https://github.com/alanarzumanjan/SmartAnimalShelter/pkgs/container/smartanimalshelter%2Fbackend`
 - Attestations: `https://github.com/alanarzumanjan/SmartAnimalShelter/attestations`
 
